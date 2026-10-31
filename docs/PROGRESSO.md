@@ -69,3 +69,84 @@ flutter build apk --debug
 Etapa 1 — fundação: `DateOnly`, `Clock`, entidades, esquema completo com
 migrações, repositórios e testes de domínio/persistência. Aguardando
 aprovação para iniciar.
+
+## Etapa 1 — Fundação (concluída em 2026-10-31)
+
+### Implementado
+
+- Identidade definitiva do app: `com.mikemequis1.planner` (namespace,
+  applicationId e pacote do `MainActivity`); título da janela Windows
+  atualizado para Planner.
+- `DateOnly` (datas de calendário sem fuso), `Clock`/`SystemClock`,
+  formatação pt_BR com intl.
+- Entidades de domínio: `PostIt` (tipo, estado, marcante, notas, intervalo,
+  ordem, rollover, timestamps, tombstone), `Note`/`NoteLine` e
+  `PostItHistoryEntry`.
+- `ValidatePostIt` com erros tipados (título, evento sem data, fim antes do
+  início, intervalo em tarefa/recorrente, marcante que não é evento).
+- Esquema drift v2 com `app_settings`, `notes`, `note_lines`, `post_its`,
+  `post_it_history_entries`; índices, chaves estrangeiras, conversor
+  `DateOnly` e migração v1 → v2.
+- Repositórios drift: post-its (salvar com histórico transacional, lote,
+  exclusão lógica), notas (linhas substituídas em transação, exclusão lógica
+  desvincula post-its preservando o trecho) e preferências.
+- `PlannerController`: data selecionada, modos por orientação persistidos,
+  carregamento, contagens, filtro por data (eventos multi-dia), validação de
+  post-it. `NotesController` para o caderno.
+- Composição (`AppDependencies`), injeção (`AppScope`), tema Material 3,
+  navegação adaptativa (trilho em tablet, barra inferior em telas estreitas)
+  e telas de visão geral.
+- Textos pt_BR centralizados em `AppStrings`.
+
+### Comandos executados
+
+```bash
+dart run build_runner clean
+dart run build_runner build
+flutter analyze
+flutter test
+flutter build apk --debug
+```
+
+### Resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: 43 testes aprovados, incluindo migração v1 → v2 com
+  preferências preservadas.
+- `flutter build apk --debug`: aprovado (~19 s com cache), incluindo o novo
+  applicationId.
+- Cobertura dos critérios de aceitação da etapa: CRUD de post-it e nota via
+  repositório; ordem (`sortOrder`) e datas preservadas após reabrir o banco;
+  vínculo nota↔post-it persistido; preferências de modo/data persistidas;
+  abas Agenda/Caixinha/Notas acessíveis em trilho e barra inferior.
+
+### Arquivos principais
+
+- `lib/core/`: `date_only.dart`, `clock.dart`, `date_formatting.dart`
+- `lib/domain/`: entidades, repositórios e `validate_post_it.dart`
+- `lib/data/db/`: `tables.dart`, `converters.dart`, `app_database.dart` (+ `.g.dart`)
+- `lib/data/mappers/mappers.dart`, `lib/data/repositories/*`
+- `lib/app/`: bootstrap, scope, controllers, tema, strings, view modes
+- `lib/features/`: shell, planner, inbox, notes, shared
+- `test/`: `core/`, `domain/`, `data/db/`, `app/`, `helpers/`
+- `android/app/build.gradle.kts`, `MainActivity.kt`, `windows/runner/main.cpp`
+- `README.md`, `docs/DECISOES.md`, `docs/PROGRESSO.md`
+
+### Limitações e pendências
+
+- Sem grade de calendário, criação/edição visual, arraste ou redimensionamento
+  (Etapas 2 e 3).
+- TO-DO recorrente ainda não avança: modelagem (`startDate`,
+  `lastRolloverAt`) pronta, regra na Etapa 4.
+- Caixinha e Notas são telas de visão geral; filtros/editor nas Etapas 4 e 5.
+- Build Windows não validado (ambiente sem Developer Mode/workload C++).
+- Testes de widget cobrem navegação e renderização básica; interações visuais
+  e acessibilidade entram na Etapa 6.
+- O aviso do drift sobre múltiplas instâncias em testes de reabertura é
+  esperado (bancos distintos em sequência, fechados antes da reabertura).
+
+### Próximo passo
+
+Etapa 2 — agenda visual: janelas de período por orientação, grade de dias,
+post-its com cartão contínuo para eventos multi-dia e overflow "+N".
+Aguardando aprovação para iniciar.

@@ -1,0 +1,25 @@
+import 'package:drift/native.dart';
+import 'package:flutter_schedule/app/bootstrap.dart';
+import 'package:flutter_schedule/core/clock.dart';
+import 'package:flutter_schedule/data/db/app_database.dart';
+
+/// Relógio fixo para testes determinísticos.
+final class FixedClock implements Clock {
+  const FixedClock(this._now);
+
+  final DateTime _now;
+
+  @override
+  DateTime now() => _now;
+}
+
+/// Dependências completas com banco em memória.
+AppDependencies testDependencies({required DateTime now}) {
+  return AppDependencies.fromDatabase(
+    AppDatabase(NativeDatabase.memory()),
+    clock: FixedClock(now),
+  );
+}
+
+DateTime utcDate(int year, int month, int day, [int hour = 12]) =>
+    DateTime.utc(year, month, day, hour);

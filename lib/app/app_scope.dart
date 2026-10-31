@@ -1,0 +1,29 @@
+import 'package:flutter/widgets.dart';
+
+import 'controllers/notes_controller.dart';
+import 'controllers/planner_controller.dart';
+
+/// Expõe os controllers para a árvore de widgets.
+///
+/// Widgets escutam com `ListenableBuilder`; este escopo só injeta dependências.
+class AppScope extends InheritedWidget {
+  const AppScope({
+    super.key,
+    required this.planner,
+    required this.notes,
+    required super.child,
+  });
+
+  final PlannerController planner;
+  final NotesController notes;
+
+  static AppScope of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
+    assert(scope != null, 'AppScope não encontrado na árvore de widgets.');
+    return scope!;
+  }
+
+  @override
+  bool updateShouldNotify(AppScope oldWidget) =>
+      planner != oldWidget.planner || notes != oldWidget.notes;
+}

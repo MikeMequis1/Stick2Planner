@@ -7,11 +7,12 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapa 0 (preparação) concluída. Ainda não existe interface de agenda: o app
-abre em uma tela temporária. O escopo funcional começa na Etapa 1.
+Etapas 0 e 1 concluídas: base técnica e de domínio prontas. A interface ainda é
+uma visão geral (contagens e data selecionada); a grade de agenda começa na
+Etapa 2.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
-- [ ] Etapa 1 — fundação (domínio, esquema completo, tema, navegação)
+- [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
 - [ ] Etapa 2 — agenda visual
 - [ ] Etapa 3 — manipulação (arrastar, reordenar, redimensionar)
 - [ ] Etapa 4 — organização (estados, caixinha, recorrente)
@@ -39,31 +40,61 @@ flutter run -d <device>                # ex.: emulador Android
 flutter build apk --debug
 ```
 
-O arquivo `*.g.dart` é gerado pelo drift; não editar manualmente.
+O arquivo `*.g.dart` é gerado pelo drift; não editar manualmente. Rode o
+codegen sempre que alterar `lib/data/db/tables.dart`.
 
 ## Estrutura
 
 ```
 lib/
-  main.dart                 # entrada + tema + localização (pt_BR)
-  data/db/app_database.dart # banco drift (esquema v1: preferências)
+  main.dart                     # entrada, pt_BR, bootstrap
+  core/                         # DateOnly, Clock, formatação de datas
+  domain/
+    entities/                   # PostIt, Note/NoteLine, histórico
+    repositories/               # contratos (post-it, nota, preferências)
+    usecases/                   # validação de post-it
+  data/
+    db/                         # esquema drift v2, conversores, migrações
+    mappers/                    # linha drift <-> entidade
+    repositories/               # implementações drift
+  app/
+    bootstrap.dart              # composição de banco/repos/controllers
+    app_scope.dart              # injeção na árvore de widgets
+    controllers/                # PlannerController, NotesController
+    theme/                      # Material 3
+    app_strings.dart            # textos pt_BR centralizados
+  features/
+    shell/                      # trilho/barra de navegação adaptativos
+    planner/                    # visão geral da agenda (Etapa 2 trará a grade)
+    inbox/                      # caixinha
+    notes/                      # caderno
+    shared/                     # componentes reutilizáveis
 test/
-  app_test.dart             # smoke test da tela inicial
-  data/db/                  # testes de persistência
-docs/                       # decisões e histórico das etapas
+  core/  domain/  data/db/  app/  helpers/
+docs/
 ```
 
-Camadas planejadas: `domain` (entidades e casos de uso puros), `data`
-(repositórios drift), `app` (controllers e composição), `features` (UI).
 Regra de dependência: `features -> app -> domain`, `data -> domain`; `domain`
 não importa Flutter nem drift.
 
-## Persistência
+## Domínio e persistência
 
-drift + SQLite, escolhido por relacionamentos (post-it ↔ nota ↔ histórico),
-transações, consultas por data/estado e migrações versionadas testáveis.
-Versões atuais: `drift 2.35.3`, `sqlite3 3.8.0` (biblioteca embutida via
-hooks), `path_provider 2.1.6`, `drift_dev 2.35.2`, `build_runner 2.17.1`.
+- `PostIt`: UUID, título, tipo (`task`, `event`, `recurringTodo`), estado
+  (`active`, `done`, `cancelled`), `isHighlight` (`+`), detalhes, vínculo de
+  nota (`noteId` + snapshot `noteExcerpt`), data/início/fim, `sortOrder`,
+  timestamps e tombstone (`deletedAt`).
+- `Note` + `NoteLine`: texto ou checklist, linhas ordenadas.
+- `PostItHistoryEntry`: auditoria de criação, edição, movimento, status,
+  rollover etc., sem duplicar o post-it.
+- Esquema drift v2: `app_settings`, `notes`, `note_lines`, `post_its`,
+  `post_it_history_entries`, com índices e migração v1 → v2.
+- Datas de calendário usam `DateOnly` (sem hora), persistido como
+  `aaaa-mm-dd`; timestamps em UTC (ms).
+
+`drift + SQLite` foi escolhido por relacionamentos, transações, consultas por
+data/estado e migrações testáveis. Versões atuais: `drift 2.35.3`,
+`sqlite3 3.8.0` (biblioteca embutida via hooks), `path_provider 2.1.6`,
+`drift_dev 2.35.2`, `build_runner 2.17.1`.
 
 `sqlite3_flutter_libs` foi evitado por estar marcado EOL no pub.dev. Se os
 hooks falharem em algum ambiente, o fallback documentado é `drift_flutter`.
@@ -78,5 +109,6 @@ distribuída faz parte do MVP.
 
 ## Identificador do aplicativo
 
-`applicationId` ainda é o provisório `com.example.flutter_schedule`, pendente
-de definição. O nome de exibição já é **Planner**.
+`applicationId` definitivo: **`com.mikemequis1.planner`**. Nome de exibição:
+**Planner**. Alterar o ID depois de instalar implica novo app e perda dos dados
+locais existentes.

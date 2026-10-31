@@ -25,6 +25,13 @@ etapas. Cada item: contexto, decisão, consequência.
   relacional.
 - **Consequência:** codegen obrigatório (`dart run build_runner build`).
 
+## Identidade do aplicativo
+
+- **Decisão:** `applicationId` / `namespace` `com.mikemequis1.planner`; nome de
+  exibição Planner.
+- **Consequência:** definido antes de existirem dados reais. Mudar depois cria
+  outro app e perde o banco local.
+
 ## Datas e IDs
 
 - **Decisão:** datas de calendário usam `DateOnly` (sem hora, persistido como
@@ -103,4 +110,4 @@ etapas. Cada item: contexto, decisão, consequência.
 
 ## Pendente de decisão
 
-- `applicationId` definitivo (atual: `com.example.flutter_schedule`).
+Nenhuma no momento.
