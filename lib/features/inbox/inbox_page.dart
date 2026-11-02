@@ -15,76 +15,81 @@ class InboxPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final planner = AppScope.of(context).planner;
 
-    if (planner.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return ListenableBuilder(
+      listenable: planner,
+      builder: (context, _) {
+        if (planner.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    final hasAnyPostIt = planner.postIts.isNotEmpty;
+        final hasAnyPostIt = planner.postIts.isNotEmpty;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.active,
-                      value: planner.countByStatus(PostItStatus.active),
-                      icon: Icons.radio_button_unchecked,
-                    ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      SizedBox(
+                        width: 230,
+                        child: CountTile(
+                          label: AppStrings.active,
+                          value: planner.countByStatus(PostItStatus.active),
+                          icon: Icons.radio_button_unchecked,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 230,
+                        child: CountTile(
+                          label: AppStrings.done,
+                          value: planner.countByStatus(PostItStatus.done),
+                          icon: Icons.check_circle_outline,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 230,
+                        child: CountTile(
+                          label: AppStrings.cancelled,
+                          value: planner.countByStatus(PostItStatus.cancelled),
+                          icon: Icons.cancel_outlined,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 230,
+                        child: CountTile(
+                          label: AppStrings.undated,
+                          value: planner.undatedPostIts.length,
+                          icon: Icons.event_busy_outlined,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.done,
-                      value: planner.countByStatus(PostItStatus.done),
-                      icon: Icons.check_circle_outline,
+                  if (!hasAnyPostIt) ...[
+                    const SizedBox(height: 8),
+                    const EmptyState(
+                      icon: Icons.inbox_outlined,
+                      title: AppStrings.emptyInbox,
+                      message: AppStrings.inboxPlaceholderBody,
                     ),
-                  ),
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.cancelled,
-                      value: planner.countByStatus(PostItStatus.cancelled),
-                      icon: Icons.cancel_outlined,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.undated,
-                      value: planner.undatedPostIts.length,
-                      icon: Icons.event_busy_outlined,
-                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  const StageNoticeCard(
+                    icon: Icons.filter_alt_outlined,
+                    title: AppStrings.inboxPlaceholderTitle,
+                    message: AppStrings.inboxPlaceholderBody,
                   ),
                 ],
               ),
-              if (!hasAnyPostIt) ...[
-                const SizedBox(height: 8),
-                const EmptyState(
-                  icon: Icons.inbox_outlined,
-                  title: AppStrings.emptyInbox,
-                  message: AppStrings.inboxPlaceholderBody,
-                ),
-              ],
-              const SizedBox(height: 16),
-              const StageNoticeCard(
-                icon: Icons.filter_alt_outlined,
-                title: AppStrings.inboxPlaceholderTitle,
-                message: AppStrings.inboxPlaceholderBody,
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -42,4 +42,33 @@ abstract final class AppStrings {
   static const viewModeWeek = 'Semana';
   static const viewModeTwoWeeks = '2 semanas';
   static const viewModeMonth = 'Mês';
+
+  static const previousPeriod = 'Período anterior';
+  static const nextPeriod = 'Próximo período';
+  static const decreaseDays = 'Menos dias';
+  static const increaseDays = 'Mais dias';
+
+  static const taskType = 'Tarefa';
+  static const eventType = 'Evento';
+  static const recurringType = 'TO-DO recorrente';
+  static const highlightType = 'Evento marcante';
+  static const eventSymbol = '✮';
+  static const highlightSymbol = '+';
+
+  static const detailsTitle = 'Detalhes do post-it';
+  static const detailsSection = 'Detalhes';
+  static const noDetails = 'Sem detalhes adicionais.';
+  static const periodLabel = 'Período';
+  static const noteExcerptTitle = 'Trecho copiado da nota';
+  static const linkedNoteTitle = 'Nota vinculada';
+  static const close = 'Fechar';
+  static const emptyDay = 'Nenhum post-it neste dia.';
+  static const calendarHint =
+      'Toque em um dia para selecionar; toque em um post-it para ver os '
+      'detalhes.';
+  static const todayBadge = 'hoje';
+  static const continuation = 'continua';
+
+  static String moreItems(int count) => '+$count mais';
+  static String hiddenEvents(int count) => '+$count eventos';
 }

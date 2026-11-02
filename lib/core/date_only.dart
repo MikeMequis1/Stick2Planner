@@ -45,7 +45,7 @@ final class DateOnly implements Comparable<DateOnly> {
 
   DateOnly get startOfWeek => addDays(1 - weekday);
 
-  DateOnly get endOfMonth => DateOnly(year, month, _daysInMonth(year, month));
+  DateOnly get endOfMonth => DateOnly(year, month, daysInMonth(year, month));
 
   bool isBefore(DateOnly other) => _utc.isBefore(other._utc);
   bool isAfter(DateOnly other) => _utc.isAfter(other._utc);
@@ -61,7 +61,7 @@ final class DateOnly implements Comparable<DateOnly> {
     return '$year-$monthPart-$dayPart';
   }
 
-  static int _daysInMonth(int year, int month) {
+  static int daysInMonth(int year, int month) {
     final firstOfNextMonth = month == 12
         ? DateTime.utc(year + 1)
         : DateTime.utc(year, month + 1);

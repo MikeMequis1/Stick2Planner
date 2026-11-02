@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../core/clock.dart';
 import '../../core/date_only.dart';
+import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/repositories/post_it_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
@@ -31,8 +32,8 @@ final class PlannerController extends ChangeNotifier {
   final ValidatePostIt _validatePostIt;
 
   DateOnly _selectedDate;
-  PlannerViewMode _portraitMode = PlannerViewMode.day;
-  PlannerViewMode _landscapeMode = PlannerViewMode.week;
+  AgendaViewMode _portraitMode = AgendaViewMode.day;
+  AgendaViewMode _landscapeMode = AgendaViewMode.week;
   List<PostIt> _postIts = const [];
   bool _isLoading = true;
   bool _initialized = false;
@@ -40,13 +41,13 @@ final class PlannerController extends ChangeNotifier {
 
   DateOnly get selectedDate => _selectedDate;
   DateOnly get today => DateOnly.fromDateTime(_clock.now());
-  PlannerViewMode get portraitMode => _portraitMode;
-  PlannerViewMode get landscapeMode => _landscapeMode;
+  AgendaViewMode get portraitMode => _portraitMode;
+  AgendaViewMode get landscapeMode => _landscapeMode;
   List<PostIt> get postIts => List.unmodifiable(_postIts);
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  PlannerViewMode modeFor(Orientation orientation) =>
+  AgendaViewMode modeFor(Orientation orientation) =>
       orientation == Orientation.landscape ? _landscapeMode : _portraitMode;
 
   Future<void> initialize() async {
@@ -57,11 +58,11 @@ final class PlannerController extends ChangeNotifier {
           _parseDate(settings[SettingsKeys.selectedDate]) ?? today;
       _portraitMode = _parseMode(
         settings[SettingsKeys.portraitMode],
-        PlannerViewMode.day,
+        AgendaViewMode.day,
       );
       _landscapeMode = _parseMode(
         settings[SettingsKeys.landscapeMode],
-        PlannerViewMode.week,
+        AgendaViewMode.week,
       );
       _postIts = await _postItRepository.loadAll();
       _error = null;
@@ -96,8 +97,34 @@ final class PlannerController extends ChangeNotifier {
 
   Future<void> goToToday() => selectDate(today);
 
+  /// Avança um período relativo ao modo visível, mantendo a data como âncora.
+  Future<void> nextPeriod(AgendaViewMode mode) =>
+      selectDate(shiftSelectedDate(_selectedDate, mode, 1));
+
+  Future<void> previousPeriod(AgendaViewMode mode) =>
+      selectDate(shiftSelectedDate(_selectedDate, mode, -1));
+
+  bool canDecreaseMode(Orientation orientation) {
+    final modes = plannerModesFor(orientation);
+    return modes.indexOf(modeFor(orientation)) > 0;
+  }
+
+  bool canIncreaseMode(Orientation orientation) {
+    final modes = plannerModesFor(orientation);
+    return modes.indexOf(modeFor(orientation)) < modes.length - 1;
+  }
+
+  /// Ajusta a quantidade de dias visíveis dentro dos modos da orientação.
+  Future<void> cycleMode(int delta, Orientation orientation) async {
+    final modes = plannerModesFor(orientation);
+    final currentIndex = modes.indexOf(modeFor(orientation));
+    final nextIndex = (currentIndex + delta).clamp(0, modes.length - 1);
+    if (nextIndex == currentIndex) return;
+    await setMode(modes[nextIndex], orientation);
+  }
+
   Future<void> setMode(
-    PlannerViewMode mode,
+    AgendaViewMode mode,
     Orientation orientation,
   ) async {
     if (orientation == Orientation.landscape) {
@@ -159,8 +186,8 @@ final class PlannerController extends ChangeNotifier {
     }
   }
 
-  static PlannerViewMode _parseMode(
+  static AgendaViewMode _parseMode(
     String? value,
-    PlannerViewMode fallback,
-  ) => PlannerViewModeX.fromStorage(value) ?? fallback;
+    AgendaViewMode fallback,
+  ) => AgendaViewModeX.fromStorage(value) ?? fallback;
 }

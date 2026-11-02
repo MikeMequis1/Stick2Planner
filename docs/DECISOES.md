@@ -58,12 +58,12 @@ etapas. Cada item: contexto, decisão, consequência.
 
 - **Decisão aprovada:** um evento estendido é **um único post-it contínuo**
   entre os dias, não cartões repetidos.
-- **Consequência de implementação (Etapa 2/3):** a grade precisa de uma camada
-  de sobreposição para desenhar o cartão atravessando colunas/dias, com
-  identidade única, extremidades arrastáveis nas pontas e indicação de
-  continuação. O layout por célula deve reservar "faixas" para esses eventos.
-  Arrastar o corpo move o intervalo inteiro; arrastar as alças altera apenas a
-  extremidade correspondente.
+- **Consequência de implementação (Etapa 2/3):** a grade usa uma faixa de
+  eventos por linha de semana. O evento vira um segmento com o mesmo ID,
+  pontas de continuação e título exibido uma única vez por período visível;
+  se cruzar a quebra de semana, o segmento seguinte mostra "continua" em vez
+  de repetir o cartão inteiro. Arrastar o corpo move o intervalo inteiro;
+  arrastar as alças altera apenas a extremidade correspondente (Etapa 3).
 
 ## TO-DO recorrente
 
@@ -90,6 +90,8 @@ etapas. Cada item: contexto, decisão, consequência.
 
 - Paisagem: semana, duas semanas, mês compacto.
 - Retrato: dia, quatro dias, semana.
+- A data selecionada é a âncora. Anterior/próximo move a seleção em um
+  período (1, 4, 7, 14 dias; mês com dia preservado e clampado).
 - Mês compacto: grade dinâmica de 35 ou 42 células conforme o mês, incluindo
   dias de borda atenuados; nunca recortado em 30 dias.
 - Trocar modo ou orientação não altera data, ordem ou qualquer dado; apenas

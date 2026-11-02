@@ -150,3 +150,88 @@ flutter build apk --debug
 Etapa 2 — agenda visual: janelas de período por orientação, grade de dias,
 post-its com cartão contínuo para eventos multi-dia e overflow "+N".
 Aguardando aprovação para iniciar.
+
+## Etapa 2 — Agenda visual (concluída em 2026-11-02)
+
+### Implementado
+
+- `AgendaViewMode` no domínio (dia, 4 dias, semana, 2 semanas, mês).
+- `CalendarPeriod`: janela derivada da data selecionada; semana começando na
+  segunda; duas linhas de 7 dias; mês em grade dinâmica de 35/42 células com
+  dias de borda; navegação por período com clamp de dia no mês.
+- `layoutEventSegments`: eventos multi-dia viram barras por linha da grade,
+  com faixas sem sobreposição, continuação nas pontas e limite de faixas com
+  contador de excedentes. Título aparece uma vez por período; segmento
+  seguinte mostra "continua".
+- Grade visual: cabeçalho de dias da semana, células com número do dia,
+  destaque de selecionado/hoje, cartões de post-it por dia (símbolos e estado
+  também por ícone/riscado), overflow "+N mais" e folha com a lista completa
+  do dia.
+- Barra de evento multi-dia com identidade única (chave por post-it + semana),
+  pontas de continuação e abertura da folha de detalhes.
+- Ferramenta de período: anterior, próximo, "Hoje", `−`/`+` para ajustar a
+  quantidade de dias; preferência por orientação persistida.
+- Folha de detalhes somente leitura (tipo, estado, data/intervalo, detalhes,
+  trecho de nota, nota vinculada).
+- Cada página escuta seu controller (`ListenableBuilder`), corrigindo o caso
+  em que widgets const reutilizados não refletiam mudanças de data/modo.
+
+### Comandos executados
+
+```bash
+flutter analyze
+flutter test
+flutter build apk --debug
+```
+
+### Resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: 70 testes aprovados (27 novos: períodos, barras, grade,
+  navegação, overflow, orientação e persistência de dados).
+- `flutter build apk --debug`: aprovado (~38 s).
+
+### Critérios cobertos
+
+- Sete dias em uma linha, 14 em duas linhas, mês compacto 35/42 sem truncar
+  31 dias; retrato com dia/4 dias/semana.
+- `+`/`−` e navegação sem perder a data selecionada; modo e data persistidos.
+- Trocar modo ou orientação não altera quantidade, ordem nem datas dos dados
+  (teste de widget comparando IDs e seleção antes/depois).
+- Evento multi-dia é uma barra contínua, não cartões repetidos por dia; ao
+  cruzar semana, não repete o título.
+- Vários post-its no mesmo dia não quebram a célula; "+N mais" dá acesso à
+  lista completa.
+
+### Arquivos principais
+
+- `lib/domain/calendar/`: `agenda_view_mode.dart`, `calendar_period.dart`,
+  `event_bar_layout.dart`
+- `lib/core/date_formatting.dart` (+ rótulos de período)
+- `lib/features/planner/`: `agenda_page.dart` e `widgets/` (grade, linha,
+  célula, barra, cartão, toolbar, folhas de detalhes)
+- `lib/app/planner_view_mode.dart`, `lib/app/controllers/planner_controller.dart`
+- `lib/features/shell/home_shell.dart`
+- Testes: `test/domain/calendar_period_test.dart`,
+  `test/domain/event_bar_layout_test.dart`,
+  `test/app/calendar_view_test.dart`
+
+### Limitações e pendências
+
+- Sem criação/edição visual, arraste, reordenação ou redimensionamento
+  (Etapa 3). A folha de detalhes é somente leitura.
+- Evento que cruza semana é desenhado em um segmento por linha, com o mesmo
+  ID; o título não se repete, mas a barra é interrompida fisicamente pela
+  quebra de linha.
+- Eventos excedentes do limite de faixas não aparecem na linha; continuam
+  acessíveis pela lista do dia.
+- Sem animações de transição de período e sem auditoria de acessibilidade
+  completa (Etapa 6).
+- Sem validação visual em aparelho/emulador nesta etapa; verificação por
+  testes de widget em 1280×800, 800×1280 e 500×800 + build APK.
+
+### Próximo passo
+
+Etapa 3 — manipulação: criação/edição, arraste entre dias, reordenação,
+alças de redimensionamento com persistência transacional e alternativas
+acessíveis aos gestos. Aguardando aprovação para iniciar.

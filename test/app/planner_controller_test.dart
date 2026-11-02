@@ -29,16 +29,16 @@ void main() {
 
       expect(controller.isLoading, isFalse);
       expect(controller.selectedDate, DateOnly(2026, 10, 31));
-      expect(controller.portraitMode, PlannerViewMode.day);
-      expect(controller.landscapeMode, PlannerViewMode.week);
+      expect(controller.portraitMode, AgendaViewMode.day);
+      expect(controller.landscapeMode, AgendaViewMode.week);
       expect(controller.postIts, isEmpty);
       expect(controller.error, isNull);
     });
 
     test('persiste modo de visualização por orientação', () async {
       await controller.initialize();
-      await controller.setMode(PlannerViewMode.fourDays, Orientation.portrait);
-      await controller.setMode(PlannerViewMode.twoWeeks, Orientation.landscape);
+      await controller.setMode(AgendaViewMode.fourDays, Orientation.portrait);
+      await controller.setMode(AgendaViewMode.twoWeeks, Orientation.landscape);
 
       final reloaded = AppDependencies.fromDatabase(
         dependencies.database,
@@ -46,8 +46,8 @@ void main() {
       );
       await reloaded.planner.initialize();
 
-      expect(reloaded.planner.portraitMode, PlannerViewMode.fourDays);
-      expect(reloaded.planner.landscapeMode, PlannerViewMode.twoWeeks);
+      expect(reloaded.planner.portraitMode, AgendaViewMode.fourDays);
+      expect(reloaded.planner.landscapeMode, AgendaViewMode.twoWeeks);
 
       reloaded.planner.dispose();
       reloaded.notes.dispose();
@@ -141,14 +141,14 @@ void main() {
 
     test('modos disponíveis dependem da orientação', () {
       expect(plannerModesFor(Orientation.portrait), [
-        PlannerViewMode.day,
-        PlannerViewMode.fourDays,
-        PlannerViewMode.week,
+        AgendaViewMode.day,
+        AgendaViewMode.fourDays,
+        AgendaViewMode.week,
       ]);
       expect(plannerModesFor(Orientation.landscape), [
-        PlannerViewMode.week,
-        PlannerViewMode.twoWeeks,
-        PlannerViewMode.month,
+        AgendaViewMode.week,
+        AgendaViewMode.twoWeeks,
+        AgendaViewMode.month,
       ]);
       expect(AppStrings.viewModeMonth, 'Mês');
     });

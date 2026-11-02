@@ -1,52 +1,36 @@
 import 'package:flutter/material.dart';
 
+import '../domain/calendar/agenda_view_mode.dart';
 import 'app_strings.dart';
 
-/// Modos de visualização da agenda, separados por orientação.
-enum PlannerViewMode { day, fourDays, week, twoWeeks, month }
+export '../domain/calendar/agenda_view_mode.dart';
 
-extension PlannerViewModeX on PlannerViewMode {
+extension AgendaViewModeLabels on AgendaViewMode {
   String get label => switch (this) {
-    PlannerViewMode.day => AppStrings.viewModeDay,
-    PlannerViewMode.fourDays => AppStrings.viewModeFourDays,
-    PlannerViewMode.week => AppStrings.viewModeWeek,
-    PlannerViewMode.twoWeeks => AppStrings.viewModeTwoWeeks,
-    PlannerViewMode.month => AppStrings.viewModeMonth,
+    AgendaViewMode.day => AppStrings.viewModeDay,
+    AgendaViewMode.fourDays => AppStrings.viewModeFourDays,
+    AgendaViewMode.week => AppStrings.viewModeWeek,
+    AgendaViewMode.twoWeeks => AppStrings.viewModeTwoWeeks,
+    AgendaViewMode.month => AppStrings.viewModeMonth,
   };
-
-  /// Número de dias cobertos; zero para o mês (grade depende do mês).
-  int get visibleDays => switch (this) {
-    PlannerViewMode.day => 1,
-    PlannerViewMode.fourDays => 4,
-    PlannerViewMode.week => 7,
-    PlannerViewMode.twoWeeks => 14,
-    PlannerViewMode.month => 0,
-  };
-
-  static PlannerViewMode? fromStorage(String? value) {
-    for (final mode in PlannerViewMode.values) {
-      if (mode.name == value) return mode;
-    }
-    return null;
-  }
 }
 
-/// Modos disponíveis por orientação.
-List<PlannerViewMode> plannerModesFor(Orientation orientation) {
+/// Modos disponíveis por orientação, do menor para o maior.
+List<AgendaViewMode> plannerModesFor(Orientation orientation) {
   return orientation == Orientation.landscape
       ? const [
-          PlannerViewMode.week,
-          PlannerViewMode.twoWeeks,
-          PlannerViewMode.month,
+          AgendaViewMode.week,
+          AgendaViewMode.twoWeeks,
+          AgendaViewMode.month,
         ]
       : const [
-          PlannerViewMode.day,
-          PlannerViewMode.fourDays,
-          PlannerViewMode.week,
+          AgendaViewMode.day,
+          AgendaViewMode.fourDays,
+          AgendaViewMode.week,
         ];
 }
 
-PlannerViewMode defaultModeFor(Orientation orientation) =>
+AgendaViewMode defaultModeFor(Orientation orientation) =>
     orientation == Orientation.landscape
-    ? PlannerViewMode.week
-    : PlannerViewMode.day;
+    ? AgendaViewMode.week
+    : AgendaViewMode.day;

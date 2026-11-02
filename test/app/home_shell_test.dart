@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_schedule/app/app.dart';
 import 'package:flutter_schedule/app/app_strings.dart';
+import 'package:flutter_schedule/features/planner/widgets/day_cell.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -26,11 +27,8 @@ void main() {
     expect(find.text(AppStrings.agenda), findsWidgets);
     expect(find.text(AppStrings.inbox), findsWidgets);
     expect(find.text(AppStrings.notes), findsWidgets);
-    expect(
-      find.text(AppStrings.agendaPlaceholderTitle),
-      findsOneWidget,
-    );
-    expect(find.text('Sábado, 31 de outubro de 2026'), findsOneWidget);
+    expect(find.byType(DayCell), findsNWidgets(7));
+    expect(find.byKey(const Key('day-2026-10-31')), findsOneWidget);
 
     await tester.tap(
       find.descendant(
@@ -64,6 +62,7 @@ void main() {
 
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(DayCell), findsOneWidget);
 
     await tester.tap(
       find.descendant(

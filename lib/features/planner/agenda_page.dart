@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
-import '../../core/date_formatting.dart';
-import '../../app/planner_view_mode.dart';
-import '../shared/count_tile.dart';
-import 'stage_notice_card.dart';
+import '../../app/controllers/planner_controller.dart';
+import '../../domain/calendar/calendar_period.dart';
+import 'widgets/calendar_grid.dart';
+import 'widgets/calendar_labels.dart';
+import 'widgets/calendar_toolbar.dart';
+import 'widgets/day_details_sheet.dart';
+import 'widgets/post_it_details_sheet.dart';
 
-/// Visão geral da agenda na Etapa 1: data selecionada e contagens.
-///
-/// A grade de dias e os post-its interativos entram na Etapa 2.
+/// Agenda visual por período, com post-its e eventos multi-dia contínuos.
 class AgendaPage extends StatelessWidget {
   const AgendaPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final planner = AppScope.of(context).planner;
+
+    return ListenableBuilder(
+      listenable: planner,
+      builder: (context, _) => _buildContent(context, planner),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, PlannerController planner) {
     final theme = Theme.of(context);
     final orientation = MediaQuery.orientationOf(context);
 
@@ -23,101 +32,87 @@ class AgendaPage extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final selected = planner.selectedDate;
-    final dayPostIts = planner.postItsOn(selected);
+    final mode = planner.modeFor(orientation);
+    final period = CalendarPeriod.compute(
+      selectedDate: planner.selectedDate,
+      mode: mode,
+    );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CalendarToolbar(
+            periodLabel: calendarPeriodLabel(period),
+            mode: mode,
+            canDecreaseMode: planner.canDecreaseMode(orientation),
+            canIncreaseMode: planner.canIncreaseMode(orientation),
+            onPreviousPeriod: () => planner.previousPeriod(mode),
+            onNextPeriod: () => planner.nextPeriod(mode),
+            onToday: planner.goToToday,
+            onDecreaseMode: () => planner.cycleMode(-1, orientation),
+            onIncreaseMode: () => planner.cycleMode(1, orientation),
+          ),
+          if (planner.error != null) ...[
+            const SizedBox(height: 8),
+            Card(
+              color: theme.colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  AppStrings.loadError,
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Expanded(
+            child: CalendarGrid(
+              period: period,
+              postIts: planner.postIts,
+              today: planner.today,
+              selectedDate: planner.selectedDate,
+              onDaySelected: planner.selectDate,
+              onPostItTap: (postIt) =>
+                  showPostItDetailsSheet(context, postIt),
+              onShowDay: (date) => showDayDetailsSheet(
+                context,
+                date: date,
+                postIts: planner.postItsOn(date),
+                onPostItSelected: (postIt) =>
+                    showPostItDetailsSheet(context, postIt),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
             children: [
+              Icon(
+                Icons.touch_app_outlined,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  AppStrings.calendarHint,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
-                AppStrings.selectedDate,
-                style: theme.textTheme.labelMedium?.copyWith(
+                '${AppStrings.undated}: ${planner.undatedPostIts.length}',
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    DateFormats.fullDate(selected),
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  if (selected == planner.today)
-                    Chip(
-                      avatar: const Icon(Icons.today, size: 18),
-                      label: const Text(AppStrings.today),
-                    ),
-                  Chip(
-                    avatar: const Icon(Icons.view_agenda_outlined, size: 18),
-                    label: Text(planner.modeFor(orientation).label),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.postItsOnDay,
-                      value: dayPostIts.length,
-                      icon: Icons.sticky_note_2_outlined,
-                      semanticLabel:
-                          '${AppStrings.postItsOnDay}: ${dayPostIts.length}',
-                    ),
-                  ),
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.undated,
-                      value: planner.undatedPostIts.length,
-                      icon: Icons.inbox_outlined,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.notesCount,
-                      value: AppScope.of(context).notes.notes.length,
-                      icon: Icons.note_alt_outlined,
-                    ),
-                  ),
-                ],
-              ),
-              if (planner.error != null) ...[
-                const SizedBox(height: 16),
-                Card(
-                  color: theme.colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      AppStrings.loadError,
-                      style: TextStyle(
-                        color: theme.colorScheme.onErrorContainer,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              const StageNoticeCard(
-                icon: Icons.calendar_view_week_outlined,
-                title: AppStrings.agendaPlaceholderTitle,
-                message: AppStrings.agendaPlaceholderBody,
-              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

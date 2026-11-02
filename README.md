@@ -7,13 +7,13 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapas 0 e 1 concluídas: base técnica e de domínio prontas. A interface ainda é
-uma visão geral (contagens e data selecionada); a grade de agenda começa na
-Etapa 2.
+Etapas 0, 1 e 2 concluídas. A agenda visual já exibe os períodos por
+orientação, navega entre datas e desenha eventos multi-dia como barras
+contínuas. Criação/edição e gestos de arrastar entram na Etapa 3.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
-- [ ] Etapa 2 — agenda visual
+- [x] Etapa 2 — agenda visual (períodos, grade, eventos contínuos, overflow)
 - [ ] Etapa 3 — manipulação (arrastar, reordenar, redimensionar)
 - [ ] Etapa 4 — organização (estados, caixinha, recorrente)
 - [ ] Etapa 5 — notas
@@ -50,6 +50,7 @@ lib/
   main.dart                     # entrada, pt_BR, bootstrap
   core/                         # DateOnly, Clock, formatação de datas
   domain/
+    calendar/                   # AgendaViewMode, CalendarPeriod, barras de evento
     entities/                   # PostIt, Note/NoteLine, histórico
     repositories/               # contratos (post-it, nota, preferências)
     usecases/                   # validação de post-it
@@ -65,7 +66,7 @@ lib/
     app_strings.dart            # textos pt_BR centralizados
   features/
     shell/                      # trilho/barra de navegação adaptativos
-    planner/                    # visão geral da agenda (Etapa 2 trará a grade)
+    planner/                    # agenda + grade + folhas de detalhes
     inbox/                      # caixinha
     notes/                      # caderno
     shared/                     # componentes reutilizáveis
@@ -76,6 +77,22 @@ docs/
 
 Regra de dependência: `features -> app -> domain`, `data -> domain`; `domain`
 não importa Flutter nem drift.
+
+## Agenda visual
+
+- Paisagem: semana, 2 semanas e mês compacto; retrato: dia, 4 dias e semana.
+- `+`/`−` alternam os modos da orientação atual; a escolha fica persistida.
+- Navegação anterior/próximo move a data selecionada em um período; "Hoje"
+  volta à data local. No modo mês o dia é preservado quando possível
+  (31 jan → 28/29 fev).
+- Eventos multi-dia aparecem como uma barra contínua por linha da grade, com
+  ID único e pontas de continuação. Não são repetidos como cartões por dia;
+  ao cruzar a quebra de semana, o título aparece uma vez e o trecho seguinte é
+  marcado como "continua".
+- Células limitam a quantidade de cartões e mostram "+N mais", que abre a
+  lista completa do dia.
+- Mês compacto usa grade dinâmica de 35 ou 42 células, com dias de borda
+  atenuados; meses de 31 dias nunca são truncados.
 
 ## Domínio e persistência
 

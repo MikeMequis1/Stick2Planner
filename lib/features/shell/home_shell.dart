@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../inbox/inbox_page.dart';
 import '../notes/notes_page.dart';
@@ -8,6 +7,9 @@ import '../planner/agenda_page.dart';
 
 /// Casca de navegação: trilho em tablets largos, barra inferior em telas
 /// estreitas. Preserva o estado de cada seção com [IndexedStack].
+///
+/// Cada página escuta seu próprio controller, então a casca não precisa
+/// reconstruir a árvore inteira a cada mudança de dados.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -69,54 +71,46 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final scope = AppScope.of(context);
+    final useRail = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
 
-    return ListenableBuilder(
-      listenable: Listenable.merge([scope.planner, scope.notes]),
-      builder: (context, _) {
-        final useRail =
-            MediaQuery.sizeOf(context).width >= _wideBreakpoint;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text(AppStrings.appName),
-            actions: const [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Tooltip(
-                  message: AppStrings.offlineNotice,
-                  child: Icon(Icons.cloud_off_outlined),
-                ),
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(AppStrings.appName),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Tooltip(
+              message: AppStrings.offlineNotice,
+              child: Icon(Icons.cloud_off_outlined),
+            ),
           ),
-          body: SafeArea(
-            top: false,
-            child: useRail
-                ? Row(
-                    children: [
-                      NavigationRail(
-                        selectedIndex: _index,
-                        onDestinationSelected: _select,
-                        destinations: _railDestinations,
-                      ),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        child: IndexedStack(index: _index, children: _pages),
-                      ),
-                    ],
-                  )
-                : IndexedStack(index: _index, children: _pages),
-          ),
-          bottomNavigationBar: useRail
-              ? null
-              : NavigationBar(
-                  selectedIndex: _index,
-                  onDestinationSelected: _select,
-                  destinations: _barDestinations,
-                ),
-        );
-      },
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: useRail
+            ? Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: _index,
+                    onDestinationSelected: _select,
+                    destinations: _railDestinations,
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: IndexedStack(index: _index, children: _pages),
+                  ),
+                ],
+              )
+            : IndexedStack(index: _index, children: _pages),
+      ),
+      bottomNavigationBar: useRail
+          ? null
+          : NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: _select,
+              destinations: _barDestinations,
+            ),
     );
   }
 }
