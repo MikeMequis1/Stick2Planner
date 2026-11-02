@@ -50,12 +50,20 @@ final class DriftPostItRepository implements PostItRepository {
   }
 
   @override
-  Future<void> saveAll(List<PostIt> postIts) {
+  Future<void> saveBatch(
+    List<PostIt> postIts, {
+    List<PostItHistoryEntry> history = const [],
+  }) {
     return _db.transaction(() async {
       for (final postIt in postIts) {
         await _db
             .into(_db.postIts)
             .insertOnConflictUpdate(postItToCompanion(postIt));
+      }
+      for (final entry in history) {
+        await _db
+            .into(_db.postItHistoryEntries)
+            .insert(postItHistoryToCompanion(entry));
       }
     });
   }
@@ -64,16 +72,24 @@ final class DriftPostItRepository implements PostItRepository {
   Future<void> softDelete({
     required String id,
     required DateTime deletedAt,
-  }) async {
+    PostItHistoryEntry? history,
+  }) {
     final timestamp = dateTimeToStorage(deletedAt);
-    await (_db.update(
-      _db.postIts,
-    )..where((table) => table.id.equals(id))).write(
-      PostItsCompanion(
-        deletedAt: Value(timestamp),
-        updatedAt: Value(timestamp),
-      ),
-    );
+    return _db.transaction(() async {
+      await (_db.update(
+        _db.postIts,
+      )..where((table) => table.id.equals(id))).write(
+        PostItsCompanion(
+          deletedAt: Value(timestamp),
+          updatedAt: Value(timestamp),
+        ),
+      );
+      if (history != null) {
+        await _db
+            .into(_db.postItHistoryEntries)
+            .insert(postItHistoryToCompanion(history));
+      }
+    });
   }
 
   @override

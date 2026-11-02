@@ -14,12 +14,17 @@ abstract interface class PostItRepository {
   /// transação.
   Future<void> save(PostIt postIt, {PostItHistoryEntry? history});
 
-  /// Atualização em lote e transacional (reordenação, rollover).
-  Future<void> saveAll(List<PostIt> postIts);
+  /// Atualiza vários post-its e grava o histórico em uma única transação
+  /// (mover, reordenar, normalizar ordem).
+  Future<void> saveBatch(
+    List<PostIt> postIts, {
+    List<PostItHistoryEntry> history = const [],
+  });
 
   Future<void> softDelete({
     required String id,
     required DateTime deletedAt,
+    PostItHistoryEntry? history,
   });
 
   Future<List<PostItHistoryEntry>> loadHistory(String postItId);

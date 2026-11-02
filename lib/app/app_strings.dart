@@ -69,6 +69,56 @@ abstract final class AppStrings {
   static const todayBadge = 'hoje';
   static const continuation = 'continua';
 
+  static const newPostIt = 'Novo post-it';
+  static const editPostIt = 'Editar post-it';
+  static const fieldTitle = 'Título';
+  static const fieldDetails = 'Detalhes (opcional)';
+  static const fieldType = 'Tipo';
+  static const fieldDate = 'Data';
+  static const fieldNoDate = 'Sem data';
+  static const fieldStartDate = 'Início';
+  static const fieldEndDate = 'Fim';
+  static const fieldHighlight = 'Evento marcante (+)';
+  static const save = 'Salvar';
+  static const cancel = 'Cancelar';
+  static const edit = 'Editar';
+  static const delete = 'Excluir';
+  static const actions = 'Ações';
+  static const moveToDate = 'Mover para data…';
+  static const changeDuration = 'Alterar duração…';
+  static const moveUp = 'Subir na ordem';
+  static const moveDown = 'Descer na ordem';
+  static const resizeStart = 'Redimensionar início';
+  static const resizeEnd = 'Redimensionar fim';
+  static const deleting = 'Excluir post-it?';
+  static const deleteExplanation =
+      'O post-it sairá da agenda, mas o histórico e o registro serão '
+      'preservados no banco.';
+  static const confirmDelete = 'Excluir';
+  static const savedMessage = 'Post-it salvo.';
+  static const deletedMessage = 'Post-it excluído.';
+  static const movedMessage = 'Post-it movido.';
+  static const resizedMessage = 'Duração atualizada.';
+  static const reorderedMessage = 'Ordem atualizada.';
+
+  static const errorTitleEmpty = 'Informe um título.';
+  static const errorTitleLong = 'O título deve ter no máximo 120 caracteres.';
+  static const errorEventDate = 'Escolha a data do evento.';
+  static const errorEndBeforeStart =
+      'A data final não pode ser anterior à inicial.';
+  static const errorEndWithoutStart =
+      'Informe a data inicial antes da final.';
+  static const errorIntervalOnTask =
+      'Apenas eventos podem ocupar vários dias.';
+  static const errorHighlightEvent =
+      'O símbolo + só pode ser usado em eventos.';
+  static const errorSave =
+      'Não foi possível salvar. Verifique os dados e tente novamente.';
+  static const errorMove = 'Não foi possível mover o post-it.';
+  static const errorResize = 'Não foi possível redimensionar o evento.';
+  static const errorDelete = 'Não foi possível excluir o post-it.';
+  static const errorReorder = 'Não foi possível alterar a ordem.';
+
   static String moreItems(int count) => '+$count mais';
   static String hiddenEvents(int count) => '+$count eventos';
 }

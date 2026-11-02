@@ -4,11 +4,13 @@ import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../domain/calendar/calendar_period.dart';
+import '../../domain/entities/post_it.dart';
 import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_labels.dart';
 import 'widgets/calendar_toolbar.dart';
 import 'widgets/day_details_sheet.dart';
 import 'widgets/post_it_details_sheet.dart';
+import 'widgets/post_it_editor_sheet.dart';
 
 /// Agenda visual por período, com post-its e eventos multi-dia contínuos.
 class AgendaPage extends StatelessWidget {
@@ -24,8 +26,7 @@ class AgendaPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, PlannerController planner) {
-    final theme = Theme.of(context);
+  Widget _buildContent(BuildContext context, PlannerController planner) {    final theme = Theme.of(context);
     final orientation = MediaQuery.orientationOf(context);
 
     if (planner.isLoading) {
@@ -39,7 +40,7 @@ class AgendaPage extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -75,14 +76,36 @@ class AgendaPage extends StatelessWidget {
               today: planner.today,
               selectedDate: planner.selectedDate,
               onDaySelected: planner.selectDate,
-              onPostItTap: (postIt) =>
-                  showPostItDetailsSheet(context, postIt),
+              onPostItTap: (postIt) => _openDetails(context, planner, postIt),
               onShowDay: (date) => showDayDetailsSheet(
                 context,
                 date: date,
                 postIts: planner.postItsOn(date),
                 onPostItSelected: (postIt) =>
-                    showPostItDetailsSheet(context, postIt),
+                    _openDetails(context, planner, postIt),
+              ),
+              onMovePostIt: (postIt, date) => _runGuarded(
+                context,
+                () => planner.movePostIt(postIt, date),
+                AppStrings.errorMove,
+              ),
+              onReorderTo: (postIt, date, index) => _runGuarded(
+                context,
+                () => planner.movePostIt(
+                  postIt,
+                  date,
+                  targetIndex: index,
+                ),
+                AppStrings.errorMove,
+              ),
+              onResizeEvent: (postIt, start, end) => _runGuarded(
+                context,
+                () => planner.resizeEvent(
+                  postIt,
+                  startDate: start,
+                  endDate: end,
+                ),
+                AppStrings.errorResize,
               ),
             ),
           ),
@@ -113,6 +136,39 @@ class AgendaPage extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _runGuarded(
+    BuildContext context,
+    Future<void> Function() operation,
+    String errorMessage,
+  ) async {
+    try {
+      await operation();
+    } on Object {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    }
+  }
+
+  void _openDetails(
+    BuildContext context,
+    PlannerController planner,
+    PostIt postIt,
+  ) {
+    showPostItDetailsSheet(
+      context,
+      postIt: postIt,
+      planner: planner,
+      onEdit: (current) => showPostItEditorSheet(
+        context,
+        controller: planner,
+        initialDate: current.startDate ?? planner.selectedDate,
+        existing: current,
       ),
     );
   }

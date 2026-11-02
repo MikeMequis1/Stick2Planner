@@ -3,10 +3,13 @@ import 'package:flutter/widgets.dart';
 // Parâmetros nomeados não podem usar campos privados como initializing formals.
 // ignore_for_file: prefer_initializing_formals
 
+import 'package:uuid/uuid.dart';
+
 import '../../core/clock.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
+import '../../domain/entities/post_it_history.dart';
 import '../../domain/repositories/post_it_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/usecases/validate_post_it.dart';
@@ -38,6 +41,9 @@ final class PlannerController extends ChangeNotifier {
   bool _isLoading = true;
   bool _initialized = false;
   String? _error;
+
+  /// Serializa mutações para evitar conflitos em arrastes/edições rápidos.
+  Future<void> _mutationQueue = Future<void>.value();
 
   DateOnly get selectedDate => _selectedDate;
   DateOnly get today => DateOnly.fromDateTime(_clock.now());
@@ -159,14 +165,383 @@ final class PlannerController extends ChangeNotifier {
   int countByStatus(PostItStatus status) =>
       _postIts.where((postIt) => postIt.status == status).length;
 
-  /// Valida e persiste a criação/edição de um post-it.
-  ///
-  /// A UI de criação chega na Etapa 3; a regra já fica disponível e testada.
-  Future<void> savePostIt(PostIt postIt) async {
+  /// Valida e persiste a criação/edição de um post-it já montado.
+  Future<void> savePostIt(PostIt postIt) => _exclusive(() async {
     _validatePostIt(postIt);
-    await _postItRepository.save(postIt);
-    await refresh();
+    await _postItRepository.save(
+      postIt,
+      history: _history(
+        postIt.id,
+        PostItHistoryAction.created,
+        postIt.updatedAt,
+      ),
+    );
+    await _reload();
+  });
+
+  /// Cria tarefa, evento ou recorrente, com validação e ordem no fim do dia.
+  Future<PostIt> createPostIt({
+    required String title,
+    required PostItType type,
+    bool isHighlight = false,
+    String? details,
+    DateOnly? startDate,
+    DateOnly? endDate,
+  }) {
+    return _exclusive(() async {
+      final now = _clock.now().toUtc();
+      final postIt = PostIt(
+        id: const Uuid().v4(),
+        title: title.trim(),
+        type: type,
+        status: PostItStatus.active,
+        isHighlight: type == PostItType.event && isHighlight,
+        details: _normalizeDetails(details),
+        startDate: startDate,
+        endDate: _normalizeEndDate(type, startDate, endDate),
+        sortOrder: _nextOrderFor(startDate),
+        createdAt: now,
+        updatedAt: now,
+      );
+      _validatePostIt(postIt);
+      await _postItRepository.save(
+        postIt,
+        history: _history(postIt.id, PostItHistoryAction.created, now),
+      );
+      await _reload();
+      return postIt;
+    });
   }
+
+  /// Atualiza campos editáveis preservando id, estado, nota e histórico.
+  Future<void> updatePostIt(
+    PostIt existing, {
+    required String title,
+    required PostItType type,
+    bool isHighlight = false,
+    String? details,
+    DateOnly? startDate,
+    DateOnly? endDate,
+  }) {
+    return _exclusive(() async {
+      final current = _findCurrent(existing.id) ?? existing;
+      final effectiveType = current.isRecurring ? current.type : type;
+      final dateChanged =
+          current.startDate?.toIso8601String() != startDate?.toIso8601String();
+      final now = _clock.now().toUtc();
+      final updated = current.copyWith(
+        title: title.trim(),
+        type: effectiveType,
+        isHighlight:
+            effectiveType == PostItType.event ? isHighlight : false,
+        details: _normalizeDetails(details),
+        startDate: startDate,
+        endDate: _normalizeEndDate(effectiveType, startDate, endDate),
+        sortOrder:
+            dateChanged && effectiveType != PostItType.event
+            ? _nextOrderFor(startDate)
+            : current.sortOrder,
+        updatedAt: now,
+      );
+
+      _validatePostIt(updated);
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          updated.id,
+          PostItHistoryAction.updated,
+          now,
+          fromValue: current.title,
+          toValue: updated.title,
+        ),
+      );
+      await _reload();
+    });
+  }
+
+  /// Exclusão definitiva lógica: apaga da agenda, preserva registro e histórico.
+  Future<void> deletePostIt(PostIt postIt) {
+    return _exclusive(() async {
+      final now = _clock.now().toUtc();
+      await _postItRepository.softDelete(
+        id: postIt.id,
+        deletedAt: now,
+        history: _history(postIt.id, PostItHistoryAction.deleted, now),
+      );
+      await _reload();
+    });
+  }
+
+  /// Move um post-it para [targetDate]; eventos mantêm a duração.
+  Future<void> movePostIt(
+    PostIt postIt,
+    DateOnly targetDate, {
+    int? targetIndex,
+  }) {
+    return _exclusive(() async {
+      final current = _findCurrent(postIt.id);
+      if (current == null) return;
+      final sourceDate = current.startDate;
+      if (current.isEvent) {
+        if (sourceDate != null && sourceDate.isSameDay(targetDate)) return;
+      } else if (sourceDate != null &&
+          sourceDate.isSameDay(targetDate) &&
+          targetIndex == null) {
+        return;
+      }
+
+      final now = _clock.now().toUtc();
+      final moved = _movedCopy(current, targetDate, now);
+      final updates = <PostIt>[];
+      final history = <PostItHistoryEntry>[
+        _history(
+          current.id,
+          PostItHistoryAction.moved,
+          now,
+          fromValue: sourceDate?.toIso8601String(),
+          toValue: targetDate.toIso8601String(),
+        ),
+      ];
+
+      if (current.isEvent) {
+        updates.add(moved);
+      } else {
+        final targetItems = _sortedDayItems(
+          targetDate,
+        ).where((item) => item.id != current.id).toList();
+        final insertion = (targetIndex ?? targetItems.length).clamp(
+          0,
+          targetItems.length,
+        );
+        targetItems.insert(insertion, moved);
+        updates.addAll(_reindex(targetItems, now));
+
+        if (sourceDate != null && !sourceDate.isSameDay(targetDate)) {
+          final sourceItems = _sortedDayItems(
+            sourceDate,
+          ).where((item) => item.id != current.id).toList();
+          updates.addAll(_reindex(sourceItems, now));
+        }
+      }
+
+      await _postItRepository.saveBatch(updates, history: history);
+      await _reload();
+    });
+  }
+
+  /// Redimensiona um evento, ajustando início e/ou fim.
+  Future<void> resizeEvent(
+    PostIt postIt, {
+    required DateOnly startDate,
+    required DateOnly endDate,
+  }) {
+    return _exclusive(() async {
+      final current = _findCurrent(postIt.id) ?? postIt;
+      if (!current.isEvent) {
+        throw ArgumentError('Somente eventos podem ser redimensionados.');
+      }
+      final normalizedEnd = endDate.isBefore(startDate)
+          ? startDate
+          : endDate;
+      final updated = current.copyWith(
+        startDate: startDate,
+        endDate: normalizedEnd.isSameDay(startDate) ? null : normalizedEnd,
+        updatedAt: _clock.now().toUtc(),
+      );
+
+      _validatePostIt(updated);
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          updated.id,
+          PostItHistoryAction.resized,
+          updated.updatedAt,
+          fromValue: _rangeLabel(current),
+          toValue: _rangeLabel(updated),
+        ),
+      );
+      await _reload();
+    });
+  }
+
+  /// Reposiciona um post-it dentro do dia (índice zero-based).
+  Future<void> reorderPostIt(PostIt postIt, int newIndex) {
+    return _exclusive(() async {
+      final current = _findCurrent(postIt.id);
+      final date = current?.startDate;
+      if (current == null ||
+          current.isEvent ||
+          date == null) {
+        return;
+      }
+
+      final items = _sortedDayItems(date);
+      final from = items.indexWhere((item) => item.id == current.id);
+      if (from < 0) return;
+      final to = newIndex.clamp(0, items.length - 1);
+      if (from == to) return;
+
+      final moved = items.removeAt(from);
+      items.insert(to, moved);
+      await _postItRepository.saveBatch(
+        _reindex(items, _clock.now().toUtc()),
+        history: [
+          _history(
+            current.id,
+            PostItHistoryAction.reordered,
+            _clock.now().toUtc(),
+            fromValue: '$from',
+            toValue: '$to',
+          ),
+        ],
+      );
+      await _reload();
+    });
+  }
+
+  Future<void> movePostItUp(PostIt postIt) =>
+      reorderPostIt(postIt, _indexInDay(postIt) - 1);
+
+  Future<void> movePostItDown(PostIt postIt) =>
+      reorderPostIt(postIt, _indexInDay(postIt) + 1);
+
+  bool canMovePostItUp(PostIt postIt) =>
+      !postIt.isEvent &&
+      postIt.startDate != null &&
+      _indexInDay(postIt) > 0;
+
+  bool canMovePostItDown(PostIt postIt) {
+    if (postIt.isEvent || postIt.startDate == null) return false;
+    final index = _indexInDay(postIt);
+    return index >= 0 && index < _sortedDayItems(postIt.startDate!).length - 1;
+  }
+
+  Future<void> _reload() async {
+    _postIts = await _postItRepository.loadAll();
+    _error = null;
+    notifyListeners();
+  }
+
+  Future<T> _exclusive<T>(Future<T> Function() action) {
+    final result = _mutationQueue.then((_) => action());
+    _mutationQueue = result.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stackTrace) {},
+    );
+    return result;
+  }
+
+  PostIt? _findCurrent(String id) {
+    for (final postIt in _postIts) {
+      if (postIt.id == id) return postIt;
+    }
+    return null;
+  }
+
+  List<PostIt> _sortedDayItems(DateOnly date) {
+    final items = [
+      for (final postIt in _postIts)
+        if (!postIt.isEvent &&
+            postIt.startDate != null &&
+            postIt.startDate!.isSameDay(date))
+          postIt,
+    ];
+    items.sort((a, b) {
+      final byOrder = a.sortOrder.compareTo(b.sortOrder);
+      if (byOrder != 0) return byOrder;
+      final byCreated = a.createdAt.compareTo(b.createdAt);
+      if (byCreated != 0) return byCreated;
+      return a.id.compareTo(b.id);
+    });
+    return items;
+  }
+
+  int _indexInDay(PostIt postIt) {
+    final date = postIt.startDate;
+    if (date == null) return -1;
+    return _sortedDayItems(
+      date,
+    ).indexWhere((item) => item.id == postIt.id);
+  }
+
+  int _nextOrderFor(DateOnly? date) {
+    if (date == null) {
+      final undated = [
+        for (final postIt in _postIts)
+          if (postIt.startDate == null && !postIt.isEvent) postIt,
+      ];
+      if (undated.isEmpty) return 0;
+      return undated
+              .map((postIt) => postIt.sortOrder)
+              .reduce((a, b) => a > b ? a : b) +
+          1;
+    }
+    final items = _sortedDayItems(date);
+    if (items.isEmpty) return 0;
+    return items.last.sortOrder + 1;
+  }
+
+  List<PostIt> _reindex(List<PostIt> items, DateTime now) {
+    return [
+      for (var index = 0; index < items.length; index++)
+        items[index].sortOrder == index
+            ? items[index]
+            : items[index].copyWith(sortOrder: index, updatedAt: now),
+    ];
+  }
+
+  PostIt _movedCopy(PostIt postIt, DateOnly targetDate, DateTime now) {
+    if (!postIt.isEvent) {
+      return postIt.copyWith(
+        startDate: targetDate,
+        endDate: null,
+        updatedAt: now,
+      );
+    }
+    return postIt.copyWith(
+      startDate: targetDate,
+      endDate: postIt.endDate == null
+          ? null
+          : targetDate.addDays(postIt.durationInDays - 1),
+      updatedAt: now,
+    );
+  }
+
+  static DateOnly? _normalizeEndDate(
+    PostItType type,
+    DateOnly? startDate,
+    DateOnly? endDate,
+  ) {
+    if (type != PostItType.event || endDate == null) return null;
+    if (startDate == null) return endDate;
+    return endDate.isSameDay(startDate) ? null : endDate;
+  }
+
+  static String? _normalizeDetails(String? details) {
+    final trimmed = details?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  static String _rangeLabel(PostIt postIt) {
+    final start = postIt.startDate?.toIso8601String() ?? '';
+    final end = postIt.effectiveEndDate?.toIso8601String() ?? '';
+    return '$start|$end';
+  }
+
+  static PostItHistoryEntry _history(
+    String postItId,
+    PostItHistoryAction action,
+    DateTime at, {
+    String? fromValue,
+    String? toValue,
+  }) => PostItHistoryEntry(
+    id: const Uuid().v4(),
+    postItId: postItId,
+    action: action,
+    fromValue: fromValue,
+    toValue: toValue,
+    createdAt: at,
+  );
 
   static bool _coversDate(PostIt postIt, DateOnly date) {
     final start = postIt.startDate;

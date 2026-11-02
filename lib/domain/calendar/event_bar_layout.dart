@@ -51,7 +51,6 @@ EventBarLayout layoutEventSegments(
     final start = postIt.startDate;
     final end = postIt.effectiveEndDate;
     if (!postIt.isEvent || start == null || end == null) continue;
-    if (start.isSameDay(end)) continue;
     if (end.isBefore(week.start) || start.isAfter(week.end)) continue;
 
     final visibleStart = start.isBefore(week.start) ? week.start : start;
@@ -137,12 +136,12 @@ final class _SegmentDraft {
   final bool continuesAfter;
 }
 
-/// Post-its exibidos como cartões dentro de um dia (exclui eventos multi-dia,
-/// que são desenhados como barras).
+/// Post-its exibidos como cartões dentro de um dia (exclui eventos, que são
+/// desenhados como barras).
 List<PostIt> singleDayItemsOn(List<PostIt> postIts, DateOnly date) {
   return [
     for (final postIt in postIts)
-      if (_covers(postIt, date) && !_isMultiDayEvent(postIt)) postIt,
+      if (_covers(postIt, date) && !postIt.isEvent) postIt,
   ];
 }
 
@@ -151,13 +150,4 @@ bool _covers(PostIt postIt, DateOnly date) {
   if (start == null) return false;
   final end = postIt.effectiveEndDate ?? start;
   return !date.isBefore(start) && !date.isAfter(end);
-}
-
-bool _isMultiDayEvent(PostIt postIt) {
-  final start = postIt.startDate;
-  final end = postIt.effectiveEndDate;
-  return postIt.isEvent &&
-      start != null &&
-      end != null &&
-      !start.isSameDay(end);
 }

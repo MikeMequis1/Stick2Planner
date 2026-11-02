@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../inbox/inbox_page.dart';
 import '../notes/notes_page.dart';
 import '../planner/agenda_page.dart';
+import '../planner/widgets/post_it_editor_sheet.dart';
 
 /// Casca de navegação: trilho em tablets largos, barra inferior em telas
 /// estreitas. Preserva o estado de cada seção com [IndexedStack].
@@ -72,6 +74,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final useRail = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final planner = AppScope.of(context).planner;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,6 +114,18 @@ class _HomeShellState extends State<HomeShell> {
               onDestinationSelected: _select,
               destinations: _barDestinations,
             ),
+      floatingActionButton: _index == 0
+          ? FloatingActionButton.extended(
+              key: const Key('add-post-it'),
+              onPressed: () => showPostItEditorSheet(
+                context,
+                controller: planner,
+                initialDate: planner.selectedDate,
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text(AppStrings.newPostIt),
+            )
+          : null,
     );
   }
 }

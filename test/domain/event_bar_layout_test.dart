@@ -112,7 +112,7 @@ void main() {
       expect(layout.hiddenCount, 1);
     });
 
-    test('ignora tarefas e eventos de um único dia', () {
+    test('ignora tarefas, mas inclui eventos de um único dia', () {
       final task = buildPostIt(
         id: 't1',
         startDate: DateOnly(2026, 11, 4),
@@ -126,7 +126,9 @@ void main() {
 
       final layout = layoutEventSegments([task, singleDayEvent], week);
 
-      expect(layout.segments, isEmpty);
+      expect(layout.segments, hasLength(1));
+      expect(layout.segments.single.postIt.id, 'e1');
+      expect(layout.segments.single.columnSpan, 1);
     });
 
     test('ignora evento fora da semana', () {
@@ -142,7 +144,7 @@ void main() {
   });
 
   group('singleDayItemsOn', () {
-    test('inclui tarefas e eventos de um dia, exclui multi-dia', () {
+    test('inclui tarefas e exclui eventos (inclusive de um dia)', () {
       final task = buildPostIt(
         id: 't1',
         startDate: DateOnly(2026, 11, 4),
@@ -166,7 +168,7 @@ void main() {
         DateOnly(2026, 11, 4),
       );
 
-      expect(items.map((item) => item.id), ['t1', 'e1']);
+      expect(items.map((item) => item.id), ['t1']);
     });
   });
 }

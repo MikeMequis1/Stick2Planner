@@ -7,14 +7,15 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapas 0, 1 e 2 concluídas. A agenda visual já exibe os períodos por
-orientação, navega entre datas e desenha eventos multi-dia como barras
-contínuas. Criação/edição e gestos de arrastar entram na Etapa 3.
+Etapas 0 a 3 concluídas. A agenda já permite criar, editar, excluir, mover,
+reordenar e redimensionar post-its, com alternativas explícitas aos gestos.
+A caixinha e a recorrência entram na Etapa 4.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
 - [x] Etapa 2 — agenda visual (períodos, grade, eventos contínuos, overflow)
-- [ ] Etapa 3 — manipulação (arrastar, reordenar, redimensionar)
+- [x] Etapa 3 — criação/edição, arraste, reordenação e redimensionamento
+  (implementação e testes; revisão/validação física pendente)
 - [ ] Etapa 4 — organização (estados, caixinha, recorrente)
 - [ ] Etapa 5 — notas
 - [ ] Etapa 6 — qualidade e documentação final
@@ -93,6 +94,26 @@ não importa Flutter nem drift.
   lista completa do dia.
 - Mês compacto usa grade dinâmica de 35 ou 42 células, com dias de borda
   atenuados; meses de 31 dias nunca são truncados.
+
+## Criação e manipulação
+
+- Botão **Novo post-it** cria tarefa (título e detalhes opcionais) ou evento
+  (data/intervalo obrigatórios, com marcação `+` opcional). Tipo recorrente é
+  reservado à Etapa 4.
+- Tarefas aceitam data única ou "Sem data"; intervalo só existe em eventos.
+  Erros de validação aparecem no próprio formulário.
+- Arrastar o corpo de um post-it move o registro (long press no toque). Eventos
+  mantêm a duração ao mudar de dia; no mesmo dia, soltar sobre outro cartão
+  reordena.
+- Alças nas extremidades dos eventos redimensionam início/fim, com prévia da
+  nova data; soltar aplica e persiste. O corpo move; as alças redimensionam.
+- Alternativas aos gestos ficam no detalhe do post-it: mover para data,
+  alterar duração (eventos), subir/descer na ordem, editar e excluir com
+  confirmação.
+- Mutações são validadas, transacionais e serializadas no controller; ao
+  falhar, a interface mantém o último estado persistido.
+- Mover para outro período visível pode ser feito por arraste; para períodos
+  fora da tela use "Mover para data…".
 
 ## Domínio e persistência
 

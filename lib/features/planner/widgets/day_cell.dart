@@ -4,9 +4,10 @@ import '../../../app/app_strings.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
-import '../widgets/post_it_tile.dart';
+import 'post_it_drag_data.dart';
+import 'post_it_tile.dart';
 
-/// Célula de um dia: cabeçalho, cartões de um dia e indicador "+N mais".
+/// Célula de um dia: alvo de soltura, cartões arrastáveis e overflow.
 class DayCell extends StatelessWidget {
   const DayCell({
     super.key,
@@ -18,6 +19,8 @@ class DayCell extends StatelessWidget {
     required this.onTap,
     required this.onPostItTap,
     required this.onShowAll,
+    required this.onMoveToDay,
+    required this.onReorderTo,
   });
 
   final CalendarDay day;
@@ -28,57 +31,76 @@ class DayCell extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<PostIt> onPostItTap;
   final VoidCallback onShowAll;
+  final ValueChanged<PostIt> onMoveToDay;
+  final void Function(PostIt postIt, int newIndex) onReorderTo;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final muted = !day.isCurrentMonth;
-    final borderColor = isSelected ? scheme.primary : scheme.outlineVariant;
 
-    return Padding(
-      padding: const EdgeInsets.all(1.5),
-      child: Material(
-        color: isSelected
-            ? scheme.primaryContainer.withValues(alpha: 0.28)
-            : (muted ? scheme.surfaceContainerLowest : scheme.surface),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
+    return DragTarget<PostItDragData>(
+      onWillAcceptWithDetails: (_) => true,
+      onAcceptWithDetails: (details) {
+        onMoveToDay(details.data.postIt);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isDropTarget = candidateData.isNotEmpty;
+        final muted = !day.isCurrentMonth;
+        final borderColor = isDropTarget
+            ? scheme.primary
+            : (isSelected ? scheme.primary : scheme.outlineVariant);
+
+        return Padding(
+          padding: const EdgeInsets.all(1.5),
+          child: Material(
+            color: isDropTarget
+                ? scheme.primaryContainer.withValues(alpha: 0.45)
+                : (isSelected
+                      ? scheme.primaryContainer.withValues(alpha: 0.28)
+                      : (muted
+                            ? scheme.surfaceContainerLowest
+                            : scheme.surface)),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: borderColor,
-                width: isSelected ? 1.8 : 0.6,
-              ),
-            ),
-            padding: EdgeInsets.all(compact ? 2 : 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _DayHeader(
-                  date: day.date,
-                  isSelected: isSelected,
-                  isToday: isToday,
-                  muted: muted,
-                  compact: compact,
-                ),
-                Expanded(
-                  child: _DayContent(
-                    date: day.date,
-                    items: items,
-                    compact: compact,
-                    onPostItTap: onPostItTap,
-                    onShowAll: onShowAll,
+              onTap: onTap,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: borderColor,
+                    width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
                   ),
                 ),
-              ],
+                padding: EdgeInsets.all(compact ? 2 : 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _DayHeader(
+                      date: day.date,
+                      isSelected: isSelected,
+                      isToday: isToday,
+                      muted: muted,
+                      compact: compact,
+                    ),
+                    Expanded(
+                      child: _DayContent(
+                        date: day.date,
+                        items: items,
+                        compact: compact,
+                        onPostItTap: onPostItTap,
+                        onShowAll: onShowAll,
+                        onReorderTo: onReorderTo,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -161,6 +183,7 @@ class _DayContent extends StatelessWidget {
     required this.compact,
     required this.onPostItTap,
     required this.onShowAll,
+    required this.onReorderTo,
   });
 
   final DateOnly date;
@@ -168,6 +191,7 @@ class _DayContent extends StatelessWidget {
   final bool compact;
   final ValueChanged<PostIt> onPostItTap;
   final VoidCallback onShowAll;
+  final void Function(PostIt postIt, int newIndex) onReorderTo;
 
   @override
   Widget build(BuildContext context) {
@@ -202,11 +226,12 @@ class _DayContent extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: gap),
                 child: SizedBox(
                   height: itemHeight,
-                  child: PostItTile(
-                    key: Key('post-it-${items[index].id}'),
+                  child: _DraggableItem(
                     postIt: items[index],
+                    index: index,
                     compact: compact,
                     onTap: () => onPostItTap(items[index]),
+                    onReorderTo: onReorderTo,
                   ),
                 ),
               ),
@@ -232,6 +257,79 @@ class _DayContent extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _DraggableItem extends StatelessWidget {
+  const _DraggableItem({
+    required this.postIt,
+    required this.index,
+    required this.compact,
+    required this.onTap,
+    required this.onReorderTo,
+  });
+
+  final PostIt postIt;
+  final int index;
+  final bool compact;
+  final VoidCallback onTap;
+  final void Function(PostIt postIt, int newIndex) onReorderTo;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DragTarget<PostItDragData>(
+      onWillAcceptWithDetails: (details) =>
+          details.data.postIt.id != postIt.id,
+      onAcceptWithDetails: (details) =>
+          onReorderTo(details.data.postIt, index),
+      builder: (context, candidateData, rejectedData) {
+        final tile = PostItTile(
+          key: Key('post-it-${postIt.id}'),
+          postIt: postIt,
+          compact: compact,
+          onTap: onTap,
+        );
+
+        return LongPressDraggable<PostItDragData>(
+          data: PostItDragData(postIt),
+          dragAnchorStrategy: childDragAnchorStrategy,
+          feedback: _DragFeedback(postIt: postIt, compact: compact),
+          childWhenDragging: Opacity(opacity: 0.35, child: tile),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: candidateData.isNotEmpty
+                  ? Border.all(color: theme.colorScheme.primary, width: 2)
+                  : null,
+            ),
+            child: tile,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DragFeedback extends StatelessWidget {
+  const _DragFeedback({required this.postIt, required this.compact});
+
+  final PostIt postIt;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 6,
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 200,
+        height: compact ? 26 : 52,
+        child: PostItTile(postIt: postIt, compact: compact),
+      ),
     );
   }
 }

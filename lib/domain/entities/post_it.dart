@@ -82,6 +82,53 @@ final class PostIt {
         start.isAfter(today);
   }
 
+  static const Object _unset = Object();
+
+  PostIt copyWith({
+    String? title,
+    PostItType? type,
+    PostItStatus? status,
+    bool? isHighlight,
+    Object? details = _unset,
+    Object? noteId = _unset,
+    Object? noteExcerpt = _unset,
+    Object? startDate = _unset,
+    Object? endDate = _unset,
+    int? sortOrder,
+    Object? lastRolloverAt = _unset,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Object? deletedAt = _unset,
+  }) {
+    return PostIt(
+      id: id,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      isHighlight: isHighlight ?? this.isHighlight,
+      details: identical(details, _unset)
+          ? this.details
+          : details as String?,
+      noteId: identical(noteId, _unset) ? this.noteId : noteId as String?,
+      noteExcerpt: identical(noteExcerpt, _unset)
+          ? this.noteExcerpt
+          : noteExcerpt as String?,
+      startDate: identical(startDate, _unset)
+          ? this.startDate
+          : startDate as DateOnly?,
+      endDate: identical(endDate, _unset) ? this.endDate : endDate as DateOnly?,
+      sortOrder: sortOrder ?? this.sortOrder,
+      lastRolloverAt: identical(lastRolloverAt, _unset)
+          ? this.lastRolloverAt
+          : lastRolloverAt as DateTime?,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: identical(deletedAt, _unset)
+          ? this.deletedAt
+          : deletedAt as DateTime?,
+    );
+  }
+
   @override
   String toString() =>
       'PostIt(id: $id, type: $type, status: $status, start: $startDate)';
