@@ -159,6 +159,9 @@ não importa Flutter nem drift.
   arraste após 200 ms; as alças mantêm área de toque de 24×24 dp lógicos.
 - **Bordas:** o app usa edge-to-edge, com barras de sistema transparentes e
   fundo cobrindo a área útil.
+- **Animações:** seleção de dia animada, cartões/barras reagem ao toque,
+  feedback de arraste com escala, badges com fade/scale e cross-fade ao trocar
+  período ou modo. O redimensionamento contínuo segue o dedo sem atraso.
 
 ## Notas privadas
 

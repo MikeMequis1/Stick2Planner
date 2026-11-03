@@ -839,3 +839,25 @@ avaliação.
 - O ajuste de margens cobre os espaçamentos principais; a grade mantém um
   gutter óptico de 1,5 px entre células para não perder densidade no mês.
 - Permanecem as limitações anteriores de notas, links e vínculos.
+
+## Animações da agenda (2026-11-03)
+
+### Implementado
+
+- Seleção de dia anima cor, borda e uma escala sutil (160 ms, `easeOut`).
+- Célula sob arraste cresce levemente e o alvo de soltura ganha borda animada.
+- Cartões de post-it e barras de evento encolhem levemente ao toque (100 ms).
+- Feedback de arraste entra com escala (180 ms, `easeOutBack`); o cartão de
+  origem desbota em 160 ms.
+- Prévia de redimensionamento e botão “+N eventos” entram com fade/scale.
+- Rótulo do período faz cross-fade e o rótulo do modo usa fade + scale.
+- Ao trocar período ou modo, a grade faz cross-fade de 180 ms; atualizações de
+  dados no mesmo período continuam instantâneas.
+
+### Limitações
+
+- O redimensionamento contínuo segue o dedo sem animação para não introduzir
+  atraso; só o selo de prévia é animado.
+- Não há preferência explícita de “reduzir movimento”; as animações são curtas
+  e não bloqueiam a interação.
+- Animações não alteram dados, persistência ou regras de negócio.
