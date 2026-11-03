@@ -10,6 +10,7 @@ final class Note {
     required this.lines,
     required this.createdAt,
     required this.updatedAt,
+    this.markdown,
     this.deletedAt,
   });
 
@@ -17,13 +18,19 @@ final class Note {
   final String title;
   final NoteType type;
   final List<NoteLine> lines;
+
+  /// Conteúdo integral de notas de texto, em Markdown.
+  final String? markdown;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
   bool get isDeleted => deletedAt != null;
 
-  String get plainText => lines.map((line) => line.text).join('\n');
+  String get plainText => type == NoteType.text
+      ? (markdown ?? lines.map((line) => line.text).join('\n'))
+      : lines.map((line) => line.text).join('\n');
 }
 
 /// Linha de nota ou item de checklist.

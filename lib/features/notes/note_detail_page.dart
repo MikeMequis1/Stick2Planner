@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
@@ -87,7 +88,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                           label: Text(
                             note.type == NoteType.checklist
                                 ? AppStrings.noteTypeChecklist
-                                : AppStrings.noteTypeText,
+                                : AppStrings.noteTypeMarkdown,
                           ),
                         ),
                         Chip(
@@ -135,7 +136,14 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    if (note.lines.isEmpty)
+                    if (note.type == NoteType.text)
+                      _MarkdownNoteBody(
+                        markdown: note.markdown ?? note.plainText,
+                        onCreateSnapshot: _busy
+                            ? null
+                            : () => _createSnapshotFromMarkdown(note),
+                      )
+                    else if (note.lines.isEmpty)
                       const EmptyState(
                         icon: Icons.notes,
                         title: AppStrings.noLines,
@@ -146,7 +154,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         _NoteLineRow(
                           line: line,
                           selected: _selectedLines.contains(line.id),
-                          checklist: note.type == NoteType.checklist,
+                          checklist: true,
                           onSelect: () => setState(() {
                             if (_selectedLines.contains(line.id)) {
                               _selectedLines.remove(line.id);
@@ -157,7 +165,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                           onChecked: (value) =>
                               _toggleLine(notes, note, line.id, value),
                         ),
-                    if (note.lines.isNotEmpty) ...[
+                    if (note.type == NoteType.checklist &&
+                        note.lines.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         AppStrings.selectLinesHint,
@@ -192,7 +201,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                   ],
                 ),
               ),
-              if (note.lines.isNotEmpty)
+              if (note.type == NoteType.checklist && note.lines.isNotEmpty)
                 Material(
                   elevation: _selectedLines.isEmpty ? 0 : 8,
                   child: SafeArea(
@@ -310,6 +319,42 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       );
       if (!mounted) return;
       setState(() => _selectedLines.clear());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.savedMessage)),
+      );
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.createPostItError)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _createSnapshotFromMarkdown(Note note) async {
+    final planner = AppScope.of(context).planner;
+    final markdown = note.markdown ?? note.plainText;
+    if (markdown.trim().isEmpty) return;
+
+    final selection = await showDialog<_MarkdownSnapshot>(
+      context: context,
+      builder: (dialogContext) => _MarkdownSnapshotDialog(
+        initialTitle: note.title,
+        markdown: markdown,
+      ),
+    );
+    if (selection == null) return;
+
+    setState(() => _busy = true);
+    try {
+      await planner.createPostIt(
+        title: selection.title,
+        type: PostItType.task,
+        noteExcerpt: selection.excerpt,
+      );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.savedMessage)),
       );
@@ -447,6 +492,68 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+}
+
+class _MarkdownNoteBody extends StatelessWidget {
+  const _MarkdownNoteBody({
+    required this.markdown,
+    required this.onCreateSnapshot,
+  });
+
+  final String markdown;
+  final VoidCallback? onCreateSnapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEmpty = markdown.trim().isEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.start,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            OutlinedButton.icon(
+              key: const Key('note-create-from-markdown'),
+              onPressed: isEmpty ? null : onCreateSnapshot,
+              icon: const Icon(Icons.content_copy, size: 18),
+              label: const Text(AppStrings.createPostItFromMarkdown),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (isEmpty)
+          const EmptyState(
+            icon: Icons.notes,
+            title: AppStrings.noMarkdown,
+            message: AppStrings.markdownHint,
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+            ),
+            child: MarkdownBody(
+              data: markdown,
+              selectable: true,
+              // No caderno, Enter deve preservar a quebra de linha visível.
+              softLineBreak: true,
+              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                p: theme.textTheme.bodyLarge,
+                blockSpacing: 12,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -612,6 +719,152 @@ class _SnapshotDialogState extends State<_SnapshotDialog> {
             if (title.isEmpty) return;
             Navigator.of(context).pop(title);
           },
+          child: const Text(AppStrings.createPostItFromSelection),
+        ),
+      ],
+    );
+  }
+}
+
+/// Trecho escolhido numa nota Markdown para virar snapshot.
+class _MarkdownSnapshot {
+  const _MarkdownSnapshot({required this.title, required this.excerpt});
+
+  final String title;
+  final String excerpt;
+}
+
+class _MarkdownSnapshotDialog extends StatefulWidget {
+  const _MarkdownSnapshotDialog({
+    required this.initialTitle,
+    required this.markdown,
+  });
+
+  final String initialTitle;
+  final String markdown;
+
+  @override
+  State<_MarkdownSnapshotDialog> createState() =>
+      _MarkdownSnapshotDialogState();
+}
+
+class _MarkdownSnapshotDialogState extends State<_MarkdownSnapshotDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
+
+  @override
+  void initState() {
+    super.initState();
+    final title = widget.initialTitle.trim();
+    _titleController = TextEditingController(
+      text: title.length > 120 ? title.substring(0, 120) : title,
+    );
+    _contentController = TextEditingController(text: widget.markdown);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void _selectWholeNote() {
+    _contentController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _contentController.text.length,
+    );
+  }
+
+  void _confirm() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+
+    final full = _contentController.text;
+    var excerpt = full;
+    final selection = _contentController.selection;
+    if (selection.isValid && !selection.isCollapsed) {
+      final start = selection.start.clamp(0, full.length);
+      final end = selection.end.clamp(0, full.length);
+      final selected = full.substring(start, end);
+      if (selected.trim().isNotEmpty) excerpt = selected;
+    }
+    Navigator.of(context).pop(
+      _MarkdownSnapshot(title: title, excerpt: excerpt),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text(AppStrings.createPostItFromMarkdown),
+      content: SizedBox(
+        width: 560.0.clamp(0, MediaQuery.sizeOf(context).width * 0.85),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('snapshot-title'),
+                controller: _titleController,
+                maxLength: 120,
+                decoration: const InputDecoration(
+                  labelText: AppStrings.fieldTitle,
+                  border: OutlineInputBorder(),
+                  counterText: '',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.snapshotSelectionHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                key: const Key('snapshot-markdown'),
+                controller: _contentController,
+                readOnly: true,
+                minLines: 8,
+                maxLines: 14,
+                keyboardType: TextInputType.multiline,
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  key: const Key('snapshot-whole-note'),
+                  onPressed: _selectWholeNote,
+                  child: const Text(AppStrings.selectWholeNote),
+                ),
+              ),
+              Text(
+                AppStrings.noteSnapshotHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(AppStrings.cancel),
+        ),
+        FilledButton(
+          key: const Key('confirm-markdown-snapshot'),
+          onPressed: _confirm,
           child: const Text(AppStrings.createPostItFromSelection),
         ),
       ],

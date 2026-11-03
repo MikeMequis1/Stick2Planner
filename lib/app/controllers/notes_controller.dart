@@ -81,16 +81,19 @@ final class NotesController extends ChangeNotifier {
   Future<Note> createNote({
     required String title,
     required NoteType type,
+    String? markdown,
     List<NoteLineInput> lines = const [],
   }) {
     return _exclusive(() async {
       final now = _clock.now().toUtc();
       final id = const Uuid().v4();
+      final isText = type == NoteType.text;
       final note = Note(
         id: id,
         title: _validatedTitle(title),
         type: type,
-        lines: _buildLines(id, lines, type),
+        markdown: isText ? _normalizeMarkdown(markdown, lines) : null,
+        lines: isText ? const [] : _buildLines(id, lines),
         createdAt: now,
         updatedAt: now,
       );
@@ -104,14 +107,17 @@ final class NotesController extends ChangeNotifier {
     Note existing, {
     required String title,
     required NoteType type,
-    required List<NoteLineInput> lines,
+    String? markdown,
+    List<NoteLineInput> lines = const [],
   }) {
     return _exclusive(() async {
+      final isText = type == NoteType.text;
       final updated = Note(
         id: existing.id,
         title: _validatedTitle(title),
         type: type,
-        lines: _buildLines(existing.id, lines, type),
+        markdown: isText ? _normalizeMarkdown(markdown, lines) : null,
+        lines: isText ? const [] : _buildLines(existing.id, lines),
         createdAt: existing.createdAt,
         updatedAt: _clock.now().toUtc(),
       );
@@ -131,6 +137,7 @@ final class NotesController extends ChangeNotifier {
         id: note.id,
         title: note.title,
         type: note.type,
+        markdown: note.markdown,
         lines: [
           for (final line in note.lines)
             line.id == lineId
@@ -189,7 +196,6 @@ final class NotesController extends ChangeNotifier {
   static List<NoteLine> _buildLines(
     String noteId,
     List<NoteLineInput> inputs,
-    NoteType type,
   ) {
     final result = <NoteLine>[];
     for (final input in inputs) {
@@ -201,10 +207,20 @@ final class NotesController extends ChangeNotifier {
           noteId: noteId,
           position: result.length,
           text: text,
-          isChecked: type == NoteType.checklist ? input.isChecked : false,
+          isChecked: input.isChecked,
         ),
       );
     }
     return result;
+  }
+
+  /// Mantém o Markdown exatamente como escrito (apenas normaliza quebras de
+  /// linha). Aceita linhas como fallback para chamadas legadas.
+  static String _normalizeMarkdown(
+    String? markdown,
+    List<NoteLineInput> lines,
+  ) {
+    final source = markdown ?? lines.map((line) => line.text).join('\n');
+    return source.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
   }
 }

@@ -23,6 +23,7 @@ class Notes extends Table {
   TextColumn get id => text()();
   TextColumn get title => text()();
   TextColumn get type => textEnum<NoteType>()();
+  TextColumn get markdown => text().nullable()();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
   IntColumn get deletedAt => integer().nullable()();

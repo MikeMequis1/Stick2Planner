@@ -88,6 +88,7 @@ Note noteFromRows(NoteRow row, List<NoteLineRow> lineRows) => Note(
         isChecked: line.isChecked,
       ),
   ],
+  markdown: row.markdown,
   createdAt: dateTimeFromStorage(row.createdAt),
   updatedAt: dateTimeFromStorage(row.updatedAt),
   deletedAt: row.deletedAt == null
@@ -99,6 +100,7 @@ NotesCompanion noteToCompanion(Note note) => NotesCompanion(
   id: Value(note.id),
   title: Value(note.title),
   type: Value(note.type),
+  markdown: Value(note.markdown),
   createdAt: Value(dateTimeToStorage(note.createdAt)),
   updatedAt: Value(dateTimeToStorage(note.updatedAt)),
   deletedAt: Value(

@@ -59,7 +59,8 @@ final class DriftNoteRepository implements NoteRepository {
       await (_db.delete(
         _db.noteLines,
       )..where((table) => table.noteId.equals(note.id))).go();
-      if (note.lines.isNotEmpty) {
+      // Somente listas usam note_lines; notas de texto vivem em markdown.
+      if (note.type == NoteType.checklist && note.lines.isNotEmpty) {
         await _db.batch((batch) {
           batch.insertAll(
             _db.noteLines,

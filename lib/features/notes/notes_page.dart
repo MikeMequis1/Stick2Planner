@@ -76,8 +76,11 @@ class NotesPage extends StatelessWidget {
                               ),
                               title: Text(note.title),
                               subtitle: Text(
-                                '${note.lines.length} ${AppStrings.noteLines} · '
-                                '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
+                                note.type == NoteType.text
+                                    ? '${AppStrings.markdownLabel} · '
+                                          '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}'
+                                    : '${note.lines.length} ${AppStrings.noteLines} · '
+                                          '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
                               ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(

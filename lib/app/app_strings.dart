@@ -32,7 +32,20 @@ abstract final class AppStrings {
   static const editNote = 'Editar nota';
   static const noteTitle = 'Título da nota';
   static const noteTypeText = 'Texto';
+  static const noteTypeMarkdown = 'Texto · Markdown';
   static const noteTypeChecklist = 'Lista';
+  static const markdownLabel = 'Markdown';
+  static const markdownFieldHint =
+      '# Título\n\nEscreva livremente. Use **negrito**, *itálico*, listas, '
+      'links e blocos de código.';
+  static const markdownHint =
+      'Markdown: # título, **negrito**, *itálico*, - item, 1. item, '
+      '[link](url), `código`.';
+  static const createPostItFromMarkdown = 'Criar post-it de trecho…';
+  static const snapshotSelectionHint =
+      'Selecione um trecho abaixo. Sem seleção, será usada a nota inteira.';
+  static const selectWholeNote = 'Nota inteira';
+  static const noMarkdown = 'Nota sem conteúdo.';
   static const addLine = 'Adicionar linha';
   static const lineHint = 'Escreva uma linha';
   static const noteTitleRequired = 'Informe um título para a nota.';

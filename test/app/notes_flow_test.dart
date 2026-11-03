@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_schedule/app/app.dart';
 import 'package:flutter_schedule/app/app_strings.dart';
 import 'package:flutter_schedule/app/bootstrap.dart';
-import 'package:flutter_schedule/app/controllers/notes_controller.dart';
 import 'package:flutter_schedule/core/date_only.dart';
 import 'package:flutter_schedule/domain/entities/note.dart';
 import 'package:flutter_schedule/domain/entities/post_it.dart';
@@ -54,6 +53,8 @@ void main() {
       find.byKey(const Key('note-title')),
       'Compras da semana',
     );
+    await tester.tap(find.text(AppStrings.noteTypeChecklist));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('note-line-0')),
       'Pão',
@@ -94,12 +95,114 @@ void main() {
     expect(postIt.startDate, isNull);
   });
 
+  testWidgets('cria nota Markdown e renderiza a formatação', (tester) async {
+    final dependencies = await pumpPlanner(tester);
+    await openNotes(tester);
+
+    const markdown =
+        '# Título\n\n'
+        '**Negrito** e *itálico* em um parágrafo.\n\n'
+        '- item um\n'
+        '- item dois\n\n'
+        '[Link](https://example.com)';
+    await tester.tap(find.byKey(const Key('add-note')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('note-title')),
+      'Nota Markdown',
+    );
+    await tester.enterText(
+      find.byKey(const Key('note-markdown')),
+      markdown,
+    );
+    await tester.tap(find.byKey(const Key('note-save')));
+    await tester.pumpAndSettle();
+
+    final note = dependencies.notes.notes.single;
+    expect(note.type, NoteType.text);
+    expect(note.markdown, markdown);
+    expect(note.lines, isEmpty);
+    expect(find.text('Nota Markdown'), findsOneWidget);
+
+    await tester.tap(find.text('Nota Markdown'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('note-create-from-markdown')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Título', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Negrito', findRichText: true), findsOneWidget);
+    expect(find.textContaining('item um', findRichText: true), findsOneWidget);
+    // O detalhe interpreta o Markdown em vez de exibir a sintaxe crua.
+    expect(find.textContaining('# Título', findRichText: true), findsNothing);
+    expect(find.textContaining('**Negrito**', findRichText: true), findsNothing);
+  });
+
+  testWidgets('cria snapshot a partir de um trecho Markdown', (tester) async {
+    final dependencies = await pumpPlanner(tester);
+    await dependencies.notes.createNote(
+      title: 'Receita',
+      type: NoteType.text,
+      markdown: '# Receita\n\n- farinha\n- água',
+    );
+    await tester.pumpAndSettle();
+    await openNotes(tester);
+
+    await tester.tap(find.text('Receita'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('note-create-from-markdown')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('snapshot-title')),
+      'Farinha',
+    );
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('snapshot-markdown')),
+    );
+    final source = field.controller!.text;
+    final start = source.indexOf('- farinha');
+    field.controller!.selection = TextSelection(
+      baseOffset: start,
+      extentOffset: start + '- farinha'.length,
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('confirm-markdown-snapshot')));
+    await tester.pumpAndSettle();
+
+    final postIt = dependencies.planner.postIts.single;
+    expect(postIt.title, 'Farinha');
+    expect(postIt.noteId, isNull);
+    expect(postIt.noteExcerpt, '- farinha');
+    expect(postIt.type, PostItType.task);
+
+    final detail = dependencies.notes.notes.single;
+    expect(detail.markdown, '# Receita\n\n- farinha\n- água');
+
+    // Sem seleção, o snapshot usa a nota inteira.
+    await tester.tap(find.byKey(const Key('note-create-from-markdown')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('snapshot-title')),
+      'Receita completa',
+    );
+    await tester.tap(find.byKey(const Key('confirm-markdown-snapshot')));
+    await tester.pumpAndSettle();
+
+    final full = dependencies.planner.postIts.singleWhere(
+      (item) => item.title == 'Receita completa',
+    );
+    expect(full.noteExcerpt, '# Receita\n\n- farinha\n- água');
+    expect(full.noteId, isNull);
+  });
+
   testWidgets('vincula nota a tarefa e abre a nota pelo post-it', (tester) async {
     final dependencies = await pumpPlanner(tester);
     final note = await dependencies.notes.createNote(
       title: 'Nota vinculada',
       type: NoteType.text,
-      lines: const [NoteLineInput(text: 'Conteúdo vivo')],
+      markdown: 'Conteúdo vivo',
     );
     final task = await dependencies.planner.createPostIt(
       title: 'Tarefa com nota',
@@ -148,7 +251,7 @@ void main() {
     final note = await dependencies.notes.createNote(
       title: 'Nota antiga',
       type: NoteType.text,
-      lines: const [NoteLineInput(text: 'linha')],
+      markdown: 'linha',
     );
     await tester.pumpAndSettle();
     await openNotes(tester);
@@ -180,7 +283,7 @@ void main() {
     final note = await dependencies.notes.createNote(
       title: 'Nota mãe',
       type: NoteType.text,
-      lines: const [NoteLineInput(text: 'Trecho original')],
+      markdown: 'Trecho original',
     );
     final snapshot = await dependencies.planner.createPostIt(
       title: 'Snapshot',
@@ -192,7 +295,7 @@ void main() {
       note,
       title: 'Nota editada',
       type: NoteType.text,
-      lines: const [NoteLineInput(text: 'Conteúdo alterado')],
+      markdown: 'Conteúdo alterado',
     );
     await tester.pumpAndSettle();
 

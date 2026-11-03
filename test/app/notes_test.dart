@@ -46,7 +46,7 @@ void main() {
     test('edita título, tipo e ordem preservando IDs existentes', () async {
       final note = await notes.createNote(
         title: 'Lista',
-        type: NoteType.text,
+        type: NoteType.checklist,
         lines: const [
           NoteLineInput(text: 'a'),
           NoteLineInput(text: 'b'),
@@ -129,6 +129,83 @@ void main() {
       reopened.notes.dispose();
     });
 
+    test('cria nota de texto com Markdown em um único campo', () async {
+      const markdown =
+          '# Título\n\n'
+          '**Negrito** e *itálico* em um parágrafo.\n\n'
+          '- item um\n'
+          '- item dois\n\n'
+          '1. primeiro\n'
+          '2. segundo\n\n'
+          '[Link](https://example.com)\n\n'
+          '```dart\nfinal x = 1;\n```';
+
+      final note = await notes.createNote(
+        title: 'Markdown',
+        type: NoteType.text,
+        markdown: markdown,
+      );
+
+      expect(note.markdown, markdown);
+      expect(note.lines, isEmpty);
+
+      final stored = await repository.findById(note.id);
+      expect(stored, isNotNull);
+      expect(stored!.markdown, markdown);
+      expect(stored.lines, isEmpty);
+      expect(stored.plainText, markdown);
+    });
+
+    test('edita Markdown e preserva a formatação após reabrir', () async {
+      final note = await notes.createNote(
+        title: 'Rascunho',
+        type: NoteType.text,
+        markdown: '# Original\n\ntexto',
+      );
+
+      const edited =
+          '## Revisado\n\n'
+          'Parágrafo com **ênfase** e [link](https://example.com).\n\n'
+          '- [ ] pendente\n'
+          '- [x] feito';
+      final updated = await notes.updateNote(
+        note,
+        title: 'Revisado',
+        type: NoteType.text,
+        markdown: edited,
+      );
+      expect(updated.markdown, edited);
+      expect(updated.lines, isEmpty);
+
+      final reopened = AppDependencies.fromDatabase(
+        dependencies.database,
+        clock: FixedClock(DateTime(2026, 11, 3, 9)),
+      );
+      await reopened.initialize();
+
+      final loaded = reopened.notes.findById(note.id);
+      expect(loaded, isNotNull);
+      expect(loaded!.markdown, edited);
+      expect(loaded.lines, isEmpty);
+
+      reopened.planner.dispose();
+      reopened.notes.dispose();
+    });
+
+    test('converte linhas legadas em Markdown quando não há markdown', () async {
+      final note = await notes.createNote(
+        title: 'Legada',
+        type: NoteType.text,
+        lines: const [
+          NoteLineInput(text: '# Título'),
+          NoteLineInput(text: 'Parágrafo'),
+        ],
+      );
+
+      expect(note.markdown, '# Título\nParágrafo');
+      expect(note.lines, isEmpty);
+    });
+
     test('excluir nota remove da lista e preserva tombstone', () async {
       final note = await notes.createNote(
         title: 'Descartável',
@@ -160,10 +237,7 @@ void main() {
       final note = await notes.createNote(
         title: 'Original',
         type: NoteType.text,
-        lines: const [
-          NoteLineInput(text: 'Linha A'),
-          NoteLineInput(text: 'Linha B'),
-        ],
+        markdown: '# Original\n\nLinha A\nLinha B',
       );
 
       final postIt = await dependencies.planner.createPostIt(
@@ -175,13 +249,14 @@ void main() {
         note,
         title: 'Original alterada',
         type: NoteType.text,
-        lines: const [NoteLineInput(text: 'Conteúdo novo')],
+        markdown: '# Original alterada\n\nConteúdo novo',
       );
 
       final stored = dependencies.planner.postIts.single;
       expect(postIt.noteId, isNull);
       expect(stored.noteId, isNull);
       expect(stored.noteExcerpt, 'Linha A\nLinha B');
+      expect(notes.findById(note.id)!.markdown, contains('Conteúdo novo'));
     });
 
     test('nota completa mantém vínculo vivo e permite desvincular', () async {

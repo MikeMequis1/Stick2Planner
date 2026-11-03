@@ -243,6 +243,17 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, NoteRow> {
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       ).withConverter<NoteType>($NotesTable.$convertertype);
+  static const VerificationMeta _markdownMeta = const VerificationMeta(
+    'markdown',
+  );
+  @override
+  late final GeneratedColumn<String> markdown = GeneratedColumn<String>(
+    'markdown',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -281,6 +292,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, NoteRow> {
     id,
     title,
     type,
+    markdown,
     createdAt,
     updatedAt,
     deletedAt,
@@ -309,6 +321,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, NoteRow> {
       );
     } else if (isInserting) {
       context.missing(_titleMeta);
+    }
+    if (data.containsKey('markdown')) {
+      context.handle(
+        _markdownMeta,
+        markdown.isAcceptableOrUnknown(data['markdown']!, _markdownMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -355,6 +373,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, NoteRow> {
           data['${effectivePrefix}type'],
         )!,
       ),
+      markdown: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}markdown'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -383,6 +405,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
   final String id;
   final String title;
   final NoteType type;
+  final String? markdown;
   final int createdAt;
   final int updatedAt;
   final int? deletedAt;
@@ -390,6 +413,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
     required this.id,
     required this.title,
     required this.type,
+    this.markdown,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -401,6 +425,9 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
     map['title'] = Variable<String>(title);
     {
       map['type'] = Variable<String>($NotesTable.$convertertype.toSql(type));
+    }
+    if (!nullToAbsent || markdown != null) {
+      map['markdown'] = Variable<String>(markdown);
     }
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -415,6 +442,9 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
       id: Value(id),
       title: Value(title),
       type: Value(type),
+      markdown: markdown == null && nullToAbsent
+          ? const Value.absent()
+          : Value(markdown),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -434,6 +464,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
       type: $NotesTable.$convertertype.fromJson(
         serializer.fromJson<String>(json['type']),
       ),
+      markdown: serializer.fromJson<String?>(json['markdown']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
@@ -448,6 +479,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
       'type': serializer.toJson<String>(
         $NotesTable.$convertertype.toJson(type),
       ),
+      'markdown': serializer.toJson<String?>(markdown),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
       'deletedAt': serializer.toJson<int?>(deletedAt),
@@ -458,6 +490,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
     String? id,
     String? title,
     NoteType? type,
+    Value<String?> markdown = const Value.absent(),
     int? createdAt,
     int? updatedAt,
     Value<int?> deletedAt = const Value.absent(),
@@ -465,6 +498,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
     id: id ?? this.id,
     title: title ?? this.title,
     type: type ?? this.type,
+    markdown: markdown.present ? markdown.value : this.markdown,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -474,6 +508,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       type: data.type.present ? data.type.value : this.type,
+      markdown: data.markdown.present ? data.markdown.value : this.markdown,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -486,6 +521,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('type: $type, ')
+          ..write('markdown: $markdown, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -495,7 +531,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
 
   @override
   int get hashCode =>
-      Object.hash(id, title, type, createdAt, updatedAt, deletedAt);
+      Object.hash(id, title, type, markdown, createdAt, updatedAt, deletedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -503,6 +539,7 @@ class NoteRow extends DataClass implements Insertable<NoteRow> {
           other.id == this.id &&
           other.title == this.title &&
           other.type == this.type &&
+          other.markdown == this.markdown &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -512,6 +549,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
   final Value<String> id;
   final Value<String> title;
   final Value<NoteType> type;
+  final Value<String?> markdown;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int?> deletedAt;
@@ -520,6 +558,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.type = const Value.absent(),
+    this.markdown = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -529,6 +568,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
     required String id,
     required String title,
     required NoteType type,
+    this.markdown = const Value.absent(),
     required int createdAt,
     required int updatedAt,
     this.deletedAt = const Value.absent(),
@@ -542,6 +582,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
     Expression<String>? id,
     Expression<String>? title,
     Expression<String>? type,
+    Expression<String>? markdown,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? deletedAt,
@@ -551,6 +592,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (type != null) 'type': type,
+      if (markdown != null) 'markdown': markdown,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -562,6 +604,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
     Value<String>? id,
     Value<String>? title,
     Value<NoteType>? type,
+    Value<String?>? markdown,
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int?>? deletedAt,
@@ -571,6 +614,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
       id: id ?? this.id,
       title: title ?? this.title,
       type: type ?? this.type,
+      markdown: markdown ?? this.markdown,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -591,6 +635,9 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
       map['type'] = Variable<String>(
         $NotesTable.$convertertype.toSql(type.value),
       );
+    }
+    if (markdown.present) {
+      map['markdown'] = Variable<String>(markdown.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
@@ -613,6 +660,7 @@ class NotesCompanion extends UpdateCompanion<NoteRow> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('type: $type, ')
+          ..write('markdown: $markdown, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2514,6 +2562,7 @@ typedef $$NotesTableCreateCompanionBuilder = NotesCompanion Function({
   required String id,
   required String title,
   required NoteType type,
+  Value<String?> markdown,
   required int createdAt,
   required int updatedAt,
   Value<int?> deletedAt,
@@ -2523,6 +2572,7 @@ typedef $$NotesTableUpdateCompanionBuilder = NotesCompanion Function({
   Value<String> id,
   Value<String> title,
   Value<NoteType> type,
+  Value<String?> markdown,
   Value<int> createdAt,
   Value<int> updatedAt,
   Value<int?> deletedAt,
@@ -2594,6 +2644,11 @@ class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
         column: $table.type,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnFilters<String> get markdown => $composableBuilder(
+    column: $table.markdown,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
@@ -2685,6 +2740,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get markdown => $composableBuilder(
+    column: $table.markdown,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2718,6 +2778,9 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<NoteType, String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get markdown =>
+      $composableBuilder(column: $table.markdown, builder: (column) => column);
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2810,6 +2873,7 @@ class $$NotesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<NoteType> type = const Value.absent(),
+                Value<String?> markdown = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
@@ -2818,6 +2882,7 @@ class $$NotesTableTableManager
                 id: id,
                 title: title,
                 type: type,
+                markdown: markdown,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -2828,6 +2893,7 @@ class $$NotesTableTableManager
                 required String id,
                 required String title,
                 required NoteType type,
+                Value<String?> markdown = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
                 Value<int?> deletedAt = const Value.absent(),
@@ -2836,6 +2902,7 @@ class $$NotesTableTableManager
                 id: id,
                 title: title,
                 type: type,
+                markdown: markdown,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

@@ -16,7 +16,8 @@ part 'app_database.g.dart';
 
 /// Banco local do aplicativo.
 ///
-/// Esquema v2: preferências, post-its, notas/linhas e histórico.
+/// Esquema v3: preferências, post-its, notas (texto Markdown ou linhas),
+/// histórico.
 @DriftDatabase(
   tables: [AppSettings, Notes, NoteLines, PostIts, PostItHistoryEntries],
 )
@@ -24,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -36,6 +37,29 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(noteLines);
         await migrator.createTable(postIts);
         await migrator.createTable(postItHistoryEntries);
+      }
+      if (from < 3) {
+        // Em bancos v1 a tabela acabou de ser criada já no formato v3.
+        if (from >= 2) {
+          await migrator.addColumn(notes, notes.markdown);
+          // Converte notas de texto legadas (linhas) para um único Markdown.
+          await customStatement('''
+            UPDATE notes SET markdown = (
+              SELECT group_concat(content, char(10))
+              FROM (
+                SELECT content
+                FROM note_lines
+                WHERE note_id = notes.id
+                ORDER BY position ASC
+              )
+            )
+            WHERE type = 'text'
+          ''');
+          await customStatement('''
+            DELETE FROM note_lines
+            WHERE note_id IN (SELECT id FROM notes WHERE type = 'text')
+          ''');
+        }
       }
     },
     beforeOpen: (details) async {

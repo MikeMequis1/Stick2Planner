@@ -63,7 +63,9 @@ Future<void> showPostItDetailsSheet(
                     ),
                     title: Text(note.title),
                     subtitle: Text(
-                      '${note.lines.length} ${AppStrings.noteLines}',
+                      note.type == NoteType.checklist
+                          ? '${note.lines.length} ${AppStrings.noteLines}'
+                          : AppStrings.markdownLabel,
                     ),
                     onTap: () => Navigator.of(dialogContext).pop(note),
                   );
