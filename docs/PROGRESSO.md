@@ -516,3 +516,91 @@ Evidências: `docs/validacao/etapa4-recorrente-adiado.png` e
 
 Etapa 5 — notas privadas: caderno, listas, seleção de linha/trecho, criação de
 post-it a partir do texto e vínculos persistidos. Aguardando aprovação.
+
+## Rodada de fechamento das Etapas 3 e 4 (2026-11-03)
+
+### Pendências resolvidas
+
+- **Falhas de persistência/rollback:** decorator de repositório com falha
+  simulada cobre criação, edição, movimento, redimensionamento, reordenação e
+  exclusão; memória e banco permanecem iguais. Testes de rollback real usam FK
+  inválida no histórico para provar que o lote é revertido. UI de arraste e
+  formulário mostram erro compreensível e mantêm o estado persistido.
+- **Eventos fim a fim no aparelho:** criados via formulário:
+  - evento comum de um dia (`endDate` nulo);
+  - evento marcante `+` de um dia (`is_highlight = 1`);
+  - evento marcante de vários dias (`03/11` a `05/11`).
+  Todos persistidos e exibidos como barras; validações e seletores pt-BR
+  exercitados.
+- **Alças de resize:** `SizedBox` de 24×24 dp lógicos; verificado no aparelho
+  (66×66 px @440 dpi = 24 dp) e em teste de widget. Grip visual continua
+  discreto (2×12 dp).
+- **"+N eventos":** agora é botão; abre a lista de eventos ocultos da semana,
+  com data e acesso aos detalhes. Teste de widget + verificação no aparelho.
+- **FAB em telas estreitas:** abaixo de 600 dp o FAB foi substituído por um
+  ícone “+” na AppBar. Padding inferior compacto evita cobrir conteúdo; tela
+  de 1000×1600 (≈364 dp) sem overflow de layout.
+- **Carga:** teste de widget com 200 post-its (tarefas, eventos simples e
+  multi-dia) e teste no aparelho com 170 registros. Sem travamento; ajustes
+  feitos para eliminar overflow e preservar datas/contadores no mês compacto.
+- **Desfazer exclusão:** snackbar “Desfazer” restaura o tombstone e grava
+  `restored` no histórico; teste de controller e widget.
+- **Wakelock:** `wakelock_plus 1.8.2` + permissão `WAKE_LOCK`; serviço isolado
+  em `ScreenWakeService`, ativado no boot. Tela permaneceu ligada após 20 s com
+  timeout de 15 s. Opção de desligar nas configurações fica para etapa futura.
+
+### Decisões registradas
+
+- **Auto-scroll durante arraste:** não implementado nesta rodada. “Mover para
+  data…” é determinístico, acessível e evita conflitos; fica como possível
+  evolução futura.
+- **Ordenação manual de eventos:** não implementada. Data de início + faixas
+  atende e evita complexidade com eventos multi-dia.
+- **Desfazer exclusão:** implementado, como descrito acima.
+
+### Resultados dos testes
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **138 testes aprovados**.
+- `flutter build apk --debug`: aprovado (~15 s com cache).
+- Carga de 200 itens no teste de widget: primeira renderização entre ~1,1 s e
+  ~1,4 s no host; sem exceção de layout.
+- Carga no aparelho (170 itens): cold start `am start -W` **2341 ms**;
+  navegação e troca de modo sem travamento; amostras de frame ~12 ms
+  (gfxinfo). No modo mês de alta densidade, células exibem resumo “+N mais” e
+  “+N eventos” em vez de cartões individuais; datas permanecem legíveis.
+
+### Validação física complementar
+
+- Eventos comuns/marcantes e recorrente criados pelo formulário, persistidos no
+  SQLite, sobrevivendo a force-stop/reabertura.
+- Recorrente UI: 1 instância, data de hoje, histórico `created`; sem duplicação.
+- Teclado virtual: formulário se ajusta sem overflow na agenda de fundo
+  (`resizeToAvoidBottomInset: false`).
+- Retrato/paisagem, mês compacto, tela estreita via override e wakelock
+  verificados.
+- Limitações mantidas: gestos injetados por `motionevent`; sem dedo/caneta/
+  TalkBack/teclado físico externo; criação de recorrência via formulário foi
+  validada, mas o avanço diário foi observado com registro semeado em rodada
+  anterior.
+
+### Evidências
+
+- `docs/validacao/round-evento-comum.png`
+- `round-evento-marcante-multidia.png`
+- `round-recorrente-ui.png`
+- `round-eventos-ocultos.png`
+- `round-carga-mes.png`
+- `round-tela-estreita.png`
+
+### Pendências mantidas
+
+- Auto-scroll e ordenação manual de eventos permanecem fora (decisão).
+- Opção de desligar wakelock nas configurações (futuro).
+- Filtros da caixinha não persistem.
+- Falta teste manual com dedo/caneta/TalkBack/teclado físico.
+- Falta otimização dedicada para muitos itens; não foi necessária nesta carga.
+
+### Próximo passo
+
+Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.

@@ -94,15 +94,15 @@ não importa Flutter nem drift.
   ao cruzar a quebra de semana, o título aparece uma vez e o trecho seguinte é
   marcado como "continua".
 - Células limitam a quantidade de cartões e mostram "+N mais", que abre a
-  lista completa do dia.
+  lista completa do dia. Eventos excedentes mostram "+N eventos", acionável,
+  que abre a lista de eventos ocultos da semana.
 - Mês compacto usa grade dinâmica de 35 ou 42 células, com dias de borda
   atenuados; meses de 31 dias nunca são truncados.
 
 ## Criação e manipulação
 
-- Botão **Novo post-it** cria tarefa (título e detalhes opcionais) ou evento
-  (data/intervalo obrigatórios, com marcação `+` opcional). Tipo recorrente é
-  reservado à Etapa 4.
+- Botão **Novo post-it** cria tarefa (título e detalhes opcionais), evento
+  (data/intervalo obrigatórios, com marcação `+` opcional) ou TO-DO recorrente.
 - Tarefas aceitam data única ou "Sem data"; intervalo só existe em eventos.
   Erros de validação aparecem no próprio formulário.
 - Arrastar o corpo de um post-it move o registro (long press no toque). Eventos
@@ -110,13 +110,15 @@ não importa Flutter nem drift.
   reordena.
 - Alças nas extremidades dos eventos redimensionam início/fim, com prévia da
   nova data; soltar aplica e persiste. O corpo move; as alças redimensionam.
+  A área de toque é de 24×24 dp lógicos (grip visual discreto).
 - Alternativas aos gestos ficam no detalhe do post-it: mover para data,
   alterar duração (eventos), subir/descer na ordem, editar e excluir com
-  confirmação.
+  confirmação. Após excluir, há **Desfazer** no snackbar (restaura o tombstone).
 - Mutações são validadas, transacionais e serializadas no controller; ao
-  falhar, a interface mantém o último estado persistido.
+  falhar, a interface mantém o último estado persistido e mostra uma mensagem.
 - Mover para outro período visível pode ser feito por arraste; para períodos
-  fora da tela use "Mover para data…".
+  fora da tela use "Mover para data…". O auto-scroll durante o arraste foi
+  avaliado e não entrou nesta rodada (ver `docs/DECISOES.md`).
 
 ## Estados, caixinha e TO-DO recorrente
 
@@ -133,6 +135,22 @@ não importa Flutter nem drift.
   Concluir ou cancelar interrompe o avanço.
 - Não há timers nem serviços contínuos: o cálculo usa a data local na
   inicialização, no `resumed` e em operações relevantes.
+
+## Decisões desta rodada
+
+- **Auto-scroll durante arraste:** não implementado. A navegação explícita
+  "Mover para data…" é determinística, acessível e evita conflitos entre arraste,
+  scroll e alvos; auto-scroll fica registrado como evolução futura.
+- **Ordenação manual de eventos:** não implementada. As barras seguem data de
+  início e faixas; ordenação manual não traz benefício claro e conflita com
+  eventos multi-dia.
+- **Desfazer exclusão:** implementado via tombstone + histórico (`restored`),
+  com ação no snackbar após a confirmação.
+- **Eventos ocultos:** o contador "+N eventos" é acionável e lista os eventos
+  da semana com data e acesso aos detalhes; a lista completa do dia continua
+  disponível ao tocar na célula.
+- **Telas estreitas:** abaixo de 600 dp o FAB é substituído por um ícone “+”
+  na AppBar, evitando cobrir a agenda; a grade rola quando necessário.
 
 ## Domínio e persistência
 
@@ -151,7 +169,11 @@ não importa Flutter nem drift.
 `drift + SQLite` foi escolhido por relacionamentos, transações, consultas por
 data/estado e migrações testáveis. Versões atuais: `drift 2.35.3`,
 `sqlite3 3.8.0` (biblioteca embutida via hooks), `path_provider 2.1.6`,
-`drift_dev 2.35.2`, `build_runner 2.17.1`.
+`drift_dev 2.35.2`, `build_runner 2.17.1`, `wakelock_plus 1.8.2`.
+
+`wakelock_plus` mantém a tela ligada durante o uso (permissão `WAKE_LOCK`),
+isolado no `ScreenWakeService`; a opção de desligar pela tela de configurações
+fica para uma etapa futura.
 
 `sqlite3_flutter_libs` foi evitado por estar marcado EOL no pub.dev. Se os
 hooks falharem em algum ambiente, o fallback documentado é `drift_flutter`.

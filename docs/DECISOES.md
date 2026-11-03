@@ -135,6 +135,44 @@ etapas. Cada item: contexto, decisão, consequência.
   atualização ou título.
 - O estado é independente da posição temporal; arrastar não altera status.
 
+## Falhas, rollback e consistência
+
+- Escritas passam por transações drift; `saveBatch` grava post-its + histórico
+  atomicamente. Falha em qualquer item reverte o lote.
+- O controller só atualiza a memória depois do commit (`_reload`); validação ou
+  falha do repositório mantém a UI no último estado persistido.
+- Operações são serializadas por fila; erros chegam à UI como snackbar/mensagem
+  de formulário.
+- Testes cobrem falhas simuladas em criação, edição, movimento,
+  redimensionamento, reordenação e exclusão, além de rollback por FK inválida.
+
+## Alças e acessibilidade
+
+- Área de interação de **24×24 dp lógicos** no Flutter (não pixels físicos),
+  com grip visual de 2×12 dp. O corpo do evento continua sendo o alvo de
+  movimento; a alça só redimensiona.
+- Em telas estreitas (<600 dp), o FAB dá lugar a um ícone “+” na AppBar para
+  não cobrir conteúdo.
+
+## Eventos adicionais no mês
+
+- "+N eventos" é um botão; abre uma folha com os eventos que não couberam nas
+  faixas da semana, com datas e acesso aos detalhes.
+- O mês continua sendo visão compacta; tarefas que não couberem usam "+N mais"
+  e abrem a lista do dia ao tocar na célula.
+
+## Decisões desta rodada
+
+- **Auto-scroll no arraste:** adiado. A ação “Mover para data…” cobre o caso e
+  evita riscos de interação; pode ser reavaliado após uso real.
+- **Ordenação manual de eventos:** não necessária. A organização por data de
+  início e faixas atende; ordem manual conflita com eventos multi-dia.
+- **Desfazer exclusão:** implementado com o tombstone existente; snackbar
+  “Desfazer” restaura e grava `restored` no histórico.
+- **Tela ligada:** `wakelock_plus` ativo por padrão durante o uso, isolado em
+  `ScreenWakeService`; a opção de desligar nas configurações fica para etapa
+  futura (não implementada agora).
+
 ## Notas
 
 - Notas têm linhas (`note_lines`) para texto e checklists; a seleção para
