@@ -225,11 +225,12 @@ etapas. Cada item: contexto, decisão, consequência.
   espaçamentos principais em múltiplos de 8 px e ajustes finos em múltiplos de
   4 px. A grade mantém gutter óptico de 1,5 px entre células para preservar a
   densidade do mês.
-- **Movimento:** transições curtas (100–180 ms). Seleção e alvo de arraste usam
-  escala/cor; cartões e barras reagem ao toque; feedback de arraste usa
-  `easeOutBack`; período/modo e grade fazem cross-fade. Redimensionamento
-  contínuo não é animado para não atrasar o dedo. Ainda não há preferência de
-  reduzir movimento.
+- **Movimento:** transições curtas (100–200 ms). Seleção e alvo de arraste usam
+  escala/cor/sombra; cartões e barras reagem ao toque; feedback de arraste usa
+  `easeOutBack`; período/modo e grade fazem cross-fade. Durante o
+  redimensionamento a barra acompanha a largura do dedo em tempo real, com
+  destaque na alça ativa e cross-fade do texto de data. Ainda não há preferência
+  de reduzir movimento.
 - No mês compacto, o padding interno da célula é reduzido para preservar ao
   menos uma tarefa visível junto do indicador de overflow.
 - A data selecionada é a âncora. Anterior/próximo move a seleção em um

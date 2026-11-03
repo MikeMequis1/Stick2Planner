@@ -161,7 +161,8 @@ não importa Flutter nem drift.
   fundo cobrindo a área útil.
 - **Animações:** seleção de dia animada, cartões/barras reagem ao toque,
   feedback de arraste com escala, badges com fade/scale e cross-fade ao trocar
-  período ou modo. O redimensionamento contínuo segue o dedo sem atraso.
+  período ou modo. Ao redimensionar, a barra acompanha a largura do dedo em
+  tempo real e a alça ativa recebe destaque.
 
 ## Notas privadas
 

@@ -813,10 +813,11 @@ avaliação.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **162 testes aprovados**.
+- `flutter test`: **163 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - Novos testes: dois toques abrem tarefa e três abrem evento; toque longo mostra
-  prévia e soltar remove; prévia Markdown fica à direita do campo.
+  prévia e soltar remove; prévia Markdown fica à direita do campo; arrastar a
+  alça atualiza a largura da barra antes de soltar.
 
 ### Validação física
 
@@ -844,20 +845,28 @@ avaliação.
 
 ### Implementado
 
-- Seleção de dia anima cor, borda e uma escala sutil (160 ms, `easeOut`).
-- Célula sob arraste cresce levemente e o alvo de soltura ganha borda animada.
-- Cartões de post-it e barras de evento encolhem levemente ao toque (100 ms).
-- Feedback de arraste entra com escala (180 ms, `easeOutBack`); o cartão de
-  origem desbota em 160 ms.
+- Seleção de dia anima cor, borda, sombra e escala mais perceptível (180 ms,
+  `easeOut`); o número do dia cresce 15%.
+- Célula sob arraste cresce mais (1,04) e o alvo de soltura ganha borda/sombra
+  animadas.
+- Cartões de post-it e barras de evento encolhem mais ao toque (0,93/0,97,
+  110 ms).
+- Feedback de arraste entra com escala (200 ms, `easeOutBack`) e elevação; o
+  cartão de origem desbota em 180 ms.
+- **Redimensionar evento atualiza a largura/posição da barra em tempo real**,
+  com a barra ativa levemente ampliada (1,03), alça ativa maior e o texto da
+  data trocando com cross-fade.
 - Prévia de redimensionamento e botão “+N eventos” entram com fade/scale.
-- Rótulo do período faz cross-fade e o rótulo do modo usa fade + scale.
-- Ao trocar período ou modo, a grade faz cross-fade de 180 ms; atualizações de
-  dados no mesmo período continuam instantâneas.
+- Rótulo do período desliza + faz fade; o rótulo do modo usa fade + scale.
+- Ao trocar período ou modo, a grade faz cross-fade com escala sutil (0,98 → 1);
+  atualizações de dados no mesmo período continuam instantâneas.
 
 ### Limitações
 
-- O redimensionamento contínuo segue o dedo sem animação para não introduzir
-  atraso; só o selo de prévia é animado.
+- O redimensionamento contínuo acompanha o dedo sem easing na largura para não
+  introduzir atraso; o movimento é suavizado pelo próprio frame do gesto.
 - Não há preferência explícita de “reduzir movimento”; as animações são curtas
   e não bloqueiam a interação.
 - Animações não alteram dados, persistência ou regras de negócio.
+- Evidência do redimensionamento ao vivo:
+  `docs/validacao/rodada-redimensionar-ao-vivo.png`.
