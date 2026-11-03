@@ -57,8 +57,8 @@ class _EventBarState extends State<EventBar> {
       label: postItSemanticLabel(postIt),
       excludeSemantics: true,
       child: AnimatedScale(
-        scale: _pressed ? 0.985 : 1,
-        duration: const Duration(milliseconds: 100),
+        scale: _pressed ? 0.97 : 1,
+        duration: const Duration(milliseconds: 110),
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,

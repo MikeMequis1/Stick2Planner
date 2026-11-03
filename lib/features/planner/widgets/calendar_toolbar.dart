@@ -47,9 +47,19 @@ class CalendarToolbar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                switchInCurve: Curves.easeOut,
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  final offset = Tween<Offset>(
+                    begin: const Offset(0.08, 0),
+                    end: Offset.zero,
+                  ).animate(animation);
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(position: offset, child: child),
+                  );
+                },
                 child: Text(
                   periodLabel,
                   key: ValueKey(periodLabel),

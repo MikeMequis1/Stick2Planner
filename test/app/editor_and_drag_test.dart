@@ -290,6 +290,39 @@ void main() {
     expect(tasks.map((postIt) => postIt.id), ['t2', 't1']);
   });
 
+  testWidgets('redimensionar atualiza a barra durante o gesto', (tester) async {
+    await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+
+    final bar = find.byKey(
+      const ValueKey('event-bar-e1-2026-11-02'),
+    );
+    final initialWidth = tester.getSize(bar).width;
+    final handle = find.byKey(const Key('event-resize-end-e1'));
+
+    final gesture = await tester.startGesture(tester.getCenter(handle));
+    await gesture.moveBy(const Offset(20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(120, 0));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(tester.getSize(bar).width, greaterThan(initialWidth));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('alça final estende evento em um dia', (tester) async {
     final dependencies = await pumpPlanner(
       tester,

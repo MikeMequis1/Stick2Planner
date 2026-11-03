@@ -46,8 +46,8 @@ class _PostItTileState extends State<PostItTile> {
       label: postItSemanticLabel(postIt),
       excludeSemantics: true,
       child: AnimatedScale(
-        scale: _pressed ? 0.96 : 1,
-        duration: const Duration(milliseconds: 100),
+        scale: _pressed ? 0.93 : 1,
+        duration: const Duration(milliseconds: 110),
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,

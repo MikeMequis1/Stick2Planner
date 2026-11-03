@@ -84,8 +84,19 @@ class AgendaPage extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [...previous, ?current],
               ),
-              transitionBuilder: (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
+              transitionBuilder: (child, animation) {
+                final curved = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                );
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
+                    child: child,
+                  ),
+                );
+              },
               child: CalendarGrid(
                 key: ValueKey(
                   'calendar-grid-${mode.name}-'
@@ -112,11 +123,7 @@ class AgendaPage extends StatelessWidget {
                 ),
                 onReorderTo: (postIt, date, index) => _runGuarded(
                   context,
-                  () => planner.movePostIt(
-                    postIt,
-                    date,
-                    targetIndex: index,
-                  ),
+                  () => planner.movePostIt(postIt, date, targetIndex: index),
                   AppStrings.errorMove,
                 ),
                 onResizeEvent: (postIt, start, end) => _runGuarded(
@@ -189,9 +196,8 @@ class AgendaPage extends StatelessWidget {
       await operation();
     } on Object {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(errorMessage)));
     }
   }
 

@@ -72,11 +72,11 @@ class DayCell extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(1.5),
             child: AnimatedScale(
-              scale: isDropTarget ? 1.02 : (isSelected ? 1.008 : 1),
-              duration: const Duration(milliseconds: 160),
+              scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
+              duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
+                duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOut,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
@@ -92,6 +92,16 @@ class DayCell extends StatelessWidget {
                     color: borderColor,
                     width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
                   ),
+                  boxShadow: isSelected || isDropTarget
+                      ? [
+                          BoxShadow(
+                            color: scheme.primary.withValues(
+                              alpha: isDropTarget ? 0.32 : 0.18,
+                            ),
+                            blurRadius: isDropTarget ? 16 : 10,
+                          ),
+                        ]
+                      : const [],
                 ),
                 padding: EdgeInsets.all(compact ? 1 : 4),
                 child: LayoutBuilder(
@@ -382,29 +392,34 @@ class _DayHeader extends StatelessWidget {
       padding: EdgeInsets.only(bottom: compact ? 0 : 4),
       child: Row(
         children: [
-          AnimatedContainer(
-            key: Key('day-number-${date.toIso8601String()}'),
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            width: dense ? 12 : (compact ? 15 : 24),
-            height: dense ? 12 : (compact ? 15 : 24),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isSelected ? scheme.primary : null,
-              shape: BoxShape.circle,
-              border: isToday && !isSelected
-                  ? Border.all(color: scheme.primary, width: 1.2)
-                  : null,
-            ),
-            child: Text(
-              '${date.day}',
-              style: TextStyle(
-                fontSize: dense ? 7.5 : (compact ? 9.5 : 12),
-                height: 1,
-                fontWeight: isSelected || isToday
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: foreground,
+          AnimatedScale(
+            scale: isSelected ? 1.15 : 1,
+            duration: const Duration(milliseconds: 170),
+            curve: Curves.easeOutBack,
+            child: AnimatedContainer(
+              key: Key('day-number-${date.toIso8601String()}'),
+              duration: const Duration(milliseconds: 170),
+              curve: Curves.easeOut,
+              width: dense ? 12 : (compact ? 15 : 24),
+              height: dense ? 12 : (compact ? 15 : 24),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isSelected ? scheme.primary : null,
+                shape: BoxShape.circle,
+                border: isToday && !isSelected
+                    ? Border.all(color: scheme.primary, width: 1.2)
+                    : null,
+              ),
+              child: Text(
+                '${date.day}',
+                style: TextStyle(
+                  fontSize: dense ? 7.5 : (compact ? 9.5 : 12),
+                  height: 1,
+                  fontWeight: isSelected || isToday
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: foreground,
+                ),
               ),
             ),
           ),

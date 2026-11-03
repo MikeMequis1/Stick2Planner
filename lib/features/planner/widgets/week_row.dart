@@ -131,10 +131,16 @@ class _WeekRowState extends State<WeekRow> {
                                 horizontal: 6,
                                 vertical: 2,
                               ),
-                              child: Text(
-                                previewLabel,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 120),
+                                switchInCurve: Curves.easeOut,
+                                switchOutCurve: Curves.easeIn,
+                                child: Text(
+                                  previewLabel,
+                                  key: ValueKey(previewLabel),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
                                 ),
                               ),
                             ),
@@ -249,6 +255,28 @@ class _WeekRowState extends State<WeekRow> {
     required double barGap,
   }) {
     final postIt = segment.postIt;
+    final activeResize = _resize;
+    final resizing = activeResize?.postIt.id == postIt.id;
+    final resizingThisEdge =
+        resizing &&
+        (activeResize!.isStart
+            ? !segment.continuesBefore
+            : !segment.continuesAfter);
+
+    var left = segment.startColumn * columnWidth + 2;
+    var width = math.max(2.0, segment.columnSpan * columnWidth - 4);
+    if (resizingThisEdge) {
+      final dx = activeResize.dx;
+      if (activeResize.isStart) {
+        final delta = dx.clamp(-(left - 2), width - 8).toDouble();
+        left += delta;
+        width -= delta;
+      } else {
+        final maxWidth = (widget.week.days.length * columnWidth - 2) - left;
+        width = (width + dx).clamp(8.0, math.max(8.0, maxWidth)).toDouble();
+      }
+    }
+
     final bar = EventBar(
       key: ValueKey(
         'event-bar-${postIt.id}-${widget.week.start.toIso8601String()}',
@@ -264,48 +292,53 @@ class _WeekRowState extends State<WeekRow> {
     );
 
     return Positioned(
-      left: segment.startColumn * columnWidth + 2,
+      left: left,
       top: segment.lane * (barHeight + barGap),
-      width: math.max(2, segment.columnSpan * columnWidth - 4),
+      width: width,
       height: barHeight,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          LongPressDraggable<PostItDragData>(
-            data: PostItDragData(postIt),
-            delay: const Duration(milliseconds: 200),
-            dragAnchorStrategy: childDragAnchorStrategy,
-            feedback: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.92, end: 1),
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutBack,
-              builder: (context, scale, child) =>
-                  Transform.scale(scale: scale, child: child),
-              child: Material(
-                color: Colors.transparent,
-                elevation: 6,
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 220,
-                  height: barHeight,
-                  child: EventBar(
-                    postIt: postIt,
-                    continuesBefore: false,
-                    continuesAfter: false,
-                    showTitle: true,
-                    compact: widget.compact,
+          AnimatedScale(
+            scale: resizingThisEdge ? 1.03 : 1,
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            child: LongPressDraggable<PostItDragData>(
+              data: PostItDragData(postIt),
+              delay: const Duration(milliseconds: 200),
+              dragAnchorStrategy: childDragAnchorStrategy,
+              feedback: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.86, end: 1),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 220,
+                    height: barHeight,
+                    child: EventBar(
+                      postIt: postIt,
+                      continuesBefore: false,
+                      continuesAfter: false,
+                      showTitle: true,
+                      compact: widget.compact,
+                    ),
                   ),
                 ),
               ),
-            ),
-            childWhenDragging: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 1, end: 0.35),
-              duration: const Duration(milliseconds: 160),
-              builder: (context, opacity, child) =>
-                  Opacity(opacity: opacity, child: child),
+              childWhenDragging: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 1, end: 0.25),
+                duration: const Duration(milliseconds: 180),
+                builder: (context, opacity, child) =>
+                    Opacity(opacity: opacity, child: child),
+                child: bar,
+              ),
               child: bar,
             ),
-            child: bar,
           ),
           if (!segment.continuesBefore)
             Align(
@@ -467,7 +500,9 @@ class _ResizeHandle extends StatelessWidget {
             child: SizedBox(
               width: 24,
               height: 24,
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOut,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: active
@@ -478,9 +513,11 @@ class _ResizeHandle extends StatelessWidget {
                     right: Radius.circular(isStart ? 2 : 8),
                   ),
                 ),
-                child: Container(
-                  width: compact ? 3 : 4,
-                  height: compact ? 10 : 14,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  curve: Curves.easeOut,
+                  width: active ? (compact ? 4 : 5) : (compact ? 3 : 4),
+                  height: active ? (compact ? 14 : 18) : (compact ? 10 : 14),
                   decoration: BoxDecoration(
                     color: active
                         ? scheme.primary
