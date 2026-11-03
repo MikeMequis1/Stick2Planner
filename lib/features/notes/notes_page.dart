@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
-import '../planner/stage_notice_card.dart';
-import '../shared/count_tile.dart';
+import '../../core/date_formatting.dart';
+import '../../core/date_only.dart';
+import '../../domain/entities/note.dart';
 import '../shared/empty_state.dart';
+import 'note_detail_page.dart';
+import 'note_editor_page.dart';
 
-/// Caderno privado. Editor e vínculos chegam na Etapa 5.
+/// Caderno privado, independente dos post-its.
 class NotesPage extends StatelessWidget {
   const NotesPage({super.key});
 
@@ -21,39 +24,75 @@ class NotesPage extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 960),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        final items = [...notes.notes]
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  SizedBox(
-                    width: 230,
-                    child: CountTile(
-                      label: AppStrings.notesCount,
-                      value: notes.notes.length,
-                      icon: Icons.note_alt_outlined,
-                    ),
+                  Text(
+                    AppStrings.noteCount(items.length),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  if (notes.notes.isEmpty) ...[
-                    const SizedBox(height: 8),
-                    const EmptyState(
-                      icon: Icons.edit_note_outlined,
-                      title: AppStrings.emptyNotes,
-                      message: AppStrings.notesPlaceholderBody,
+                  const Spacer(),
+                  FilledButton.icon(
+                    key: const Key('add-note'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const NoteEditorPage(),
+                      ),
                     ),
-                  ],
-                  const SizedBox(height: 16),
-                  const StageNoticeCard(
-                    icon: Icons.menu_book_outlined,
-                    title: AppStrings.notesPlaceholderTitle,
-                    message: AppStrings.notesPlaceholderBody,
+                    icon: const Icon(Icons.add),
+                    label: const Text(AppStrings.newNote),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: items.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.edit_note_outlined,
+                        title: AppStrings.emptyNotes,
+                        message: AppStrings.notesEmptyMessage,
+                      )
+                    : ListView.separated(
+                        itemCount: items.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final note = items[index];
+                          return Card(
+                            margin: EdgeInsets.zero,
+                            child: ListTile(
+                              key: Key('note-${note.id}'),
+                              leading: Icon(
+                                note.type == NoteType.checklist
+                                    ? Icons.checklist
+                                    : Icons.notes,
+                              ),
+                              title: Text(note.title),
+                              subtitle: Text(
+                                '${note.lines.length} ${AppStrings.noteLines} · '
+                                '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) => NoteDetailPage(
+                                    noteId: note.id,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
         );
       },

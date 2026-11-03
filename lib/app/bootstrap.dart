@@ -34,7 +34,10 @@ final class AppDependencies {
         settingsRepository: settingsRepository,
         clock: clock,
       ),
-      notes: NotesController(noteRepository: noteRepository),
+      notes: NotesController(
+        noteRepository: noteRepository,
+        clock: clock,
+      ),
     );
   }
 

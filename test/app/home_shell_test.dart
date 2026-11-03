@@ -49,7 +49,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.notesPlaceholderTitle), findsOneWidget);
+    expect(find.byKey(const Key('add-note')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -81,7 +81,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.notesPlaceholderTitle), findsOneWidget);
+    expect(find.byKey(const Key('add-note')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

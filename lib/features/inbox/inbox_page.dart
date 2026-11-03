@@ -9,6 +9,7 @@ import '../planner/widgets/post_it_details_sheet.dart';
 import '../planner/widgets/post_it_editor_sheet.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
+import '../notes/note_detail_page.dart';
 import '../shared/empty_state.dart';
 
 enum _InboxFilter { all, active, done, cancelled, undated }
@@ -104,6 +105,12 @@ class _InboxPageState extends State<InboxPage> {
       context,
       postIt: postIt,
       planner: planner,
+      notesController: AppScope.of(context).notes,
+      onOpenNote: (note) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => NoteDetailPage(noteId: note.id),
+        ),
+      ),
       onEdit: (current) => showPostItEditorSheet(
         context,
         controller: planner,

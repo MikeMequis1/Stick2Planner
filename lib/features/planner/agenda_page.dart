@@ -5,6 +5,7 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
+import '../notes/note_detail_page.dart';
 import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_labels.dart';
 import 'widgets/calendar_toolbar.dart';
@@ -173,6 +174,12 @@ class AgendaPage extends StatelessWidget {
       context,
       postIt: postIt,
       planner: planner,
+      notesController: AppScope.of(context).notes,
+      onOpenNote: (note) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => NoteDetailPage(noteId: note.id),
+        ),
+      ),
       onEdit: (current) => showPostItEditorSheet(
         context,
         controller: planner,

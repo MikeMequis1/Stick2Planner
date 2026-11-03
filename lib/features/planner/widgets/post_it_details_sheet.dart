@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_strings.dart';
+import '../../../app/controllers/notes_controller.dart';
 import '../../../app/controllers/planner_controller.dart';
 import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
+import '../../../domain/entities/note.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_presentation.dart';
 
@@ -12,7 +14,9 @@ Future<void> showPostItDetailsSheet(
   BuildContext context, {
   required PostIt postIt,
   required PlannerController planner,
+  required NotesController notesController,
   required ValueChanged<PostIt> onEdit,
+  required ValueChanged<Note> onOpenNote,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -21,6 +25,86 @@ Future<void> showPostItDetailsSheet(
     builder: (sheetContext) {
       final theme = Theme.of(sheetContext);
       final symbol = postItSymbol(postIt);
+      final linkedNote = postIt.noteId == null
+          ? null
+          : notesController.findById(postIt.noteId!);
+
+      Future<void> openNote() async {
+        if (linkedNote == null) return;
+        Navigator.of(sheetContext).pop();
+        onOpenNote(linkedNote);
+      }
+
+      Future<void> linkNote() async {
+        final candidates = notesController.notes;
+        if (candidates.isEmpty) {
+          _showMessage(context, AppStrings.noNotes);
+          return;
+        }
+        final selected = await showDialog<Note>(
+          context: sheetContext,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text(AppStrings.selectNote),
+            content: SizedBox(
+              width: 420.0.clamp(
+                0,
+                MediaQuery.sizeOf(dialogContext).width * 0.85,
+              ),
+              height: 360,
+              child: ListView.builder(
+                itemCount: candidates.length,
+                itemBuilder: (context, index) {
+                  final note = candidates[index];
+                  return ListTile(
+                    leading: Icon(
+                      note.type == NoteType.checklist
+                          ? Icons.checklist
+                          : Icons.notes,
+                    ),
+                    title: Text(note.title),
+                    subtitle: Text(
+                      '${note.lines.length} ${AppStrings.noteLines}',
+                    ),
+                    onTap: () => Navigator.of(dialogContext).pop(note),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(AppStrings.cancel),
+              ),
+            ],
+          ),
+        );
+        if (selected == null) return;
+        try {
+          await planner.linkNote(postIt, selected);
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+          if (context.mounted) {
+            _showMessage(context, AppStrings.statusUpdatedMessage);
+          }
+        } on Object {
+          if (context.mounted) {
+            _showMessage(context, AppStrings.linkNoteError);
+          }
+        }
+      }
+
+      Future<void> unlinkNote() async {
+        try {
+          await planner.unlinkNote(postIt);
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+          if (context.mounted) {
+            _showMessage(context, AppStrings.statusUpdatedMessage);
+          }
+        } on Object {
+          if (context.mounted) {
+            _showMessage(context, AppStrings.linkNoteError);
+          }
+        }
+      }
 
       Future<void> edit() async {
         Navigator.of(sheetContext).pop();
@@ -185,6 +269,16 @@ Future<void> showPostItDetailsSheet(
                       ),
                     ),
                     Chip(label: Text(postItStatusLabel(postIt.status))),
+                    if (postIt.noteId != null)
+                      Chip(
+                        avatar: const Icon(Icons.link, size: 18),
+                        label: const Text(AppStrings.linkedNoteChip),
+                      ),
+                    if (postIt.noteExcerpt != null)
+                      Chip(
+                        avatar: const Icon(Icons.content_copy, size: 18),
+                        label: const Text(AppStrings.noteExcerptChip),
+                      ),
                     if (postIt.isRecurring &&
                         postIt.status == PostItStatus.active)
                       Chip(
@@ -234,12 +328,29 @@ Future<void> showPostItDetailsSheet(
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.noteSnapshotHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
                 if (postIt.noteId != null) ...[
                   const SizedBox(height: 16),
                   _InfoRow(
                     icon: Icons.note_alt_outlined,
-                    text: '${AppStrings.linkedNoteTitle}: ${postIt.noteId}',
+                    text: linkedNote != null
+                        ? '${AppStrings.linkedNoteTitle}: '
+                              '${linkedNote.title}'
+                        : '${AppStrings.linkedNoteTitle}: ${postIt.noteId}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.noteLiveLink,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
                 if (postIt.isRecurring &&
@@ -299,6 +410,28 @@ Future<void> showPostItDetailsSheet(
                       icon: const Icon(Icons.drive_file_move_outline),
                       label: const Text(AppStrings.moveToDate),
                     ),
+                    if (postIt.noteId == null &&
+                        notesController.notes.isNotEmpty)
+                      OutlinedButton.icon(
+                        key: const Key('details-link-note'),
+                        onPressed: linkNote,
+                        icon: const Icon(Icons.link),
+                        label: const Text(AppStrings.linkNote),
+                      ),
+                    if (postIt.noteId != null) ...[
+                      OutlinedButton.icon(
+                        key: const Key('details-open-note'),
+                        onPressed: linkedNote == null ? null : openNote,
+                        icon: const Icon(Icons.note_alt_outlined),
+                        label: const Text(AppStrings.openNote),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('details-unlink-note'),
+                        onPressed: unlinkNote,
+                        icon: const Icon(Icons.link_off),
+                        label: const Text(AppStrings.unlinkNote),
+                      ),
+                    ],
                     if (postIt.isEvent)
                       OutlinedButton.icon(
                         key: const Key('details-resize'),

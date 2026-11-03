@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/clock.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
+import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
 import '../../domain/repositories/post_it_repository.dart';
@@ -219,6 +220,54 @@ final class PlannerController extends ChangeNotifier {
     });
   }
 
+  /// Vincula uma nota completa (referência viva) ao post-it.
+  Future<void> linkNote(PostIt postIt, Note note) {
+    return _exclusive(() async {
+      final current = _findCurrent(postIt.id);
+      if (current == null) return;
+      final now = _clock.now().toUtc();
+      final updated = current.copyWith(
+        noteId: note.id,
+        noteExcerpt: null,
+        updatedAt: now,
+      );
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          updated.id,
+          PostItHistoryAction.noteLinked,
+          now,
+          fromValue: current.noteId,
+          toValue: note.id,
+        ),
+      );
+      await _reload();
+    });
+  }
+
+  /// Remove o vínculo vivo; um snapshot eventual é preservado.
+  Future<void> unlinkNote(PostIt postIt) {
+    return _exclusive(() async {
+      final current = _findCurrent(postIt.id);
+      if (current == null || current.noteId == null) return;
+      final now = _clock.now().toUtc();
+      final updated = current.copyWith(
+        noteId: null,
+        updatedAt: now,
+      );
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          updated.id,
+          PostItHistoryAction.noteUnlinked,
+          now,
+          fromValue: current.noteId,
+        ),
+      );
+      await _reload();
+    });
+  }
+
   /// Valida e persiste a criação/edição de um post-it já montado.
   Future<void> savePostIt(PostIt postIt) => _exclusive(() async {
     _validatePostIt(postIt);
@@ -241,6 +290,8 @@ final class PlannerController extends ChangeNotifier {
     String? details,
     DateOnly? startDate,
     DateOnly? endDate,
+    String? noteId,
+    String? noteExcerpt,
   }) {
     return _exclusive(() async {
       await _applyRecurringRollover();
@@ -255,6 +306,8 @@ final class PlannerController extends ChangeNotifier {
         status: PostItStatus.active,
         isHighlight: type == PostItType.event && isHighlight,
         details: _normalizeDetails(details),
+        noteId: noteId,
+        noteExcerpt: noteId == null ? _normalizeDetails(noteExcerpt) : null,
         startDate: resolvedStart,
         endDate: _normalizeEndDate(type, resolvedStart, endDate),
         sortOrder: _nextOrderFor(resolvedStart),

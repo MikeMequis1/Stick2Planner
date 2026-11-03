@@ -10,6 +10,7 @@ enum PostItHistoryAction {
   rolloverAdvanced,
   manualPostponed,
   noteLinked,
+  noteUnlinked,
   restored,
 }
 

@@ -15,10 +15,9 @@ abstract final class AppStrings {
   static const inboxPlaceholderBody =
       'Filtros por estado, busca e tarefas sem data chegam na Etapa 4.';
 
-  static const notesPlaceholderTitle = 'Notas privadas em construção';
-  static const notesPlaceholderBody =
-      'O caderno, as listas e a criação de post-its a partir de uma linha '
-      'chegam na Etapa 5.';
+  static const notesEmptyMessage =
+      'Crie uma nota livre ou uma lista; depois selecione linhas para gerar '
+      'post-its.';
 
   static const today = 'Hoje';
   static const selectedDate = 'Data selecionada';
@@ -28,6 +27,55 @@ abstract final class AppStrings {
   static const done = 'Concluídas';
   static const cancelled = 'Canceladas';
   static const notesCount = 'Notas';
+
+  static const newNote = 'Nova nota';
+  static const editNote = 'Editar nota';
+  static const noteTitle = 'Título da nota';
+  static const noteTypeText = 'Texto';
+  static const noteTypeChecklist = 'Lista';
+  static const addLine = 'Adicionar linha';
+  static const lineHint = 'Escreva uma linha';
+  static const noteTitleRequired = 'Informe um título para a nota.';
+  static const noteSaveError = 'Não foi possível salvar a nota.';
+  static const noteDeleteError = 'Não foi possível excluir a nota.';
+  static const selectLinesHint =
+      'Toque nas linhas para selecionar um trecho.';
+  static const createPostItFromSelection = 'Criar post-it do trecho';
+  static const clearSelection = 'Limpar seleção';
+  static const noteLinkedPostIts = 'Post-its vinculados';
+  static const createTaskFromNote = 'Criar tarefa com esta nota';
+  static const linkToPostIt = 'Vincular a post-it…';
+  static const linkNote = 'Vincular nota…';
+  static const unlinkNote = 'Desvincular nota';
+  static const openNote = 'Abrir nota';
+  static const selectNote = 'Selecionar nota';
+  static const selectPostIt = 'Selecionar post-it';
+  static const noteDeleted = 'Nota excluída.';
+  static const deleteNote = 'Excluir nota';
+  static const deleteNoteQuestion = 'Excluir nota?';
+  static const deleteNoteExplanation =
+      'A nota sairá do caderno, mas o registro será preservado no banco.';
+  static const deleteNoteLinkedWarning =
+      'Esta nota está vinculada a post-its. Os vínculos serão removidos; '
+      'trechos já copiados são preservados.';
+  static const noteSnapshotHint =
+      'Snapshot: editar a nota não altera este texto.';
+  static const noteLiveLink =
+      'Nota vinculada: o conteúdo acompanha as edições da nota.';
+  static const linkedNoteChip = 'Nota vinculada';
+  static const noteExcerptChip = 'Trecho copiado';
+  static const noNotes = 'Nenhuma nota ainda.';
+  static const noLines = 'Nenhuma linha.';
+  static const selectPostItEmpty = 'Nenhum post-it disponível.';
+  static const linkNoteError = 'Não foi possível vincular a nota.';
+  static const createPostItError = 'Não foi possível criar o post-it.';
+  static const noteLines = 'linhas';
+
+  static String noteCount(int count) => '$count ${count == 1 ? 'nota' : 'notas'}';
+  static String linkedPostItsCount(int count) =>
+      '$count ${count == 1 ? 'post-it' : 'post-its'}';
+
+  static String selectedLines(int count) => '$count selecionada(s)';
 
   static const loading = 'Carregando dados locais…';
   static const loadError = 'Não foi possível carregar os dados locais.';
