@@ -608,19 +608,23 @@ post-it a partir do texto e vínculos persistidos. Aguardando aprovação.
 
 Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
 
-## Etapa 5 — Notas privadas (implementada em 2026-11-03; aguardando revisão)
+## Etapa 5 — Notas privadas (implementada em 2026-11-03; ajuste Markdown)
 
 ### Implementado
 
 - Caderno independente: lista de notas, criação, edição e exclusão com
-  confirmação; título, tipo texto/checklist, linhas ordenadas e estado de
-  checklist.
-- Editor de linhas com adicionar, remover, subir/descer; ordem persistida pelo
-  `position`; IDs de linha preservados quando possível.
-- Detalhe da nota com seleção por toque em uma ou várias linhas, barra inferior
-  estável (não desloca o conteúdo) e ação “Criar post-it do trecho”.
-- Conversão em snapshot: `noteExcerpt` com o texto selecionado e `noteId` nulo;
-  o post-it é criado sem data, acessível pela caixinha. A UI mostra “Trecho
+  confirmação; título e dois modos: texto Markdown ou lista.
+- **Notas de texto:** um único campo multilinha Markdown, com expansão vertical
+  e dicas de sintaxe; aceita títulos, negrito, itálico, listas ordenadas e não
+  ordenadas, links, parágrafos, quebras de linha e blocos de código.
+- **Listas:** mantêm o editor por linhas com adicionar, remover, subir/descer e
+  marcar itens; ordem persistida por `position`.
+- Detalhe de nota de texto renderiza o Markdown formatado (sem exibir a sintaxe
+  crua) e permite criar um post-it de trecho.
+- Detalhe de lista mantém a seleção por toque em uma ou várias linhas, com barra
+  inferior estável e ação “Criar post-it do trecho”.
+- Conversão em snapshot: `noteExcerpt` com o texto escolhido e `noteId` nulo; o
+  post-it é criado sem data, acessível pela caixinha. A UI mostra “Trecho
   copiado” e o aviso de snapshot.
 - Vínculo vivo: “Criar tarefa com esta nota” (nota inteira) e “Vincular a
   post-it…” escolhendo tarefa existente; “Abrir nota” no detalhe do post-it e
@@ -633,11 +637,22 @@ Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
 
 ### Modelo e decisões
 
-- O esquema já possuía `notes`/`note_lines`; não houve migração nova.
-- Link vivo e snapshot são mutuamente exclusivos: vincular uma nota limpa o
-  `noteExcerpt`; copiar trecho não cria `noteId`.
-- Seleção é por linha/intervalo de linhas, não substring arbitrária; decisão
-  para manter o editor simples e confiável no toque.
+- Esquema drift **v3**: `notes.markdown` (texto nullable) guarda o conteúdo
+  integral das notas de texto; `note_lines` continua exclusivo das listas.
+- Migração v2 → v3 converte as linhas das notas `type='text'` em um único
+  Markdown separado por `\n`, remove essas linhas e preserva as listas.
+- `Note.plainText` usa `markdown` para texto e as linhas para listas; serve de
+  fallback para dados legados.
+- Renderização com `flutter_markdown_plus 1.0.12` (o `flutter_markdown` oficial
+  está descontinuado). `softLineBreak: true` mantém a quebra de linha visível ao
+  pressionar Enter, sem exigir linha em branco.
+- Snapshot de texto usa um diálogo com o Markdown cru selecionável: o usuário
+  escolhe o trecho, ou “Nota inteira” quando não há seleção; o título vem
+  preenchido com o título da nota.
+- Link vivo e snapshot continuam mutuamente exclusivos: vincular uma nota limpa
+  o `noteExcerpt`; copiar trecho não cria `noteId`.
+- Seleção de listas continua por linha/intervalo; não há substring dentro de
+  uma linha nesse modo.
 - Exclusão de nota não apaga post-its; desvincula e mantém o conteúdo próprio
   do post-it e snapshots.
 - Não há tabela de histórico de notas; eventos de vínculo ficam no histórico
@@ -646,38 +661,48 @@ Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **152 testes aprovados** (14 novos).
-- `flutter build apk --debug`: aprovado (~14 s com cache).
-- Novos testes: CRUD de nota, linhas/ordem/checklist, título obrigatório,
-  persistência após reabrir, exclusão/tombstone, snapshot imutável, vínculo
-  vivo e desvínculo com histórico, exclusão desvinculando sem apagar tarefa,
-  criação/edição/ exclusão pela UI, seleção de trecho e abertura da nota pelo
-  post-it.
-- Falha de persistência de nota segue o mesmo padrão transacional dos
-  repositórios; UI mostra erro.
+- `flutter test`: **158 testes aprovados** (6 novos nesta revisão).
+- `flutter build apk --debug`: aprovado (~15 s com cache).
+- Novos testes: criação/edição de Markdown preservando formatação após reabrir,
+  fallback de linhas legadas, migração v2 → v3 com texto e checklist, criação de
+  nota Markdown pela UI com renderização formatada e snapshot de trecho
+  Markdown.
+- Testes anteriores de lista, snapshot, vínculo vivo, desvínculo e exclusão
+  continuam passando.
 
 ### Validação física
 
-- Nota “Lista de compras” criada pelo formulário com duas linhas; banco
-  confirmou `notes` + `note_lines` na ordem (`Pao`, `Leite`).
-- Seleção de duas linhas mostrava “2 selecionada(s)” e ação “Criar post-it do
-  trecho”; snapshot persistiu com `note_id` nulo e `note_excerpt = Pao\nLeite`.
-- Detalhe do post-it exibiu “Trecho copiado”, texto e aviso de snapshot.
-- Vínculo de nota a uma tarefa pelo diálogo foi persistido e exibido como
-  “1 post-it” em “Post-its vinculados”; tarefa não foi duplicada nem apagada.
-- Editor de nota, seleção, detalhe e lista verificados em tablet Android
-  (3200×2136, 440 dpi, tema escuro). Edição/exclusão de nota pela UI ficaram
-  cobertas por testes de widget/controller nesta rodada.
+- Banco v2 existente no tablet migrou para v3: nota de texto legada
+  (`Pao`, `Leite`) virou `markdown = 'Pao\nLeite'`, `note_lines` ficou vazia e
+  `PRAGMA user_version = 3`.
+- Nota Markdown criada e editada no aparelho; negrito, itálico, lista, título e
+  quebras de linha renderizados corretamente no detalhe.
+- Snapshot de nota Markdown persistiu com `note_id` nulo e o trecho selecionado
+  no diálogo; “Nota inteira” também disponível.
+- Lista criada em modo Lista: `type = checklist`, `markdown` nulo, linhas na
+  ordem; seleção de duas linhas mostrou “2 selecionada(s)” e a ação de criar
+  post-it.
+- Vínculo de nota existente permaneceu visível em “Post-its vinculados” após a
+  migração e a edição.
+- Telas verificadas em tablet Android (3200×2136, 440 dpi, tema escuro), com
+  reinício do aplicativo para confirmar persistência. Evidências:
+  `docs/validacao/etapa5-markdown-editor.png`,
+  `etapa5-markdown-detalhe.png`, `etapa5-markdown-snapshot.png` e
+  `etapa5-lista-selecao.png`.
 
 ### Limitações
 
-- Seleção não permite substring dentro de uma linha (apenas linhas/intervalo).
+- Links Markdown são renderizados, mas não abrem navegador nesta etapa (não há
+  integração externa; o texto continua selecionável/copiável).
+- O snapshot de texto é escolhido no Markdown cru, não no texto renderizado;
+  isso mantém a implementação simples e preserva a sintaxe escolhida.
+- Alternar uma nota entre Texto e Lista converte o conteúdo (linhas ↔ Markdown)
+  e descarta formatação Markdown; a ação é intencional e não gera undo.
+- Seleção em listas é por linha/intervalo, não substring dentro da linha.
 - Nota tem um vínculo por post-it; vincular outra substitui a referência.
 - Excluir nota remove vínculos vivos sem undo; snapshots permanecem.
 - Não há busca/ordenação própria no caderno nesta etapa.
 - Snapshot é cópia intencional: editar a nota não o atualiza.
-- Edição/exclusão de nota no aparelho não foi repetida manualmente; coberta
-  por testes automatizados.
 
 ### Próximo passo
 

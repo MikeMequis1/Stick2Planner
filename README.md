@@ -11,7 +11,7 @@ Etapas 0 a 5 concluídas. A agenda, organização e caderno de notas já estão
 funcionais; falta a rodada de qualidade/acessibilidade da Etapa 6.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
-- [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
+- [x] Etapa 1 — fundação (domínio, esquema, repositórios, tema, navegação)
 - [x] Etapa 2 — agenda visual (períodos, grade, eventos contínuos, overflow)
 - [x] Etapa 3 — criação/edição, arraste, reordenação e redimensionamento
 - [x] Etapa 4 — estados, caixinha, tarefas sem data e TO-DO recorrente
@@ -58,7 +58,7 @@ lib/
     repositories/               # contratos (post-it, nota, preferências)
     usecases/                   # validação de post-it
   data/
-    db/                         # esquema drift v2, conversores, migrações
+    db/                         # esquema drift v3, conversores, migrações
     mappers/                    # linha drift <-> entidade
     repositories/               # implementações drift
   app/
@@ -153,10 +153,15 @@ não importa Flutter nem drift.
 
 ## Notas privadas
 
-- Caderno independente dos post-its: criar, editar e excluir notas; títulos,
-  linhas ordenadas e modo texto ou checklist.
-- Toque nas linhas para selecionar uma ou várias; a barra inferior permite
-  converter o trecho em post-it.
+- Caderno independente dos post-its: criar, editar e excluir notas; títulos e
+  dois modos.
+- **Texto:** um único editor Markdown, renderizado formatado no detalhe
+  (títulos, negrito/itálico, listas, links, parágrafos e blocos de código).
+- **Lista:** linhas individuais com adicionar/remover, reordenar e marcar;
+  toque nas linhas para selecionar uma ou várias e converter o trecho em
+  post-it pela barra inferior.
+- Em notas de texto, “Criar post-it de trecho…” abre o Markdown selecionável;
+  sem seleção, usa a nota inteira.
 - Trecho convertido vira **snapshot** (`noteExcerpt`, sem `noteId`): editar a
   nota não altera o texto já copiado. O detalhe do post-it mostra “Trecho
   copiado”.
@@ -165,8 +170,8 @@ não importa Flutter nem drift.
   do post-it. O detalhe mostra “Nota vinculada”.
 - Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
   snapshots existentes permanecem. A nota usa tombstone.
-- Limitação consciente: a seleção é por linha ou intervalo de linhas, não por
-  substring arbitrária dentro de uma linha.
+- Limitações conscientes: links não abrem navegador; o snapshot de texto é
+  escolhido no Markdown cru; em listas a seleção é por linha/intervalo.
 
 ## Domínio e persistência
 
@@ -174,11 +179,12 @@ não importa Flutter nem drift.
   (`active`, `done`, `cancelled`), `isHighlight` (`+`), detalhes, vínculo de
   nota (`noteId` + snapshot `noteExcerpt`), data/início/fim, `sortOrder`,
   timestamps e tombstone (`deletedAt`).
-- `Note` + `NoteLine`: texto ou checklist, linhas ordenadas.
+- `Note` + `NoteLine`: nota de texto com `markdown` integral ou lista com
+  linhas ordenadas.
 - `PostItHistoryEntry`: auditoria de criação, edição, movimento, status,
   rollover etc., sem duplicar o post-it.
-- Esquema drift v2: `app_settings`, `notes`, `note_lines`, `post_its`,
-  `post_it_history_entries`, com índices e migração v1 → v2.
+- Esquema drift v3: `app_settings`, `notes`, `note_lines`, `post_its`,
+  `post_it_history_entries`, com índices e migrações v1 → v2 → v3.
 - Datas de calendário usam `DateOnly` (sem hora), persistido como
   `aaaa-mm-dd`; timestamps em UTC (ms).
 

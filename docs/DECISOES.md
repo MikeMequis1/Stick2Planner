@@ -175,10 +175,19 @@ etapas. Cada item: contexto, decisão, consequência.
 
 ## Notas
 
-- **Implementado:** caderno com linhas (`note_lines`), ordem preservada,
-  checklist, texto livre, editor e criação de post-it/snapshot.
-- A seleção para criar post-it é uma linha ou várias linhas (trecho contíguo
-  ou não); não há seleção de substring arbitrária nesta etapa.
+- **Modelo v3:** notas de texto guardam o conteúdo integral em
+  `notes.markdown`; notas de lista guardam itens ordenados em `note_lines` e
+  deixam `markdown` nulo. A UI mantém os modos Texto e Lista.
+- **Migração v2 → v3:** as linhas das notas `type='text'` são unidas em um único
+  Markdown (`\n`), essas linhas são removidas e as listas ficam intactas. O
+  fallback `Note.plainText` cobre dados antigos sem perder conteúdo.
+- **Markdown:** `flutter_markdown_plus 1.0.12`, pois `flutter_markdown` está
+  descontinuado. O detalhe renderiza a formatação; `softLineBreak: true` trata
+  Enter como quebra visível, mantendo parágrafos separados por linha em branco.
+- **Snapshot de texto:** diálogo com o Markdown cru selecionável e título
+  preenchido; sem seleção, usa a nota inteira. O snapshot é cópia literal do
+  trecho, incluindo a sintaxe Markdown escolhida.
+- **Snapshot de lista:** seleção por toque em uma ou várias linhas, como antes.
 - **Snapshot:** `noteExcerpt` com `noteId = null`; editar a nota não altera o
   texto copiado. A UI marca “Trecho copiado”.
 - **Vínculo vivo:** `noteId` (referência à nota inteira); a UI marca “Nota
@@ -211,7 +220,9 @@ etapas. Cada item: contexto, decisão, consequência.
 
 - Servidor, autenticação remota, sincronização distribuída.
 - Posicionamento livre de post-its.
-- Seleção de substring arbitrária em notas (MVP: linha ou intervalo de linhas).
+- Editor WYSIWYG para Markdown e abertura de links externos.
+- Seleção de substring arbitrária em listas (MVP: linha ou intervalo; em notas
+  de texto o snapshot usa seleção no Markdown cru).
 
 ## Pendente de decisão
 
