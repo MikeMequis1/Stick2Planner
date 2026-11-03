@@ -8,7 +8,9 @@ Checklist final do MVP local do Planner.
   reordenação, redimensionamento, estados e recorrência.
 - Caixinha: filtros, busca, tarefas sem data e acesso aos detalhes.
 - Notas: texto Markdown, listas, snapshots e vínculos com post-its.
-- Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 e
+- Navegação: post-it vinculado/snapshot → Agenda → detalhe existente; Caixinha
+  com “Abrir na Agenda” para post-its datados.
+- Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 → v4 e
   tombstones.
 
 ## Matriz de validação
@@ -60,6 +62,10 @@ Checklist final do MVP local do Planner.
 - Não há preferência de “reduzir movimento”; as animações são curtas.
 - A grade mantém gutter óptico de 1,5 px entre células no mês.
 - Dois/três toques abrem o formulário configurado; a gravação ocorre ao salvar.
+- Snapshots criados antes da migração v4 não têm `sourceNoteId` e não aparecem
+  em “Trechos desta nota”; continuam acessíveis pela Caixinha.
+- Importação, exportação, CalDAV e sincronização não foram implementados;
+  decisões registradas em `docs/DECISOES.md`.
 
 ## Comandos finais
 
@@ -72,5 +78,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 167 testes aprovados.
+- `flutter test`: 172 testes aprovados.
 - `flutter build apk --debug`: aprovado.

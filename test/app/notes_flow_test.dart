@@ -242,7 +242,7 @@ void main() {
 
   testWidgets('cria snapshot a partir de um trecho Markdown', (tester) async {
     final dependencies = await pumpPlanner(tester);
-    await dependencies.notes.createNote(
+    final note = await dependencies.notes.createNote(
       title: 'Receita',
       type: NoteType.text,
       markdown: '# Receita\n\n- farinha\n- água',
@@ -276,6 +276,7 @@ void main() {
     expect(postIt.title, 'Farinha');
     expect(postIt.noteId, isNull);
     expect(postIt.noteExcerpt, '- farinha');
+    expect(postIt.sourceNoteId, note.id);
     expect(postIt.type, PostItType.task);
 
     final detail = dependencies.notes.notes.single;

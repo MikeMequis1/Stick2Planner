@@ -16,8 +16,8 @@ part 'app_database.g.dart';
 
 /// Banco local do aplicativo.
 ///
-/// Esquema v3: preferências, post-its, notas (texto Markdown ou linhas),
-/// histórico.
+/// Esquema v4: preferências, post-its, notas (texto Markdown ou linhas),
+/// histórico; snapshots guardam a nota de origem.
 @DriftDatabase(
   tables: [AppSettings, Notes, NoteLines, PostIts, PostItHistoryEntries],
 )
@@ -25,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -60,6 +60,10 @@ class AppDatabase extends _$AppDatabase {
             WHERE note_id IN (SELECT id FROM notes WHERE type = 'text')
           ''');
         }
+      }
+      if (from < 4 && from >= 2) {
+        // Proveniência de snapshots; bancos v1 já criam a tabela atual.
+        await migrator.addColumn(postIts, postIts.sourceNoteId);
       }
     },
     beforeOpen: (details) async {

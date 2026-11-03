@@ -3,6 +3,7 @@ import '../data/db/app_database.dart';
 import '../data/repositories/drift_note_repository.dart';
 import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
+import 'controllers/app_navigation_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
 import 'services/screen_wake_service.dart';
@@ -16,8 +17,10 @@ final class AppDependencies {
     required this.database,
     required this.planner,
     required this.notes,
+    AppNavigationController? navigation,
     ScreenWakeService? screenWake,
-  }) : screenWake = screenWake ?? const WakelockPlusScreenWakeService();
+  }) : navigation = navigation ?? AppNavigationController(),
+       screenWake = screenWake ?? const WakelockPlusScreenWakeService();
 
   factory AppDependencies.fromDatabase(
     AppDatabase database, {
@@ -47,6 +50,7 @@ final class AppDependencies {
   final AppDatabase database;
   final PlannerController planner;
   final NotesController notes;
+  final AppNavigationController navigation;
   final ScreenWakeService screenWake;
 
   Future<void> initialize() async {
@@ -56,6 +60,7 @@ final class AppDependencies {
   Future<void> dispose() async {
     planner.dispose();
     notes.dispose();
+    navigation.dispose();
     await database.close();
   }
 }

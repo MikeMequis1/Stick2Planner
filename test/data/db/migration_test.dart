@@ -61,6 +61,9 @@ void main() {
     final legacyDb = AppDatabase(NativeDatabase(file));
     await legacyDb.customStatement('ALTER TABLE notes DROP COLUMN markdown');
     await legacyDb.customStatement(
+      'ALTER TABLE post_its DROP COLUMN source_note_id',
+    );
+    await legacyDb.customStatement(
       'INSERT INTO notes (id, title, type, created_at, updated_at) '
       "VALUES ('nota-texto', 'Texto legado', 'text', 0, 0)",
     );
@@ -97,5 +100,35 @@ void main() {
       'Levar água',
     ]);
     expect(checklist.lines[1].isChecked, isTrue);
+  });
+
+  test('migra v3 para v4 preservando snapshots existentes', () async {
+    final tempDir = await Directory.systemTemp.createTemp('planner_migrate_');
+    addTearDown(() => tempDir.delete(recursive: true));
+    final file = File(p.join(tempDir.path, 'planner.sqlite'));
+
+    final legacyDb = AppDatabase(NativeDatabase(file));
+    await DriftPostItRepository(legacyDb).save(
+      buildPostIt(
+        id: 'snapshot-legado',
+        title: 'Trecho',
+        noteExcerpt: 'Conteúdo do trecho',
+      ),
+    );
+    await legacyDb.customStatement(
+      'ALTER TABLE post_its DROP COLUMN source_note_id',
+    );
+    await legacyDb.customStatement('PRAGMA user_version = 3');
+    await legacyDb.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+
+    final snapshot = await DriftPostItRepository(
+      db,
+    ).findById('snapshot-legado');
+    expect(snapshot, isNotNull);
+    expect(snapshot!.noteExcerpt, 'Conteúdo do trecho');
+    expect(snapshot.sourceNoteId, isNull);
   });
 }

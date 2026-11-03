@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/controllers/app_navigation_controller.dart';
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../inbox/inbox_page.dart';
@@ -22,8 +23,6 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell>
     with WidgetsBindingObserver {
   static const _wideBreakpoint = 720.0;
-
-  int _index = 0;
 
   @override
   void initState() {
@@ -88,8 +87,7 @@ class _HomeShellState extends State<HomeShell>
   ];
 
   void _select(int index) {
-    if (index == _index) return;
-    setState(() => _index = index);
+    AppScope.of(context).navigation.select(AppSection.values[index]);
   }
 
   @override
@@ -97,70 +95,78 @@ class _HomeShellState extends State<HomeShell>
     final width = MediaQuery.sizeOf(context).width;
     final useRail = width >= _wideBreakpoint;
     final isCompact = width < 600;
-    final planner = AppScope.of(context).planner;
+    final app = AppScope.of(context);
+    final planner = app.planner;
+    final navigation = app.navigation;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text(AppStrings.appName),
-        actions: [
-          if (isCompact)
-            IconButton(
-              key: const Key('add-post-it'),
-              tooltip: AppStrings.newPostIt,
-              onPressed: () => showPostItEditorSheet(
-                context,
-                controller: planner,
-                initialDate: planner.selectedDate,
+    return ListenableBuilder(
+      listenable: navigation,
+      builder: (context, _) {
+        final index = navigation.section.index;
+        return Scaffold(
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            title: const Text(AppStrings.appName),
+            actions: [
+              if (isCompact)
+                IconButton(
+                  key: const Key('add-post-it'),
+                  tooltip: AppStrings.newPostIt,
+                  onPressed: () => showPostItEditorSheet(
+                    context,
+                    controller: planner,
+                    initialDate: planner.selectedDate,
+                  ),
+                  icon: const Icon(Icons.add),
+                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Tooltip(
+                  message: AppStrings.offlineNotice,
+                  child: Icon(Icons.cloud_off_outlined),
+                ),
               ),
-              icon: const Icon(Icons.add),
-            ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Tooltip(
-              message: AppStrings.offlineNotice,
-              child: Icon(Icons.cloud_off_outlined),
-            ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: useRail
-            ? Row(
-                children: [
-                  NavigationRail(
-                    selectedIndex: _index,
-                    onDestinationSelected: _select,
-                    destinations: _railDestinations,
+          body: SafeArea(
+            top: false,
+            child: useRail
+                ? Row(
+                    children: [
+                      NavigationRail(
+                        selectedIndex: index,
+                        onDestinationSelected: _select,
+                        destinations: _railDestinations,
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(
+                        child: IndexedStack(index: index, children: _pages),
+                      ),
+                    ],
+                  )
+                : IndexedStack(index: index, children: _pages),
+          ),
+          bottomNavigationBar: useRail
+              ? null
+              : NavigationBar(
+                  selectedIndex: index,
+                  onDestinationSelected: _select,
+                  destinations: _barDestinations,
+                ),
+          floatingActionButton: index == AppSection.agenda.index && !isCompact
+              ? FloatingActionButton.extended(
+                  key: const Key('add-post-it'),
+                  onPressed: () => showPostItEditorSheet(
+                    context,
+                    controller: planner,
+                    initialDate: planner.selectedDate,
                   ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: IndexedStack(index: _index, children: _pages),
-                  ),
-                ],
-              )
-            : IndexedStack(index: _index, children: _pages),
-      ),
-      bottomNavigationBar: useRail
-          ? null
-          : NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: _select,
-              destinations: _barDestinations,
-            ),
-      floatingActionButton: _index == 0 && !isCompact
-          ? FloatingActionButton.extended(
-              key: const Key('add-post-it'),
-              onPressed: () => showPostItEditorSheet(
-                context,
-                controller: planner,
-                initialDate: planner.selectedDate,
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text(AppStrings.newPostIt),
-            )
-          : null,
+                  icon: const Icon(Icons.add),
+                  label: const Text(AppStrings.newPostIt),
+                )
+              : null,
+        );
+      },
     );
   }
 }

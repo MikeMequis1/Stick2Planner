@@ -62,6 +62,7 @@ class PostIts extends Table {
   TextColumn get noteId =>
       text().nullable().references(Notes, #id, onDelete: KeyAction.setNull)();
   TextColumn get noteExcerpt => text().nullable()();
+  TextColumn get sourceNoteId => text().nullable()();
   TextColumn get startDate =>
       text().map(const DateOnlyConverter()).nullable()();
   TextColumn get endDate => text().map(const DateOnlyConverter()).nullable()();

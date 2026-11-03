@@ -292,6 +292,7 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
     String? noteId,
     String? noteExcerpt,
+    String? sourceNoteId,
   }) {
     return _exclusive(() async {
       await _applyRecurringRollover();
@@ -308,6 +309,7 @@ final class PlannerController extends ChangeNotifier {
         details: _normalizeDetails(details),
         noteId: noteId,
         noteExcerpt: noteId == null ? _normalizeDetails(noteExcerpt) : null,
+        sourceNoteId: noteId == null ? sourceNoteId : null,
         startDate: resolvedStart,
         endDate: _normalizeEndDate(type, resolvedStart, endDate),
         sortOrder: _nextOrderFor(resolvedStart),

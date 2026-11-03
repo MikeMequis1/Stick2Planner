@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'controllers/app_navigation_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
 
@@ -11,11 +12,13 @@ class AppScope extends InheritedWidget {
     super.key,
     required this.planner,
     required this.notes,
+    required this.navigation,
     required super.child,
   });
 
   final PlannerController planner;
   final NotesController notes;
+  final AppNavigationController navigation;
 
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
@@ -25,5 +28,7 @@ class AppScope extends InheritedWidget {
 
   @override
   bool updateShouldNotify(AppScope oldWidget) =>
-      planner != oldWidget.planner || notes != oldWidget.notes;
+      planner != oldWidget.planner ||
+      notes != oldWidget.notes ||
+      navigation != oldWidget.navigation;
 }

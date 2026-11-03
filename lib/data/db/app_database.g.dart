@@ -1124,6 +1124,17 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceNoteIdMeta = const VerificationMeta(
+    'sourceNoteId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceNoteId = GeneratedColumn<String>(
+    'source_note_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<DateOnly?, String> startDate =
       GeneratedColumn<String>(
@@ -1208,6 +1219,7 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     details,
     noteId,
     noteExcerpt,
+    sourceNoteId,
     startDate,
     endDate,
     sortOrder,
@@ -1268,6 +1280,15 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         noteExcerpt.isAcceptableOrUnknown(
           data['note_excerpt']!,
           _noteExcerptMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_note_id')) {
+      context.handle(
+        _sourceNoteIdMeta,
+        sourceNoteId.isAcceptableOrUnknown(
+          data['source_note_id']!,
+          _sourceNoteIdMeta,
         ),
       );
     }
@@ -1353,6 +1374,10 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         DriftSqlType.string,
         data['${effectivePrefix}note_excerpt'],
       ),
+      sourceNoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_note_id'],
+      ),
       startDate: $PostItsTable.$converterstartDaten.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -1416,6 +1441,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
   final String? details;
   final String? noteId;
   final String? noteExcerpt;
+  final String? sourceNoteId;
   final DateOnly? startDate;
   final DateOnly? endDate;
   final int sortOrder;
@@ -1432,6 +1458,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     this.details,
     this.noteId,
     this.noteExcerpt,
+    this.sourceNoteId,
     this.startDate,
     this.endDate,
     required this.sortOrder,
@@ -1462,6 +1489,9 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     }
     if (!nullToAbsent || noteExcerpt != null) {
       map['note_excerpt'] = Variable<String>(noteExcerpt);
+    }
+    if (!nullToAbsent || sourceNoteId != null) {
+      map['source_note_id'] = Variable<String>(sourceNoteId);
     }
     if (!nullToAbsent || startDate != null) {
       map['start_date'] = Variable<String>(
@@ -1501,6 +1531,9 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       noteExcerpt: noteExcerpt == null && nullToAbsent
           ? const Value.absent()
           : Value(noteExcerpt),
+      sourceNoteId: sourceNoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceNoteId),
       startDate: startDate == null && nullToAbsent
           ? const Value.absent()
           : Value(startDate),
@@ -1537,6 +1570,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       details: serializer.fromJson<String?>(json['details']),
       noteId: serializer.fromJson<String?>(json['noteId']),
       noteExcerpt: serializer.fromJson<String?>(json['noteExcerpt']),
+      sourceNoteId: serializer.fromJson<String?>(json['sourceNoteId']),
       startDate: serializer.fromJson<DateOnly?>(json['startDate']),
       endDate: serializer.fromJson<DateOnly?>(json['endDate']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
@@ -1562,6 +1596,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       'details': serializer.toJson<String?>(details),
       'noteId': serializer.toJson<String?>(noteId),
       'noteExcerpt': serializer.toJson<String?>(noteExcerpt),
+      'sourceNoteId': serializer.toJson<String?>(sourceNoteId),
       'startDate': serializer.toJson<DateOnly?>(startDate),
       'endDate': serializer.toJson<DateOnly?>(endDate),
       'sortOrder': serializer.toJson<int>(sortOrder),
@@ -1581,6 +1616,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     Value<String?> details = const Value.absent(),
     Value<String?> noteId = const Value.absent(),
     Value<String?> noteExcerpt = const Value.absent(),
+    Value<String?> sourceNoteId = const Value.absent(),
     Value<DateOnly?> startDate = const Value.absent(),
     Value<DateOnly?> endDate = const Value.absent(),
     int? sortOrder,
@@ -1597,6 +1633,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     details: details.present ? details.value : this.details,
     noteId: noteId.present ? noteId.value : this.noteId,
     noteExcerpt: noteExcerpt.present ? noteExcerpt.value : this.noteExcerpt,
+    sourceNoteId: sourceNoteId.present ? sourceNoteId.value : this.sourceNoteId,
     startDate: startDate.present ? startDate.value : this.startDate,
     endDate: endDate.present ? endDate.value : this.endDate,
     sortOrder: sortOrder ?? this.sortOrder,
@@ -1621,6 +1658,9 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       noteExcerpt: data.noteExcerpt.present
           ? data.noteExcerpt.value
           : this.noteExcerpt,
+      sourceNoteId: data.sourceNoteId.present
+          ? data.sourceNoteId.value
+          : this.sourceNoteId,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
@@ -1644,6 +1684,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           ..write('details: $details, ')
           ..write('noteId: $noteId, ')
           ..write('noteExcerpt: $noteExcerpt, ')
+          ..write('sourceNoteId: $sourceNoteId, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('sortOrder: $sortOrder, ')
@@ -1665,6 +1706,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     details,
     noteId,
     noteExcerpt,
+    sourceNoteId,
     startDate,
     endDate,
     sortOrder,
@@ -1685,6 +1727,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           other.details == this.details &&
           other.noteId == this.noteId &&
           other.noteExcerpt == this.noteExcerpt &&
+          other.sourceNoteId == this.sourceNoteId &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.sortOrder == this.sortOrder &&
@@ -1703,6 +1746,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
   final Value<String?> details;
   final Value<String?> noteId;
   final Value<String?> noteExcerpt;
+  final Value<String?> sourceNoteId;
   final Value<DateOnly?> startDate;
   final Value<DateOnly?> endDate;
   final Value<int> sortOrder;
@@ -1720,6 +1764,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.details = const Value.absent(),
     this.noteId = const Value.absent(),
     this.noteExcerpt = const Value.absent(),
+    this.sourceNoteId = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -1738,6 +1783,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.details = const Value.absent(),
     this.noteId = const Value.absent(),
     this.noteExcerpt = const Value.absent(),
+    this.sourceNoteId = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.sortOrder = const Value.absent(),
@@ -1761,6 +1807,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Expression<String>? details,
     Expression<String>? noteId,
     Expression<String>? noteExcerpt,
+    Expression<String>? sourceNoteId,
     Expression<String>? startDate,
     Expression<String>? endDate,
     Expression<int>? sortOrder,
@@ -1779,6 +1826,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       if (details != null) 'details': details,
       if (noteId != null) 'note_id': noteId,
       if (noteExcerpt != null) 'note_excerpt': noteExcerpt,
+      if (sourceNoteId != null) 'source_note_id': sourceNoteId,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (sortOrder != null) 'sort_order': sortOrder,
@@ -1799,6 +1847,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Value<String?>? details,
     Value<String?>? noteId,
     Value<String?>? noteExcerpt,
+    Value<String?>? sourceNoteId,
     Value<DateOnly?>? startDate,
     Value<DateOnly?>? endDate,
     Value<int>? sortOrder,
@@ -1817,6 +1866,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       details: details ?? this.details,
       noteId: noteId ?? this.noteId,
       noteExcerpt: noteExcerpt ?? this.noteExcerpt,
+      sourceNoteId: sourceNoteId ?? this.sourceNoteId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -1858,6 +1908,9 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     }
     if (noteExcerpt.present) {
       map['note_excerpt'] = Variable<String>(noteExcerpt.value);
+    }
+    if (sourceNoteId.present) {
+      map['source_note_id'] = Variable<String>(sourceNoteId.value);
     }
     if (startDate.present) {
       map['start_date'] = Variable<String>(
@@ -1901,6 +1954,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
           ..write('details: $details, ')
           ..write('noteId: $noteId, ')
           ..write('noteExcerpt: $noteExcerpt, ')
+          ..write('sourceNoteId: $sourceNoteId, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('sortOrder: $sortOrder, ')
@@ -3307,6 +3361,7 @@ typedef $$PostItsTableCreateCompanionBuilder = PostItsCompanion Function({
   Value<String?> details,
   Value<String?> noteId,
   Value<String?> noteExcerpt,
+  Value<String?> sourceNoteId,
   Value<DateOnly?> startDate,
   Value<DateOnly?> endDate,
   Value<int> sortOrder,
@@ -3325,6 +3380,7 @@ typedef $$PostItsTableUpdateCompanionBuilder = PostItsCompanion Function({
   Value<String?> details,
   Value<String?> noteId,
   Value<String?> noteExcerpt,
+  Value<String?> sourceNoteId,
   Value<DateOnly?> startDate,
   Value<DateOnly?> endDate,
   Value<int> sortOrder,
@@ -3422,6 +3478,11 @@ class $$PostItsTableFilterComposer
 
   ColumnFilters<String> get noteExcerpt => $composableBuilder(
     column: $table.noteExcerpt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceNoteId => $composableBuilder(
+    column: $table.sourceNoteId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3555,6 +3616,11 @@ class $$PostItsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourceNoteId => $composableBuilder(
+    column: $table.sourceNoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get startDate => $composableBuilder(
     column: $table.startDate,
     builder: (column) => ColumnOrderings(column),
@@ -3645,6 +3711,11 @@ class $$PostItsTableAnnotationComposer
 
   GeneratedColumn<String> get noteExcerpt => $composableBuilder(
     column: $table.noteExcerpt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceNoteId => $composableBuilder(
+    column: $table.sourceNoteId,
     builder: (column) => column,
   );
 
@@ -3757,6 +3828,7 @@ class $$PostItsTableTableManager
                 Value<String?> details = const Value.absent(),
                 Value<String?> noteId = const Value.absent(),
                 Value<String?> noteExcerpt = const Value.absent(),
+                Value<String?> sourceNoteId = const Value.absent(),
                 Value<DateOnly?> startDate = const Value.absent(),
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -3774,6 +3846,7 @@ class $$PostItsTableTableManager
                 details: details,
                 noteId: noteId,
                 noteExcerpt: noteExcerpt,
+                sourceNoteId: sourceNoteId,
                 startDate: startDate,
                 endDate: endDate,
                 sortOrder: sortOrder,
@@ -3793,6 +3866,7 @@ class $$PostItsTableTableManager
                 Value<String?> details = const Value.absent(),
                 Value<String?> noteId = const Value.absent(),
                 Value<String?> noteExcerpt = const Value.absent(),
+                Value<String?> sourceNoteId = const Value.absent(),
                 Value<DateOnly?> startDate = const Value.absent(),
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
@@ -3810,6 +3884,7 @@ class $$PostItsTableTableManager
                 details: details,
                 noteId: noteId,
                 noteExcerpt: noteExcerpt,
+                sourceNoteId: sourceNoteId,
                 startDate: startDate,
                 endDate: endDate,
                 sortOrder: sortOrder,

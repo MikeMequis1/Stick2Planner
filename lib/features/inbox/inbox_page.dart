@@ -5,16 +5,16 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../core/date_formatting.dart';
 import '../../domain/entities/post_it.dart';
-import '../planner/widgets/post_it_details_sheet.dart';
-import '../planner/widgets/post_it_editor_sheet.dart';
+import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
-import '../notes/note_detail_page.dart';
 import '../shared/empty_state.dart';
 
 enum _InboxFilter { all, active, done, cancelled, undated }
 
 enum _InboxSort { date, updated, title }
+
+enum _InboxMenuAction { openInAgenda, done, reopen, cancel }
 
 /// Repositório central de post-its, incluindo os sem data.
 class InboxPage extends StatefulWidget {
@@ -101,22 +101,10 @@ class _InboxPageState extends State<InboxPage> {
     PlannerController planner,
     PostIt postIt,
   ) {
-    showPostItDetailsSheet(
+    openPostItDetailsById(
       context,
-      postIt: postIt,
-      planner: planner,
-      notesController: AppScope.of(context).notes,
-      onOpenNote: (note) => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => NoteDetailPage(noteId: note.id),
-        ),
-      ),
-      onEdit: (current) => showPostItEditorSheet(
-        context,
-        controller: planner,
-        initialDate: current.startDate ?? planner.selectedDate,
-        existing: current,
-      ),
+      postItId: postIt.id,
+      goToAgenda: false,
     );
   }
 
@@ -234,6 +222,10 @@ class _InboxPageState extends State<InboxPage> {
                               postIt,
                               status,
                             ),
+                            onOpenAgenda: () => openPostItDetailsById(
+                              context,
+                              postItId: postIt.id,
+                            ),
                           );
                         },
                       ),
@@ -260,12 +252,14 @@ class _InboxRow extends StatelessWidget {
     required this.planner,
     required this.onTap,
     required this.onStatus,
+    required this.onOpenAgenda,
   });
 
   final PostIt postIt;
   final PlannerController planner;
   final VoidCallback onTap;
   final ValueChanged<PostItStatus> onStatus;
+  final VoidCallback onOpenAgenda;
 
   @override
   Widget build(BuildContext context) {
@@ -289,24 +283,40 @@ class _InboxRow extends StatelessWidget {
                 ),
               ),
             ),
-            PopupMenuButton<PostItStatus>(
+            PopupMenuButton<_InboxMenuAction>(
               key: Key('inbox-menu-${postIt.id}'),
               tooltip: AppStrings.statusMenu,
-              onSelected: onStatus,
+              onSelected: (action) {
+                switch (action) {
+                  case _InboxMenuAction.openInAgenda:
+                    onOpenAgenda();
+                  case _InboxMenuAction.done:
+                    onStatus(PostItStatus.done);
+                  case _InboxMenuAction.reopen:
+                    onStatus(PostItStatus.active);
+                  case _InboxMenuAction.cancel:
+                    onStatus(PostItStatus.cancelled);
+                }
+              },
               itemBuilder: (context) => [
+                if (postIt.startDate != null)
+                  const PopupMenuItem(
+                    value: _InboxMenuAction.openInAgenda,
+                    child: Text(AppStrings.openInAgenda),
+                  ),
                 if (postIt.status == PostItStatus.active)
                   const PopupMenuItem(
-                    value: PostItStatus.done,
+                    value: _InboxMenuAction.done,
                     child: Text(AppStrings.statusDoneAction),
                   )
                 else
                   const PopupMenuItem(
-                    value: PostItStatus.active,
+                    value: _InboxMenuAction.reopen,
                     child: Text(AppStrings.statusReopenAction),
                   ),
                 if (postIt.status != PostItStatus.cancelled)
                   const PopupMenuItem(
-                    value: PostItStatus.cancelled,
+                    value: _InboxMenuAction.cancel,
                     child: Text(AppStrings.statusCancelAction),
                   ),
               ],

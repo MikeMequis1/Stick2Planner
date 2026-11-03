@@ -19,6 +19,7 @@ class PlannerApp extends StatelessWidget {
     return AppScope(
       planner: dependencies.planner,
       notes: dependencies.notes,
+      navigation: dependencies.navigation,
       child: MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,

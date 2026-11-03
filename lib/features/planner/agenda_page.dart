@@ -6,14 +6,13 @@ import '../../app/controllers/planner_controller.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
-import '../notes/note_detail_page.dart';
 import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_labels.dart';
 import 'widgets/calendar_toolbar.dart';
 import 'widgets/day_details_sheet.dart';
 import 'widgets/hidden_events_sheet.dart';
-import 'widgets/post_it_details_sheet.dart';
 import 'widgets/post_it_editor_sheet.dart';
+import 'widgets/post_it_navigation.dart';
 
 /// Agenda visual por período, com post-its e eventos multi-dia contínuos.
 class AgendaPage extends StatelessWidget {
@@ -221,22 +220,10 @@ class AgendaPage extends StatelessWidget {
     PlannerController planner,
     PostIt postIt,
   ) {
-    showPostItDetailsSheet(
+    openPostItDetailsById(
       context,
-      postIt: postIt,
-      planner: planner,
-      notesController: AppScope.of(context).notes,
-      onOpenNote: (note) => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => NoteDetailPage(noteId: note.id),
-        ),
-      ),
-      onEdit: (current) => showPostItEditorSheet(
-        context,
-        controller: planner,
-        initialDate: current.startDate ?? planner.selectedDate,
-        existing: current,
-      ),
+      postItId: postIt.id,
+      goToAgenda: false,
     );
   }
 }

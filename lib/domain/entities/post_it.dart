@@ -19,6 +19,7 @@ final class PostIt {
     this.details,
     this.noteId,
     this.noteExcerpt,
+    this.sourceNoteId,
     this.startDate,
     this.endDate,
     this.sortOrder = 0,
@@ -41,6 +42,9 @@ final class PostIt {
 
   /// Trecho copiado da nota; não acompanha edições posteriores.
   final String? noteExcerpt;
+
+  /// Nota de origem de um snapshot; metadado de proveniência, não vínculo vivo.
+  final String? sourceNoteId;
 
   /// Primeiro dia (data única para tarefas e recorrentes).
   final DateOnly? startDate;
@@ -92,6 +96,7 @@ final class PostIt {
     Object? details = _unset,
     Object? noteId = _unset,
     Object? noteExcerpt = _unset,
+    Object? sourceNoteId = _unset,
     Object? startDate = _unset,
     Object? endDate = _unset,
     int? sortOrder,
@@ -113,6 +118,9 @@ final class PostIt {
       noteExcerpt: identical(noteExcerpt, _unset)
           ? this.noteExcerpt
           : noteExcerpt as String?,
+      sourceNoteId: identical(sourceNoteId, _unset)
+          ? this.sourceNoteId
+          : sourceNoteId as String?,
       startDate: identical(startDate, _unset)
           ? this.startDate
           : startDate as DateOnly?,

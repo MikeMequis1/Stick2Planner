@@ -247,6 +247,81 @@ etapas. Cada item: contexto, decisão, consequência.
   `intl` configurados. Textos em um único ponto para permitir i18n futura sem
   reescrever telas.
 
+## Navegação entre notas, caixinha e agenda
+
+- **Seção compartilhada:** `AppNavigationController` mantém a seção atual da
+  casca e permite que rotas empilhadas (detalhe de nota) voltem para a Agenda.
+- **Abertura por UUID:** um único helper busca o post-it existente, abre o mesmo
+  detalhe/edição e não cria cópia. Se o UUID não existir, mostra aviso e não
+  navega.
+- **Notas:** post-its com vínculo vivo (`noteId`) e snapshots com proveniência
+  (`sourceNoteId`) listados no detalhe da nota abrem a Agenda.
+- **Caixinha:** o menu `...` mostra “Abrir na Agenda” somente quando
+  `startDate != null`; as ações de status permanecem inalteradas.
+- **Proveniência do snapshot:** `sourceNoteId` é metadado de origem para
+  navegação; não é vínculo vivo, não altera o snapshot e não impede a nota de
+  ser editada/excluída. Snapshots anteriores à migração v4 não têm proveniência.
+
+## Interoperabilidade, backup e sincronização (etapa futura)
+
+**Status:** decisões registradas; nada implementado nesta rodada. Não há
+servidor, CalDAV, importação, exportação ou sincronização no código atual.
+
+### Banco local como fonte principal
+
+- Drift/SQLite continua sendo a fonte de verdade do aplicativo.
+- O Planner deve continuar funcionando integralmente offline.
+- O arquivo SQLite não deve ser sincronizado diretamente entre dispositivos.
+- A arquitetura local não deve ser substituída por uma solução dependente de
+  servidor.
+
+### Backup e restauração em JSON próprio
+
+- Formato JSON versionado do Planner para exportação/importação completas.
+- Deve preservar UUIDs, tipos de post-it, estados, datas, recorrências,
+  detalhes, ordenação, Markdown, listas/checklists, snapshots, vínculos com
+  notas, histórico, tombstones e metadados necessários à restauração.
+- Deve incluir `formatVersion`, data de exportação e versão do app.
+- A restauração deve ser fiel ao estado exportado; formatos externos não são
+  usados como backup principal.
+- Estratégias de mesclagem/substituição e resolução de conflitos ficam para o
+  desenho da etapa de implementação.
+
+### Interoperabilidade: Radicale, CalDAV e iCalendar
+
+- **Radicale** é a referência de servidor CalDAV leve, open-source, executável
+  por Docker; imagem considerada: `ghcr.io/kozea/radicale:stable`.
+- **CalDAV** (RFC 4791) é o protocolo de comunicação/sincronização.
+- **iCalendar** (RFC 5545) é o formato de interoperabilidade.
+- Mapeamento previsto: eventos → `VEVENT`; tarefas → `VTODO`; propriedades
+  específicas → `X-*`.
+- O Radicale é uma camada de interoperabilidade, não um substituto do banco
+  local nem uma sincronização completa do Planner.
+- Recorrências com rollover próprio, Markdown, checklists, snapshots, histórico,
+  vínculos e ordenação podem não ter equivalente no iCalendar. Dados internos
+  não devem ser descartados para caber no padrão.
+- Documentação: <https://radicale.org/>, <https://github.com/Kozea/Radicale>.
+- O pacote Dart `caldav` pode ser avaliado em protótipo futuro, mas não é
+  dependência aprovada sem testes reais de compatibilidade com o Radicale.
+
+### Possível serviço próprio de sincronização
+
+Uma sincronização completa entre instalações pode exigir um serviço próprio,
+também executável em Docker. A arquitetura poderá considerar:
+
+- outbox de alterações;
+- UUIDs estáveis;
+- versionamento;
+- tombstones;
+- ETags;
+- detecção e resolução de conflitos;
+- sincronização oportunística, sem impedir o uso offline.
+
+### Escopo
+
+A implementação pertence a uma etapa futura ainda não iniciada. Esta rodada
+apenas registra as decisões e mantém o MVP local intacto.
+
 ## Fora de escopo no MVP
 
 - Servidor, autenticação remota, sincronização distribuída.

@@ -9,6 +9,7 @@ import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
+import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../shared/empty_state.dart';
 import 'note_editor_page.dart';
@@ -49,6 +50,11 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         final linkedPostIts = [
           for (final postIt in planner.postIts)
             if (postIt.noteId == note.id) postIt,
+        ];
+        final snapshotPostIts = [
+          for (final postIt in planner.postIts)
+            if (postIt.noteId == null && postIt.sourceNoteId == note.id)
+              postIt,
         ];
 
         return Scaffold(
@@ -190,11 +196,43 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
+                            key: Key('note-linked-postit-${postIt.id}'),
                             leading: const Icon(Icons.sticky_note_2_outlined),
                             title: Text(postIt.title),
                             subtitle: Text(
                               '${postItTypeLabel(postIt)} · '
                               '${postItDateLabel(postIt)}',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => openPostItDetailsById(
+                              context,
+                              postItId: postIt.id,
+                            ),
+                          ),
+                        ),
+                    ],
+                    if (snapshotPostIts.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        AppStrings.noteSnapshots,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      for (final postIt in snapshotPostIts)
+                        Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            key: Key('note-snapshot-${postIt.id}'),
+                            leading: const Icon(Icons.content_copy_outlined),
+                            title: Text(postIt.title),
+                            subtitle: Text(
+                              '${AppStrings.noteExcerptChip} · '
+                              '${postItDateLabel(postIt)}',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => openPostItDetailsById(
+                              context,
+                              postItId: postIt.id,
                             ),
                           ),
                         ),
@@ -354,6 +392,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         title: selection.title,
         type: PostItType.task,
         noteExcerpt: selection.excerpt,
+        sourceNoteId: note.id,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

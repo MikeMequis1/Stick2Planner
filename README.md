@@ -8,7 +8,9 @@ funcionalidade essencial depende de internet.
 ## Estado do projeto
 
 Etapas 0 a 6 concluídas. A agenda, organização, caderno de notas e a rodada de
-qualidade/acessibilidade estão implementados no MVP offline.
+qualidade/acessibilidade estão implementados no MVP offline. Uma rodada
+pós-MVP adicionou navegação entre post-its e registrou a arquitetura futura de
+interoperabilidade/sincronização (não implementada).
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema, repositórios, tema, navegação)
@@ -59,7 +61,7 @@ lib/
     repositories/               # contratos (post-it, nota, preferências)
     usecases/                   # validação de post-it
   data/
-    db/                         # esquema drift v3, conversores, migrações
+    db/                         # esquema drift v4, conversores, migrações
     mappers/                    # linha drift <-> entidade
     repositories/               # implementações drift
   app/
@@ -126,7 +128,9 @@ não importa Flutter nem drift.
   o estado fica no banco, com histórico. Reabrir restaura para ativa.
 - A caixinha lista todos os post-its, inclusive sem data, com filtros (todas,
   ativas, concluídas, canceladas, sem data), busca por título/detalhes/trecho e
-  ordenação por data, atualização ou título.
+  ordenação por data, atualização ou título. O menu `...` oferece “Abrir na
+  Agenda” apenas para post-its com data; a opção abre o mesmo registro e
+  preserva estado e data.
 - TO-DO recorrente: uma única pendência sem cópias. Pendente e atrasada avança
   para o dia local na abertura/retomada e antes de mutações; a operação é
   idempotente e registra histórico.
@@ -191,6 +195,8 @@ não importa Flutter nem drift.
   do post-it. O detalhe mostra “Nota vinculada”.
 - Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
   snapshots existentes permanecem. A nota usa tombstone.
+- Post-its vinculados e snapshots com proveniência (`sourceNoteId`) aparecem no
+  detalhe da nota; tocar abre o mesmo post-it na Agenda, sem criar cópia.
 - Limitações conscientes: a barra insere sintaxe (não é WYSIWYG); a prévia é
   um painel de conferência; dois/três toques abrem o formulário já configurado e
   só gravam ao salvar; links não abrem navegador; o snapshot de texto é escolhido
@@ -200,14 +206,14 @@ não importa Flutter nem drift.
 
 - `PostIt`: UUID, título, tipo (`task`, `event`, `recurringTodo`), estado
   (`active`, `done`, `cancelled`), `isHighlight` (`+`), detalhes, vínculo de
-  nota (`noteId` + snapshot `noteExcerpt`), data/início/fim, `sortOrder`,
-  timestamps e tombstone (`deletedAt`).
+  nota (`noteId`), snapshot (`noteExcerpt`) com proveniência (`sourceNoteId`),
+  data/início/fim, `sortOrder`, timestamps e tombstone (`deletedAt`).
 - `Note` + `NoteLine`: nota de texto com `markdown` integral ou lista com
   linhas ordenadas.
 - `PostItHistoryEntry`: auditoria de criação, edição, movimento, status,
   rollover etc., sem duplicar o post-it.
-- Esquema drift v3: `app_settings`, `notes`, `note_lines`, `post_its`,
-  `post_it_history_entries`, com índices e migrações v1 → v2 → v3.
+- Esquema drift v4: `app_settings`, `notes`, `note_lines`, `post_its`,
+  `post_it_history_entries`, com índices e migrações v1 → v2 → v3 → v4.
 - Datas de calendário usam `DateOnly` (sem hora), persistido como
   `aaaa-mm-dd`; timestamps em UTC (ms).
 
@@ -225,11 +231,20 @@ hooks falharem em algum ambiente, o fallback documentado é `drift_flutter`.
 
 ## Funcionamento offline e sincronização futura
 
-O app não declara permissão `INTERNET` e não possui código de rede. A
-preparação para uma futura sincronização em servidor próprio na rede local se
-limita a: IDs UUID, `updatedAt`, exclusão lógica (tombstones) e repositórios
-atrás de interfaces. Nenhum servidor, autenticação remota ou sincronização
-distribuída faz parte do MVP.
+O app não declara permissão `INTERNET` e não possui código de rede. O
+Drift/SQLite local continua sendo a fonte principal; nenhum substituto remoto
+faz parte do MVP.
+
+Decisões registradas para uma etapa futura:
+
+- backup/restauração completos em JSON próprio do Planner;
+- interoperabilidade via Radicale/CalDAV/iCalendar (`VEVENT`/`VTODO`), sem
+  descartar dados específicos do app;
+- eventual serviço próprio de sincronização com outbox, UUIDs, versionamento,
+  tombstones, ETags e resolução de conflitos.
+
+Nada disso foi implementado nesta etapa. Detalhes e limites em
+`docs/DECISOES.md`.
 
 ## Identificador do aplicativo
 

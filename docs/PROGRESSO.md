@@ -919,3 +919,50 @@ final `Etapa 6 — qualidade e entrega`.
 
 MVP da Etapa 6 concluído. Aguardando avaliação final; nenhuma etapa posterior
 foi iniciada.
+
+## Navegação de post-its e arquitetura futura (2026-11-03)
+
+### Navegação implementada
+
+- Novo `AppNavigationController` compartilha a seção atual entre a casca e rotas
+  empilhadas.
+- Helper único `openPostItDetailsById` localiza o post-it por UUID, seleciona a
+  Agenda, volta da rota de nota quando necessário e abre o detalhe existente.
+- Post-its com vínculo vivo aparecem em “Post-its vinculados”; snapshots com
+  `sourceNoteId` aparecem em “Trechos desta nota”. Tocar abre o mesmo registro.
+- Caixinha: menu `...` ganhou “Abrir na Agenda” somente para post-its com data;
+  ações de concluir/reabrir/cancelar continuam iguais.
+- UUID ausente exibe aviso e não cria post-it.
+
+### Modelo e compatibilidade
+
+- Esquema v4 adiciona `post_its.source_note_id` (nullable), metadado de
+  proveniência do snapshot; não é vínculo vivo.
+- Migração v3 → v4 preserva snapshots e apenas adiciona a coluna.
+- Snapshots antigos ficam sem proveniência e continuam acessíveis pela Caixinha.
+
+### Interoperabilidade (documentada, não implementada)
+
+- Drift/SQLite permanece como fonte principal e uso offline.
+- Backup/restauração futuro em JSON próprio com UUIDs, histórico, snapshots,
+  vínculos e metadados.
+- Radicale/CalDAV/iCalendar como camada de interoperabilidade (`VEVENT`,
+  `VTODO`, `X-*`), sem descartar dados do modelo interno.
+- Eventual serviço próprio de sincronização com outbox, versionamento,
+  tombstones, ETags e conflitos.
+- Nenhuma dependência `caldav`, servidor, exportação ou importação foi
+  adicionada nesta rodada.
+
+### Testes e resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **172 testes aprovados**.
+- `flutter build apk --debug`: aprovado.
+- Novos testes: navegação por vínculo vivo, navegação por snapshot, UUID
+  ausente, opção “Abrir na Agenda” com/sem data e preservação do menu.
+- Migração v3 → v4 coberta.
+
+### Próximo passo
+
+Aguardando avaliação. A interoperabilidade/sincronização pertence a uma etapa
+futura ainda não iniciada.

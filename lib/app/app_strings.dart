@@ -78,6 +78,9 @@ abstract final class AppStrings {
   static const linkNote = 'Vincular nota…';
   static const unlinkNote = 'Desvincular nota';
   static const openNote = 'Abrir nota';
+  static const openInAgenda = 'Abrir na Agenda';
+  static const postItNotFound = 'Post-it não encontrado.';
+  static const noteSnapshots = 'Trechos desta nota';
   static const selectNote = 'Selecionar nota';
   static const selectPostIt = 'Selecionar post-it';
   static const noteDeleted = 'Nota excluída.';
