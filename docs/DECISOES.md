@@ -175,11 +175,19 @@ etapas. Cada item: contexto, decisão, consequência.
 
 ## Notas
 
-- Notas têm linhas (`note_lines`) para texto e checklists; a seleção para
-  criar post-it é um intervalo de linhas contíguas.
-- Vínculo: `noteId` (referência viva, "Abrir nota") e `noteExcerpt` opcional
-  (snapshot do trecho). O snapshot não acompanha edições posteriores e isso é
-  informado na interface. Uma nota pode alimentar vários post-its.
+- **Implementado:** caderno com linhas (`note_lines`), ordem preservada,
+  checklist, texto livre, editor e criação de post-it/snapshot.
+- A seleção para criar post-it é uma linha ou várias linhas (trecho contíguo
+  ou não); não há seleção de substring arbitrária nesta etapa.
+- **Snapshot:** `noteExcerpt` com `noteId = null`; editar a nota não altera o
+  texto copiado. A UI marca “Trecho copiado”.
+- **Vínculo vivo:** `noteId` (referência à nota inteira); a UI marca “Nota
+  vinculada” e oferece “Abrir nota”. Vincular limpa o snapshot anterior.
+- **Exclusão:** a nota vira tombstone; ao excluir uma nota vinculada, os
+  `noteId` dos post-its são removidos na mesma transação, preservando título,
+  detalhes e snapshots. A UI avisa antes da ação.
+- Notas não possuem tabela de histórico própria; as alterações de vínculo são
+  registradas no histórico do post-it (`noteLinked`/`noteUnlinked`).
 
 ## Calendário
 

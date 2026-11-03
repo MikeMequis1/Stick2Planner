@@ -607,3 +607,80 @@ post-it a partir do texto e vínculos persistidos. Aguardando aprovação.
 ### Próximo passo
 
 Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
+
+## Etapa 5 — Notas privadas (implementada em 2026-11-03; aguardando revisão)
+
+### Implementado
+
+- Caderno independente: lista de notas, criação, edição e exclusão com
+  confirmação; título, tipo texto/checklist, linhas ordenadas e estado de
+  checklist.
+- Editor de linhas com adicionar, remover, subir/descer; ordem persistida pelo
+  `position`; IDs de linha preservados quando possível.
+- Detalhe da nota com seleção por toque em uma ou várias linhas, barra inferior
+  estável (não desloca o conteúdo) e ação “Criar post-it do trecho”.
+- Conversão em snapshot: `noteExcerpt` com o texto selecionado e `noteId` nulo;
+  o post-it é criado sem data, acessível pela caixinha. A UI mostra “Trecho
+  copiado” e o aviso de snapshot.
+- Vínculo vivo: “Criar tarefa com esta nota” (nota inteira) e “Vincular a
+  post-it…” escolhendo tarefa existente; “Abrir nota” no detalhe do post-it e
+  “Desvincular nota”. A UI mostra “Nota vinculada” e registra
+  `noteLinked`/`noteUnlinked` no histórico do post-it.
+- Excluir nota vinculada avisa, remove os `noteId` em transação e preserva
+  tarefas/snapshots; nota fica como tombstone.
+- Editar a nota atualiza a referência viva, mas não altera snapshots.
+- Integração com detalhes do post-it em Agenda e Caixinha.
+
+### Modelo e decisões
+
+- O esquema já possuía `notes`/`note_lines`; não houve migração nova.
+- Link vivo e snapshot são mutuamente exclusivos: vincular uma nota limpa o
+  `noteExcerpt`; copiar trecho não cria `noteId`.
+- Seleção é por linha/intervalo de linhas, não substring arbitrária; decisão
+  para manter o editor simples e confiável no toque.
+- Exclusão de nota não apaga post-its; desvincula e mantém o conteúdo próprio
+  do post-it e snapshots.
+- Não há tabela de histórico de notas; eventos de vínculo ficam no histórico
+  dos post-its. Exclusão de nota não tem “Desfazer” nesta etapa.
+
+### Testes e resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **152 testes aprovados** (14 novos).
+- `flutter build apk --debug`: aprovado (~14 s com cache).
+- Novos testes: CRUD de nota, linhas/ordem/checklist, título obrigatório,
+  persistência após reabrir, exclusão/tombstone, snapshot imutável, vínculo
+  vivo e desvínculo com histórico, exclusão desvinculando sem apagar tarefa,
+  criação/edição/ exclusão pela UI, seleção de trecho e abertura da nota pelo
+  post-it.
+- Falha de persistência de nota segue o mesmo padrão transacional dos
+  repositórios; UI mostra erro.
+
+### Validação física
+
+- Nota “Lista de compras” criada pelo formulário com duas linhas; banco
+  confirmou `notes` + `note_lines` na ordem (`Pao`, `Leite`).
+- Seleção de duas linhas mostrava “2 selecionada(s)” e ação “Criar post-it do
+  trecho”; snapshot persistiu com `note_id` nulo e `note_excerpt = Pao\nLeite`.
+- Detalhe do post-it exibiu “Trecho copiado”, texto e aviso de snapshot.
+- Vínculo de nota a uma tarefa pelo diálogo foi persistido e exibido como
+  “1 post-it” em “Post-its vinculados”; tarefa não foi duplicada nem apagada.
+- Editor de nota, seleção, detalhe e lista verificados em tablet Android
+  (3200×2136, 440 dpi, tema escuro). Edição/exclusão de nota pela UI ficaram
+  cobertas por testes de widget/controller nesta rodada.
+
+### Limitações
+
+- Seleção não permite substring dentro de uma linha (apenas linhas/intervalo).
+- Nota tem um vínculo por post-it; vincular outra substitui a referência.
+- Excluir nota remove vínculos vivos sem undo; snapshots permanecem.
+- Não há busca/ordenação própria no caderno nesta etapa.
+- Snapshot é cópia intencional: editar a nota não o atualiza.
+- Edição/exclusão de nota no aparelho não foi repetida manualmente; coberta
+  por testes automatizados.
+
+### Próximo passo
+
+Etapa 6 — qualidade e documentação final (testes de integração, acessibilidade,
+ajustes de layout, verificação offline e documentação). Não iniciada; aguardando
+avaliação.

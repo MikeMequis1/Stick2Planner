@@ -7,16 +7,15 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapas 0 a 4 concluídas. Além da agenda visual e das manipulações, o app já
-organiza estados, oferece a caixinha com filtros/busca e mantém TO-DOs
-recorrentes com avanço diário idempotente. Notas entram na Etapa 5.
+Etapas 0 a 5 concluídas. A agenda, organização e caderno de notas já estão
+funcionais; falta a rodada de qualidade/acessibilidade da Etapa 6.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
 - [x] Etapa 2 — agenda visual (períodos, grade, eventos contínuos, overflow)
 - [x] Etapa 3 — criação/edição, arraste, reordenação e redimensionamento
 - [x] Etapa 4 — estados, caixinha, tarefas sem data e TO-DO recorrente
-- [ ] Etapa 5 — notas
+- [x] Etapa 5 — notas, listas, trechos e vínculos com post-its
 - [ ] Etapa 6 — qualidade e documentação final
 
 Histórico detalhado: `docs/PROGRESSO.md`. Decisões: `docs/DECISOES.md`.
@@ -151,6 +150,23 @@ não importa Flutter nem drift.
   disponível ao tocar na célula.
 - **Telas estreitas:** abaixo de 600 dp o FAB é substituído por um ícone “+”
   na AppBar, evitando cobrir a agenda; a grade rola quando necessário.
+
+## Notas privadas
+
+- Caderno independente dos post-its: criar, editar e excluir notas; títulos,
+  linhas ordenadas e modo texto ou checklist.
+- Toque nas linhas para selecionar uma ou várias; a barra inferior permite
+  converter o trecho em post-it.
+- Trecho convertido vira **snapshot** (`noteExcerpt`, sem `noteId`): editar a
+  nota não altera o texto já copiado. O detalhe do post-it mostra “Trecho
+  copiado”.
+- Nota inteira pode ser vinculada a uma tarefa (`noteId`, referência viva):
+  “Criar tarefa com esta nota”, “Vincular a post-it…” e “Abrir nota” no detalhe
+  do post-it. O detalhe mostra “Nota vinculada”.
+- Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
+  snapshots existentes permanecem. A nota usa tombstone.
+- Limitação consciente: a seleção é por linha ou intervalo de linhas, não por
+  substring arbitrária dentro de uma linha.
 
 ## Domínio e persistência
 
