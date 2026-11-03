@@ -90,9 +90,8 @@ class _InboxPageState extends State<InboxPage> {
       );
     } on Object {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.errorSave)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(AppStrings.errorSave)));
     }
   }
 
@@ -101,11 +100,7 @@ class _InboxPageState extends State<InboxPage> {
     PlannerController planner,
     PostIt postIt,
   ) {
-    openPostItDetailsById(
-      context,
-      postItId: postIt.id,
-      goToAgenda: false,
-    );
+    openPostItDetailsById(context, postItId: postIt.id, goToAgenda: false);
   }
 
   @override
@@ -211,17 +206,9 @@ class _InboxPageState extends State<InboxPage> {
                           return _InboxRow(
                             postIt: postIt,
                             planner: planner,
-                            onTap: () => _openDetails(
-                              context,
-                              planner,
-                              postIt,
-                            ),
-                            onStatus: (status) => _setStatus(
-                              context,
-                              planner,
-                              postIt,
-                              status,
-                            ),
+                            onTap: () => _openDetails(context, planner, postIt),
+                            onStatus: (status) =>
+                                _setStatus(context, planner, postIt, status),
                             onOpenAgenda: () => openPostItDetailsById(
                               context,
                               postItId: postIt.id,
@@ -342,8 +329,7 @@ class _InboxRow extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (postIt.isRecurring &&
-                  postIt.status == PostItStatus.active)
+              if (postIt.isRecurring && postIt.status == PostItStatus.active)
                 Text(
                   isPostponed && postIt.startDate != null
                       ? '· ${AppStrings.postponedUntil} '

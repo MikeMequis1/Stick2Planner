@@ -365,6 +365,63 @@ void main() {
     expect(find.byKey(const Key('day-preview')), findsNothing);
   });
 
+  testWidgets('deslizar horizontalmente folheia o período', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+    );
+
+    expect(find.text('2 – 8 nov 2026'), findsOneWidget);
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(-500, 0),
+      1200,
+    );
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 11));
+    expect(find.text('9 – 15 nov 2026'), findsOneWidget);
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(500, 0),
+      1200,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('2 – 8 nov 2026'), findsOneWidget);
+  });
+
+  testWidgets('deslizar verticalmente altera a quantidade de dias', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+    );
+
+    expect(find.byType(DayCell), findsNWidgets(7));
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(0, -450),
+      1200,
+    );
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.landscapeMode, AgendaViewMode.twoWeeks);
+    expect(find.byType(DayCell), findsNWidgets(14));
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(0, 450),
+      1200,
+    );
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.landscapeMode, AgendaViewMode.week);
+    expect(find.byType(DayCell), findsNWidgets(7));
+  });
+
   testWidgets('retrato inicia em dia e cresce até semana', (tester) async {
     await pumpPlanner(tester, size: const Size(800, 1280));
 

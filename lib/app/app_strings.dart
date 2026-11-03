@@ -80,6 +80,8 @@ abstract final class AppStrings {
   static const openNote = 'Abrir nota';
   static const openInAgenda = 'Abrir na Agenda';
   static const postItNotFound = 'Post-it não encontrado.';
+  static const postItWithoutDate = 'Este post-it não tem data definida.';
+  static const showPostItDetails = 'Ver detalhes';
   static const noteSnapshots = 'Trechos desta nota';
   static const selectNote = 'Selecionar nota';
   static const selectPostIt = 'Selecionar post-it';
@@ -170,8 +172,8 @@ abstract final class AppStrings {
   static const close = 'Fechar';
   static const emptyDay = 'Nenhum post-it neste dia.';
   static const calendarHint =
-      'Toque: selecionar · 2 toques: tarefa · 3 toques: evento · segure: '
-      'prévia';
+      'Toque: selecionar · 2/3 toques: tarefa/evento · segure: prévia · '
+      'deslize: período/dias';
   static const todayBadge = 'hoje';
   static const continuation = 'continua';
 

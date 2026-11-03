@@ -25,11 +25,7 @@ Future<bool> openPostItDetailsById(
   final postIt = _findPostIt(planner, postItId);
 
   if (postIt == null) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.postItNotFound)),
-      );
-    }
+    _showMessage(context, AppStrings.postItNotFound);
     return false;
   }
 
@@ -60,6 +56,42 @@ Future<bool> openPostItDetailsById(
     ),
   );
   return true;
+}
+
+/// Leva o usuário para a Agenda, seleciona a data e realça o post-it.
+Future<bool> revealPostItOnAgenda(
+  BuildContext context, {
+  required String postItId,
+}) async {
+  final app = AppScope.of(context);
+  final planner = app.planner;
+  final navigation = app.navigation;
+  final postIt = _findPostIt(planner, postItId);
+
+  if (postIt == null) {
+    _showMessage(context, AppStrings.postItNotFound);
+    return false;
+  }
+  final date = postIt.startDate;
+  if (date == null) {
+    _showMessage(context, AppStrings.postItWithoutDate);
+    return false;
+  }
+
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final route = ModalRoute.of(context);
+  navigation.select(AppSection.agenda);
+  navigation.focusPostIt(postIt.id);
+  planner.selectDate(date);
+  if (route != null && !route.isFirst) {
+    navigator.popUntil((current) => current.isFirst);
+  }
+  return true;
+}
+
+void _showMessage(BuildContext context, String message) {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
 PostIt? _findPostIt(PlannerController planner, String id) {

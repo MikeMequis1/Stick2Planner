@@ -12,6 +12,7 @@ class PostItTile extends StatefulWidget {
     required this.compact,
     this.onTap,
     this.isPostponed = false,
+    this.isFocused = false,
   });
 
   final PostIt postIt;
@@ -20,6 +21,9 @@ class PostItTile extends StatefulWidget {
 
   /// TO-DO recorrente adiado manualmente (usa ícone/rótulo, não só cor).
   final bool isPostponed;
+
+  /// Destaque temporário ao chegar pela navegação de outro módulo.
+  final bool isFocused;
 
   @override
   State<PostItTile> createState() => _PostItTileState();
@@ -46,12 +50,17 @@ class _PostItTileState extends State<PostItTile> {
       label: postItSemanticLabel(postIt),
       excludeSemantics: true,
       child: AnimatedScale(
-        scale: _pressed ? 0.93 : 1,
-        duration: const Duration(milliseconds: 110),
+        scale: _pressed ? 0.93 : (widget.isFocused ? 1.05 : 1),
+        duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,
-          borderRadius: BorderRadius.circular(6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+            side: widget.isFocused
+                ? BorderSide(color: theme.colorScheme.primary, width: 2)
+                : BorderSide.none,
+          ),
           child: InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: widget.onTap,

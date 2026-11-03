@@ -34,11 +34,13 @@ class WeekRow extends StatefulWidget {
     required this.onShowHiddenEvents,
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
+    this.focusedPostItId,
   });
 
   final CalendarWeek week;
   final DateOnly periodStart;
   final List<PostIt> postIts;
+  final String? focusedPostItId;
   final DateOnly today;
   final DateOnly selectedDate;
   final bool compact;
@@ -80,9 +82,7 @@ class _WeekRowState extends State<WeekRow> {
         );
         final laneCount = layout.segments.isEmpty
             ? 0
-            : layout.segments
-                      .map((segment) => segment.lane)
-                      .reduce(math.max) +
+            : layout.segments.map((segment) => segment.lane).reduce(math.max) +
                   1;
         final barAreaHeight = laneCount * (barHeight + barGap);
         final columnWidth = constraints.maxWidth / widget.week.days.length;
@@ -175,8 +175,7 @@ class _WeekRowState extends State<WeekRow> {
                               borderRadius: BorderRadius.circular(6),
                               onTap: () {
                                 final hidden = <String, PostIt>{
-                                  for (final segment
-                                      in layout.hiddenSegments)
+                                  for (final segment in layout.hiddenSegments)
                                     segment.postIt.id: segment.postIt,
                                 }.values.toList(growable: false);
                                 widget.onShowHiddenEvents(hidden);
@@ -194,9 +193,7 @@ class _WeekRowState extends State<WeekRow> {
                                       ),
                                       style: theme.textTheme.labelSmall
                                           ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .primary,
+                                            color: theme.colorScheme.primary,
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
@@ -218,9 +215,7 @@ class _WeekRowState extends State<WeekRow> {
                   for (final day in widget.week.days)
                     Expanded(
                       child: DayCell(
-                        key: ValueKey(
-                          'day-${day.date.toIso8601String()}',
-                        ),
+                        key: ValueKey('day-${day.date.toIso8601String()}'),
                         day: day,
                         items: singleDayItemsOn(widget.postIts, day.date),
                         isSelected: day.date.isSameDay(widget.selectedDate),
@@ -236,6 +231,7 @@ class _WeekRowState extends State<WeekRow> {
                             widget.onReorderTo(postIt, day.date, index),
                         onQuickCreateTask: widget.onQuickCreateTask,
                         onQuickCreateEvent: widget.onQuickCreateEvent,
+                        focusedPostItId: widget.focusedPostItId,
                       ),
                     ),
                 ],
@@ -282,6 +278,7 @@ class _WeekRowState extends State<WeekRow> {
         'event-bar-${postIt.id}-${widget.week.start.toIso8601String()}',
       ),
       postIt: postIt,
+      isFocused: widget.focusedPostItId == postIt.id,
       continuesBefore: segment.continuesBefore,
       continuesAfter: segment.continuesAfter,
       showTitle:
@@ -348,8 +345,7 @@ class _WeekRowState extends State<WeekRow> {
                 tooltip: AppStrings.resizeStart,
                 isStart: true,
                 compact: widget.compact,
-                active: _resize?.postIt.id == postIt.id &&
-                    _resize!.isStart,
+                active: _resize?.postIt.id == postIt.id && _resize!.isStart,
                 onStart: () => _startResize(postIt, isStart: true),
                 onUpdate: (dx) => _updateResize(dx),
                 onEnd: () => _commitResize(columnWidth),
@@ -364,8 +360,7 @@ class _WeekRowState extends State<WeekRow> {
                 tooltip: AppStrings.resizeEnd,
                 isStart: false,
                 compact: widget.compact,
-                active: _resize?.postIt.id == postIt.id &&
-                    !_resize!.isStart,
+                active: _resize?.postIt.id == postIt.id && !_resize!.isStart,
                 onStart: () => _startResize(postIt, isStart: false),
                 onUpdate: (dx) => _updateResize(dx),
                 onEnd: () => _commitResize(columnWidth),

@@ -25,10 +25,12 @@ class CalendarGrid extends StatelessWidget {
     required this.onShowHiddenEvents,
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
+    this.focusedPostItId,
   });
 
   final CalendarPeriod period;
   final List<PostIt> postIts;
+  final String? focusedPostItId;
   final DateOnly today;
   final DateOnly selectedDate;
   final ValueChanged<DateOnly> onDaySelected;
@@ -49,9 +51,7 @@ class CalendarGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final needsScroll = constraints.maxHeight < _minimumHeight;
-        final height = needsScroll
-            ? _minimumHeight
-            : constraints.maxHeight;
+        final height = needsScroll ? _minimumHeight : constraints.maxHeight;
 
         final content = SizedBox(
           height: height,
@@ -87,6 +87,7 @@ class CalendarGrid extends StatelessWidget {
                             onShowHiddenEvents: onShowHiddenEvents,
                             onQuickCreateTask: onQuickCreateTask,
                             onQuickCreateEvent: onQuickCreateEvent,
+                            focusedPostItId: focusedPostItId,
                           ),
                         ),
                       ),

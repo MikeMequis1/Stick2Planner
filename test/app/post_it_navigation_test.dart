@@ -73,13 +73,25 @@ void main() {
     await openSection(tester, AppStrings.notes);
     await tester.tap(find.text(note.title));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('note-linked-postit-${task.id}')));
+
+    await tester.tap(find.byKey(Key('note-linked-details-${task.id}')));
+    await tester.pumpAndSettle();
+    expect(dependencies.navigation.section, AppSection.notes);
+    expect(find.text(task.title), findsWidgets);
+    expect(find.text(AppStrings.linkedNoteChip), findsWidgets);
+
+    Navigator.of(tester.element(find.text(task.title).last)).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('note-linked-agenda-${task.id}')));
     await tester.pumpAndSettle();
 
     expect(dependencies.navigation.section, AppSection.agenda);
+    expect(dependencies.navigation.focusedPostItId, task.id);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
     expect(dependencies.planner.postIts, hasLength(1));
-    expect(find.text(task.title), findsWidgets);
-    expect(find.text(AppStrings.linkedNoteChip), findsOneWidget);
+    dependencies.navigation.clearPostItFocus();
+    await tester.pump();
   });
 
   testWidgets('abre na Agenda pelo snapshot de trecho', (tester) async {
@@ -98,6 +110,7 @@ void main() {
           type: PostItType.task,
           noteExcerpt: 'Trecho original',
           sourceNoteId: note.id,
+          startDate: DateOnly(2026, 11, 6),
         );
       },
     );
@@ -105,13 +118,60 @@ void main() {
     await openSection(tester, AppStrings.notes);
     await tester.tap(find.text(note.title));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('note-snapshot-${snapshot.id}')));
+
+    await tester.tap(find.byKey(Key('note-snapshot-details-${snapshot.id}')));
+    await tester.pumpAndSettle();
+    expect(dependencies.navigation.section, AppSection.notes);
+    expect(find.text(AppStrings.noteExcerptChip), findsWidgets);
+
+    Navigator.of(tester.element(find.text(snapshot.title).last)).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('note-snapshot-agenda-${snapshot.id}')));
     await tester.pumpAndSettle();
 
     expect(dependencies.navigation.section, AppSection.agenda);
+    expect(dependencies.navigation.focusedPostItId, snapshot.id);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 6));
     expect(dependencies.planner.postIts, hasLength(1));
-    expect(find.text(snapshot.title), findsWidgets);
-    expect(find.text(AppStrings.noteExcerptChip), findsWidgets);
+    dependencies.navigation.clearPostItFocus();
+    await tester.pump();
+  });
+
+  testWidgets('snapshot sem data mantém Abrir na Agenda desabilitado', (
+    tester,
+  ) async {
+    late PostIt snapshot;
+    late Note note;
+    await pumpApp(
+      tester,
+      prepare: (dependencies) async {
+        note = await dependencies.notes.createNote(
+          title: 'Nota sem data',
+          type: NoteType.text,
+          markdown: 'Trecho',
+        );
+        snapshot = await dependencies.planner.createPostIt(
+          title: 'Trecho sem data',
+          type: PostItType.task,
+          noteExcerpt: 'Trecho',
+          sourceNoteId: note.id,
+        );
+      },
+    );
+
+    await openSection(tester, AppStrings.notes);
+    await tester.tap(find.text(note.title));
+    await tester.pumpAndSettle();
+
+    final agendaButton = tester.widget<IconButton>(
+      find.byKey(Key('note-snapshot-agenda-${snapshot.id}')),
+    );
+    expect(agendaButton.onPressed, isNull);
+    expect(
+      find.byKey(Key('note-snapshot-details-${snapshot.id}')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('post-it ausente mostra aviso sem navegar', (tester) async {

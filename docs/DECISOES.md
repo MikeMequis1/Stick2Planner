@@ -255,9 +255,16 @@ etapas. Cada item: contexto, decisão, consequência.
   detalhe/edição e não cria cópia. Se o UUID não existir, mostra aviso e não
   navega.
 - **Notas:** post-its com vínculo vivo (`noteId`) e snapshots com proveniência
-  (`sourceNoteId`) listados no detalhe da nota abrem a Agenda.
+  (`sourceNoteId`) listados no detalhe da nota têm duas ações: “Ver detalhes”
+  (popup no local) e “Abrir na Agenda” (data selecionada + realce temporário).
+- **Conteúdo editável:** tocar no Markdown renderizado ou em uma linha de lista
+  abre o editor da nota; o toque longo continua reservado à seleção de linhas.
 - **Caixinha:** o menu `...` mostra “Abrir na Agenda” somente quando
   `startDate != null`; as ações de status permanecem inalteradas.
+- **Gestos da agenda:** arrastar na horizontal folheia o período com transição
+  de página; arrastar na vertical aumenta/reduz a quantidade de dias.
+- **Barra lateral:** trilho com largura mínima de 88 dp e altura total da
+  casca, sem faixa vazia nas bordas.
 - **Proveniência do snapshot:** `sourceNoteId` é metadado de origem para
   navegação; não é vínculo vivo, não altera o snapshot e não impede a nota de
   ser editada/excluída. Snapshots anteriores à migração v4 não têm proveniência.

@@ -17,6 +17,7 @@ class EventBar extends StatefulWidget {
     required this.showTitle,
     required this.compact,
     this.onTap,
+    this.isFocused = false,
   });
 
   final PostIt postIt;
@@ -28,6 +29,9 @@ class EventBar extends StatefulWidget {
   final bool showTitle;
   final bool compact;
   final VoidCallback? onTap;
+
+  /// Destaque temporário ao chegar pela navegação de outro módulo.
+  final bool isFocused;
 
   @override
   State<EventBar> createState() => _EventBarState();
@@ -57,12 +61,17 @@ class _EventBarState extends State<EventBar> {
       label: postItSemanticLabel(postIt),
       excludeSemantics: true,
       child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1,
-        duration: const Duration(milliseconds: 110),
+        scale: widget.isFocused ? 1.04 : (_pressed ? 0.97 : 1),
+        duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,
-          borderRadius: radius,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: widget.isFocused
+                ? BorderSide(color: theme.colorScheme.primary, width: 2)
+                : BorderSide.none,
+          ),
           child: InkWell(
             borderRadius: radius,
             onTap: widget.onTap,

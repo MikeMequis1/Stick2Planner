@@ -53,8 +53,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         ];
         final snapshotPostIts = [
           for (final postIt in planner.postIts)
-            if (postIt.noteId == null && postIt.sourceNoteId == note.id)
-              postIt,
+            if (postIt.noteId == null && postIt.sourceNoteId == note.id) postIt,
         ];
 
         return Scaffold(
@@ -107,10 +106,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         ),
                         if (linkedPostIts.isNotEmpty)
                           Chip(
-                            avatar: const Icon(
-                              Icons.link,
-                              size: 18,
-                            ),
+                            avatar: const Icon(Icons.link, size: 18),
                             label: Text(
                               AppStrings.linkedPostItsCount(
                                 linkedPostIts.length,
@@ -134,9 +130,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         ),
                         OutlinedButton.icon(
                           key: const Key('note-link-post-it'),
-                          onPressed: _busy
-                              ? null
-                              : () => _linkToPostIt(note),
+                          onPressed: _busy ? null : () => _linkToPostIt(note),
                           icon: const Icon(Icons.link),
                           label: const Text(AppStrings.linkToPostIt),
                         ),
@@ -146,6 +140,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                     if (note.type == NoteType.text)
                       _MarkdownNoteBody(
                         markdown: note.markdown ?? note.plainText,
+                        onEdit: () => _edit(note),
                         onCreateSnapshot: _busy
                             ? null
                             : () => _createSnapshotFromMarkdown(note),
@@ -171,18 +166,16 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                           }),
                           onChecked: (value) =>
                               _toggleLine(notes, note, line.id, value),
+                          onEdit: () => _edit(note),
                         ),
                     if (note.type == NoteType.checklist &&
                         note.lines.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         AppStrings.selectLinesHint,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                     if (linkedPostIts.isNotEmpty) ...[
@@ -203,10 +196,14 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                               '${postItTypeLabel(postIt)} · '
                               '${postItDateLabel(postIt)}',
                             ),
-                            trailing: const Icon(Icons.chevron_right),
+                            trailing: _PostItActions(
+                              postIt: postIt,
+                              prefix: 'note-linked',
+                            ),
                             onTap: () => openPostItDetailsById(
                               context,
                               postItId: postIt.id,
+                              goToAgenda: false,
                             ),
                           ),
                         ),
@@ -229,10 +226,14 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                               '${AppStrings.noteExcerptChip} · '
                               '${postItDateLabel(postIt)}',
                             ),
-                            trailing: const Icon(Icons.chevron_right),
+                            trailing: _PostItActions(
+                              postIt: postIt,
+                              prefix: 'note-snapshot',
+                            ),
                             onTap: () => openPostItDetailsById(
                               context,
                               postItId: postIt.id,
+                              goToAgenda: false,
                             ),
                           ),
                         ),
@@ -258,9 +259,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                                 AppStrings.selectLinesHint,
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
                                     ),
                               ),
                             )
@@ -270,23 +271,17 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                                   AppStrings.selectedLines(
                                     _selectedLines.length,
                                   ),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.labelLarge,
+                                  style: Theme.of(context).textTheme.labelLarge,
                                 ),
                                 const Spacer(),
                                 TextButton(
                                   onPressed: () =>
                                       setState(() => _selectedLines.clear()),
-                                  child: const Text(
-                                    AppStrings.clearSelection,
-                                  ),
+                                  child: const Text(AppStrings.clearSelection),
                                 ),
                                 const SizedBox(width: 8),
                                 FilledButton.icon(
-                                  key: const Key(
-                                    'note-create-from-selection',
-                                  ),
+                                  key: const Key('note-create-from-selection'),
                                   onPressed: () =>
                                       _createPostItFromSelection(note),
                                   icon: const Icon(Icons.add),
@@ -325,9 +320,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       await notes.setLineChecked(note, lineId, checked);
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.noteSaveError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(AppStrings.noteSaveError)));
       }
     }
   }
@@ -342,10 +337,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     final excerpt = selected.map((line) => line.text).join('\n');
     final title = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _SnapshotDialog(
-        initialTitle: selected.first.text,
-        excerpt: excerpt,
-      ),
+      builder: (dialogContext) =>
+          _SnapshotDialog(initialTitle: selected.first.text, excerpt: excerpt),
     );
     if (title == null) return;
 
@@ -358,9 +351,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       );
       if (!mounted) return;
       setState(() => _selectedLines.clear());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.savedMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -379,10 +371,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
 
     final selection = await showDialog<_MarkdownSnapshot>(
       context: context,
-      builder: (dialogContext) => _MarkdownSnapshotDialog(
-        initialTitle: note.title,
-        markdown: markdown,
-      ),
+      builder: (dialogContext) =>
+          _MarkdownSnapshotDialog(initialTitle: note.title, markdown: markdown),
     );
     if (selection == null) return;
 
@@ -395,9 +385,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         sourceNoteId: note.id,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.savedMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -418,9 +407,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         noteId: note.id,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.savedMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -483,9 +471,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       );
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.linkNoteError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(AppStrings.linkNoteError)));
       }
     }
   }
@@ -538,10 +526,12 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
 class _MarkdownNoteBody extends StatelessWidget {
   const _MarkdownNoteBody({
     required this.markdown,
+    required this.onEdit,
     required this.onCreateSnapshot,
   });
 
   final String markdown;
+  final VoidCallback onEdit;
   final VoidCallback? onCreateSnapshot;
 
   @override
@@ -574,24 +564,64 @@ class _MarkdownNoteBody extends StatelessWidget {
             message: AppStrings.markdownHint,
           )
         else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: MarkdownBody(
-              data: markdown,
-              selectable: true,
-              // No caderno, Enter deve preservar a quebra de linha visível.
-              softLineBreak: true,
-              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                p: theme.textTheme.bodyLarge,
-                blockSpacing: 12,
+              onTap: onEdit,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                ),
+                child: MarkdownBody(
+                  data: markdown,
+                  selectable: false,
+                  // No caderno, Enter deve preservar a quebra de linha visível.
+                  softLineBreak: true,
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                      .copyWith(p: theme.textTheme.bodyLarge, blockSpacing: 12),
+                ),
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _PostItActions extends StatelessWidget {
+  const _PostItActions({required this.postIt, required this.prefix});
+
+  final PostIt postIt;
+  final String prefix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          key: Key('$prefix-details-${postIt.id}'),
+          tooltip: AppStrings.showPostItDetails,
+          onPressed: () => openPostItDetailsById(
+            context,
+            postItId: postIt.id,
+            goToAgenda: false,
+          ),
+          icon: const Icon(Icons.visibility_outlined),
+        ),
+        IconButton(
+          key: Key('$prefix-agenda-${postIt.id}'),
+          tooltip: AppStrings.openInAgenda,
+          onPressed: postIt.startDate == null
+              ? null
+              : () => revealPostItOnAgenda(context, postItId: postIt.id),
+          icon: const Icon(Icons.calendar_month_outlined),
+        ),
       ],
     );
   }
@@ -604,6 +634,7 @@ class _NoteLineRow extends StatelessWidget {
     required this.checklist,
     required this.onSelect,
     required this.onChecked,
+    required this.onEdit,
   });
 
   final NoteLine line;
@@ -611,6 +642,7 @@ class _NoteLineRow extends StatelessWidget {
   final bool checklist;
   final VoidCallback onSelect;
   final ValueChanged<bool> onChecked;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -628,6 +660,7 @@ class _NoteLineRow extends StatelessWidget {
           hint: AppStrings.selectLinesHint,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
+            onTap: onEdit,
             onLongPress: () {
               HapticFeedback.selectionClick();
               onSelect();
@@ -668,10 +701,7 @@ class _NoteLineRow extends StatelessWidget {
 }
 
 class _SnapshotDialog extends StatefulWidget {
-  const _SnapshotDialog({
-    required this.initialTitle,
-    required this.excerpt,
-  });
+  const _SnapshotDialog({required this.initialTitle, required this.excerpt});
 
   final String initialTitle;
   final String excerpt;
@@ -732,9 +762,7 @@ class _SnapshotDialogState extends State<_SnapshotDialog> {
               constraints: const BoxConstraints(maxHeight: 180),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SingleChildScrollView(
@@ -836,9 +864,8 @@ class _MarkdownSnapshotDialogState extends State<_MarkdownSnapshotDialog> {
       final selected = full.substring(start, end);
       if (selected.trim().isNotEmpty) excerpt = selected;
     }
-    Navigator.of(context).pop(
-      _MarkdownSnapshot(title: title, excerpt: excerpt),
-    );
+    Navigator.of(context)
+        .pop(_MarkdownSnapshot(title: title, excerpt: excerpt));
   }
 
   @override

@@ -29,10 +29,12 @@ class DayCell extends StatelessWidget {
     required this.onReorderTo,
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
+    this.focusedPostItId,
   });
 
   final CalendarDay day;
   final List<PostIt> items;
+  final String? focusedPostItId;
   final bool isSelected;
   final bool isToday;
   final DateOnly today;
@@ -136,6 +138,7 @@ class DayCell extends StatelessWidget {
                               today: today,
                               items: items,
                               compact: compact || tight,
+                              focusedPostItId: focusedPostItId,
                               onPostItTap: onPostItTap,
                               onShowAll: onShowAll,
                               onReorderTo: onReorderTo,
@@ -463,12 +466,14 @@ class _DayContent extends StatelessWidget {
     required this.onPostItTap,
     required this.onShowAll,
     required this.onReorderTo,
+    this.focusedPostItId,
   });
 
   final DateOnly date;
   final DateOnly today;
   final List<PostIt> items;
   final bool compact;
+  final String? focusedPostItId;
   final ValueChanged<PostIt> onPostItTap;
   final VoidCallback onShowAll;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
@@ -514,6 +519,7 @@ class _DayContent extends StatelessWidget {
                         index: index,
                         compact: compact,
                         isPostponed: items[index].isPostponedOn(today),
+                        isFocused: focusedPostItId == items[index].id,
                         onTap: () => onPostItTap(items[index]),
                         onReorderTo: onReorderTo,
                       ),
@@ -555,6 +561,7 @@ class _DraggableItem extends StatelessWidget {
     required this.index,
     required this.compact,
     required this.isPostponed,
+    required this.isFocused,
     required this.onTap,
     required this.onReorderTo,
   });
@@ -563,6 +570,7 @@ class _DraggableItem extends StatelessWidget {
   final int index;
   final bool compact;
   final bool isPostponed;
+  final bool isFocused;
   final VoidCallback onTap;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
 
@@ -579,6 +587,7 @@ class _DraggableItem extends StatelessWidget {
           postIt: postIt,
           compact: compact,
           isPostponed: isPostponed,
+          isFocused: isFocused,
           onTap: onTap,
         );
 

@@ -79,10 +79,9 @@ void main() {
 
     await tester.tap(find.text('Pão'));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('note-create-from-selection')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('note-save')), findsOneWidget);
+    Navigator.of(tester.element(find.byKey(const Key('note-save')))).pop();
+    await tester.pumpAndSettle();
 
     await tester.longPress(find.text('Pão'));
     await tester.longPress(find.text('Leite'));
@@ -238,6 +237,17 @@ void main() {
     // O detalhe interpreta o Markdown em vez de exibir a sintaxe crua.
     expect(find.textContaining('# Título', findRichText: true), findsNothing);
     expect(find.textContaining('**Negrito**', findRichText: true), findsNothing);
+
+    await tester.tap(
+      find
+          .ancestor(
+            of: find.byType(MarkdownBody),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('note-save')), findsOneWidget);
   });
 
   testWidgets('cria snapshot a partir de um trecho Markdown', (tester) async {

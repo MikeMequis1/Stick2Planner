@@ -157,9 +157,11 @@ não importa Flutter nem drift.
   na AppBar, evitando cobrir a agenda; a grade rola quando necessário.
 - **Cabeçalho:** navegação de período e controles de modo ficam em cápsulas
   separadas, com "Hoje", `+`/`-` e espaçamento uniforme entre os ícones.
+- **Barra lateral:** trilho com largura mínima de 88 dp e altura total da casca.
 - **Gestos na grade:** um toque seleciona o dia; dois toques abrem a criação de
   tarefa; três abrem a criação de evento; segurar mostra uma prévia do dia que
-  fecha ao soltar.
+  fecha ao soltar; deslizar na horizontal folheia o período com transição de
+  página; deslizar na vertical aumenta/reduz os dias exibidos.
 - **Barras de evento:** conteúdo recuado das alças, grips visíveis nas pontas e
   arraste após 200 ms; as alças mantêm área de toque de 24×24 dp lógicos.
 - **Bordas:** o app usa edge-to-edge, com barras de sistema transparentes e
@@ -196,7 +198,11 @@ não importa Flutter nem drift.
 - Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
   snapshots existentes permanecem. A nota usa tombstone.
 - Post-its vinculados e snapshots com proveniência (`sourceNoteId`) aparecem no
-  detalhe da nota; tocar abre o mesmo post-it na Agenda, sem criar cópia.
+  detalhe da nota; cada item tem “Ver detalhes” (popup no local) e “Abrir na
+  Agenda” (data selecionada + realce temporário). O botão de Agenda fica
+  desabilitado sem data.
+- Tocar no conteúdo Markdown ou em uma linha de lista abre o editor; toque longo
+  continua selecionando linhas para snapshot.
 - Limitações conscientes: a barra insere sintaxe (não é WYSIWYG); a prévia é
   um painel de conferência; dois/três toques abrem o formulário já configurado e
   só gravam ao salvar; links não abrem navegador; o snapshot de texto é escolhido

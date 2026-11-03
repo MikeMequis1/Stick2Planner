@@ -64,6 +64,8 @@ Checklist final do MVP local do Planner.
 - Dois/três toques abrem o formulário configurado; a gravação ocorre ao salvar.
 - Snapshots criados antes da migração v4 não têm `sourceNoteId` e não aparecem
   em “Trechos desta nota”; continuam acessíveis pela Caixinha.
+- “Abrir na Agenda” em Notas fica desabilitado para post-its sem data; o popup
+  de detalhes continua disponível.
 - Importação, exportação, CalDAV e sincronização não foram implementados;
   decisões registradas em `docs/DECISOES.md`.
 
@@ -78,5 +80,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 172 testes aprovados.
+- `flutter test`: 175 testes aprovados.
 - `flutter build apk --debug`: aprovado.

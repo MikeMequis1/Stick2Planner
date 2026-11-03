@@ -15,15 +15,23 @@ import 'widgets/post_it_editor_sheet.dart';
 import 'widgets/post_it_navigation.dart';
 
 /// Agenda visual por período, com post-its e eventos multi-dia contínuos.
-class AgendaPage extends StatelessWidget {
+class AgendaPage extends StatefulWidget {
   const AgendaPage({super.key});
 
   @override
+  State<AgendaPage> createState() => _AgendaPageState();
+}
+
+class _AgendaPageState extends State<AgendaPage> {
+  int _pageTurnDirection = 1;
+
+  @override
   Widget build(BuildContext context) {
-    final planner = AppScope.of(context).planner;
+    final app = AppScope.of(context);
+    final planner = app.planner;
 
     return ListenableBuilder(
-      listenable: planner,
+      listenable: Listenable.merge([planner, app.navigation]),
       builder: (context, _) => _buildContent(context, planner),
     );
   }
@@ -54,11 +62,14 @@ class AgendaPage extends StatelessWidget {
             mode: mode,
             canDecreaseMode: planner.canDecreaseMode(orientation),
             canIncreaseMode: planner.canIncreaseMode(orientation),
-            onPreviousPeriod: () => planner.previousPeriod(mode),
-            onNextPeriod: () => planner.nextPeriod(mode),
-            onToday: planner.goToToday,
-            onDecreaseMode: () => planner.cycleMode(-1, orientation),
-            onIncreaseMode: () => planner.cycleMode(1, orientation),
+            onPreviousPeriod: () =>
+                _turnPage(-1, () => planner.previousPeriod(mode)),
+            onNextPeriod: () => _turnPage(1, () => planner.nextPeriod(mode)),
+            onToday: () => _turnPage(1, planner.goToToday),
+            onDecreaseMode: () =>
+                _turnPage(-1, () => planner.cycleMode(-1, orientation)),
+            onIncreaseMode: () =>
+                _turnPage(1, () => planner.cycleMode(1, orientation)),
           ),
           if (planner.error != null) ...[
             const SizedBox(height: 8),
@@ -75,75 +86,95 @@ class AgendaPage extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              layoutBuilder: (current, previous) => Stack(
-                fit: StackFit.expand,
-                children: [...previous, ?current],
-              ),
-              transitionBuilder: (child, animation) {
-                final curved = CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                );
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
-                    child: child,
-                  ),
+            child: GestureDetector(
+              key: const Key('calendar-swipe-area'),
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: (details) {
+                final dx = details.velocity.pixelsPerSecond.dx;
+                if (dx.abs() < 220) return;
+                if (dx < 0) {
+                  _turnPage(1, () => planner.nextPeriod(mode));
+                } else {
+                  _turnPage(-1, () => planner.previousPeriod(mode));
+                }
+              },
+              onVerticalDragEnd: (details) {
+                final dy = details.velocity.pixelsPerSecond.dy;
+                if (dy.abs() < 220) return;
+                final increase = dy < 0;
+                if (increase && !planner.canIncreaseMode(orientation)) return;
+                if (!increase && !planner.canDecreaseMode(orientation)) return;
+                _turnPage(
+                  increase ? 1 : -1,
+                  () => planner.cycleMode(increase ? 1 : -1, orientation),
                 );
               },
-              child: CalendarGrid(
-                key: ValueKey(
-                  'calendar-grid-${mode.name}-'
-                  '${period.start.toIso8601String()}-'
-                  '${period.end.toIso8601String()}',
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 320),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                layoutBuilder: (current, previous) => Stack(
+                  fit: StackFit.expand,
+                  children: [...previous, ?current],
                 ),
-                period: period,
-                postIts: planner.postIts,
-                today: planner.today,
-                selectedDate: planner.selectedDate,
-                onDaySelected: planner.selectDate,
-                onPostItTap: (postIt) => _openDetails(context, planner, postIt),
-                onShowDay: (date) => showDayDetailsSheet(
-                  context,
-                  date: date,
-                  postIts: planner.postItsOn(date),
-                  onPostItSelected: (postIt) =>
-                      _openDetails(context, planner, postIt),
-                ),
-                onMovePostIt: (postIt, date) => _runGuarded(
-                  context,
-                  () => planner.movePostIt(postIt, date),
-                  AppStrings.errorMove,
-                ),
-                onReorderTo: (postIt, date, index) => _runGuarded(
-                  context,
-                  () => planner.movePostIt(postIt, date, targetIndex: index),
-                  AppStrings.errorMove,
-                ),
-                onResizeEvent: (postIt, start, end) => _runGuarded(
-                  context,
-                  () => planner.resizeEvent(
-                    postIt,
-                    startDate: start,
-                    endDate: end,
+                transitionBuilder: _pageTurnTransition,
+                child: CalendarGrid(
+                  key: ValueKey(
+                    'calendar-grid-${mode.name}-'
+                    '${period.start.toIso8601String()}-'
+                    '${period.end.toIso8601String()}',
                   ),
-                  AppStrings.errorResize,
-                ),
-                onShowHiddenEvents: (events) => showHiddenEventsSheet(
-                  context,
-                  events: events,
-                  onPostItSelected: (postIt) =>
+                  period: period,
+                  focusedPostItId: AppScope.of(context)
+                      .navigation
+                      .focusedPostItId,
+                  postIts: planner.postIts,
+                  today: planner.today,
+                  selectedDate: planner.selectedDate,
+                  onDaySelected: planner.selectDate,
+                  onPostItTap: (postIt) =>
                       _openDetails(context, planner, postIt),
+                  onShowDay: (date) => showDayDetailsSheet(
+                    context,
+                    date: date,
+                    postIts: planner.postItsOn(date),
+                    onPostItSelected: (postIt) =>
+                        _openDetails(context, planner, postIt),
+                  ),
+                  onMovePostIt: (postIt, date) => _runGuarded(
+                    context,
+                    () => planner.movePostIt(postIt, date),
+                    AppStrings.errorMove,
+                  ),
+                  onReorderTo: (postIt, date, index) => _runGuarded(
+                    context,
+                    () => planner.movePostIt(postIt, date, targetIndex: index),
+                    AppStrings.errorMove,
+                  ),
+                  onResizeEvent: (postIt, start, end) => _runGuarded(
+                    context,
+                    () => planner.resizeEvent(
+                      postIt,
+                      startDate: start,
+                      endDate: end,
+                    ),
+                    AppStrings.errorResize,
+                  ),
+                  onShowHiddenEvents: (events) => showHiddenEventsSheet(
+                    context,
+                    events: events,
+                    onPostItSelected: (postIt) =>
+                        _openDetails(context, planner, postIt),
+                  ),
+                  onQuickCreateTask: (date) =>
+                      _openQuickCreate(context, planner, date, PostItType.task),
+                  onQuickCreateEvent: (date) => _openQuickCreate(
+                    context,
+                    planner,
+                    date,
+                    PostItType.event,
+                  ),
                 ),
-                onQuickCreateTask: (date) =>
-                    _openQuickCreate(context, planner, date, PostItType.task),
-                onQuickCreateEvent: (date) =>
-                    _openQuickCreate(context, planner, date, PostItType.event),
               ),
             ),
           ),
@@ -186,6 +217,35 @@ class AgendaPage extends StatelessWidget {
     );
   }
 
+  void _turnPage(int direction, VoidCallback action) {
+    setState(() => _pageTurnDirection = direction);
+    action();
+  }
+
+  Widget _pageTurnTransition(Widget child, Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final value = Curves.easeInOutCubic.transform(animation.value);
+        final angle = (1 - value) * 0.55 * _pageTurnDirection;
+        final transform = Matrix4.identity()
+          ..setEntry(3, 2, 0.0012)
+          ..rotateY(angle);
+        return Opacity(
+          opacity: value.clamp(0, 1),
+          child: Transform(
+            alignment: _pageTurnDirection >= 0
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
+            transform: transform,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _runGuarded(
     BuildContext context,
     Future<void> Function() operation,
@@ -220,10 +280,6 @@ class AgendaPage extends StatelessWidget {
     PlannerController planner,
     PostIt postIt,
   ) {
-    openPostItDetailsById(
-      context,
-      postItId: postIt.id,
-      goToAgenda: false,
-    );
+    openPostItDetailsById(context, postItId: postIt.id, goToAgenda: false);
   }
 }

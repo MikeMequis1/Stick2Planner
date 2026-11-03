@@ -20,8 +20,7 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell>
-    with WidgetsBindingObserver {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   static const _wideBreakpoint = 720.0;
 
   @override
@@ -39,16 +38,10 @@ class _HomeShellState extends State<HomeShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
-    AppScope.of(
-      context,
-    ).planner.handleAppResumed().catchError((Object _) {});
+    AppScope.of(context).planner.handleAppResumed().catchError((Object _) {});
   }
 
-  static const _pages = <Widget>[
-    AgendaPage(),
-    InboxPage(),
-    NotesPage(),
-  ];
+  static const _pages = <Widget>[AgendaPage(), InboxPage(), NotesPage()];
 
   static const _railDestinations = <NavigationRailDestination>[
     NavigationRailDestination(
@@ -132,8 +125,10 @@ class _HomeShellState extends State<HomeShell>
             top: false,
             child: useRail
                 ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       NavigationRail(
+                        minWidth: 88,
                         selectedIndex: index,
                         onDestinationSelected: _select,
                         destinations: _railDestinations,

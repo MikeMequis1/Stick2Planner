@@ -929,10 +929,18 @@ foi iniciada.
 - Helper único `openPostItDetailsById` localiza o post-it por UUID, seleciona a
   Agenda, volta da rota de nota quando necessário e abre o detalhe existente.
 - Post-its com vínculo vivo aparecem em “Post-its vinculados”; snapshots com
-  `sourceNoteId` aparecem em “Trechos desta nota”. Tocar abre o mesmo registro.
+  `sourceNoteId` aparecem em “Trechos desta nota”.
+- Cada item tem dois botões: “Ver detalhes” abre o popup no local; “Abrir na
+  Agenda” seleciona a data e realça o post-it temporariamente. O botão de Agenda
+  fica desabilitado quando não há data.
+- Tocar no conteúdo Markdown ou em uma linha de lista abre o editor; toque longo
+  segue selecionando linhas para snapshot.
 - Caixinha: menu `...` ganhou “Abrir na Agenda” somente para post-its com data;
   ações de concluir/reabrir/cancelar continuam iguais.
 - UUID ausente exibe aviso e não cria post-it.
+- Agenda: deslizar na horizontal folheia o período com animação de página;
+  deslizar na vertical aumenta/reduz os dias exibidos.
+- Barra lateral: trilho com largura mínima de 88 dp e altura total da casca.
 
 ### Modelo e compatibilidade
 
@@ -956,11 +964,16 @@ foi iniciada.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **172 testes aprovados**.
+- `flutter test`: **175 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - Novos testes: navegação por vínculo vivo, navegação por snapshot, UUID
-  ausente, opção “Abrir na Agenda” com/sem data e preservação do menu.
+  ausente, opção “Abrir na Agenda” com/sem data, preservação do menu, gesto
+  horizontal de período e gesto vertical de dias.
 - Migração v3 → v4 coberta.
+- Validação no tablet: dois botões por post-it na nota, foco temporário na
+  Agenda e gestos de folhear/período. Evidências:
+  `docs/validacao/rodada-nota-acoes-postit.png` e
+  `rodada-foco-postit.png`.
 
 ### Próximo passo
 
