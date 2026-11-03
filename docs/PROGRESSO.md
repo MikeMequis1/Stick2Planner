@@ -319,6 +319,38 @@ por dedo real. Criação de evento não foi concluída manualmente no emulador
 (apenas formulário/data picker); o fluxo completo está coberto por teste de
 widget.
 
+### Validação em aparelho físico (2026-11-03)
+
+Aparelho: `2410CRP4CG` (`9a80298a`), Android 16 / HyperOS 3.0, arm64,
+2136×3200 a 440 dpi (776×1164 dp), modo escuro do sistema.
+
+Executado com sucesso:
+
+- Instalação do APK. O `adb install` normal falhou com
+  `INSTALL_FAILED_USER_RESTRICTED` mesmo com “Instalar via USB” habilitado;
+  a instalação funcionou usando `adb install -r -i com.android.vending`.
+- Abertura do app, tema escuro e layout de tablet.
+- Criação de tarefa pelo formulário, com teclado virtual e persistência.
+- Arraste por long press da tarefa de terça para quinta; UI e banco
+  confirmaram `2026-11-05`.
+- Evento multi-dia (dados semeados no SQLite via `run-as` porque a criação
+  completa de evento pelo formulário não foi concluída no `adb`) e
+  redimensionamento pela alça final: fim alterado de `2026-11-05` para
+  `2026-11-06`.
+- Folha de detalhes, ações visíveis, modo retrato (dia) e mês compacto.
+- Persistência após `force-stop` + reabertura: tarefa e evento permaneceram.
+- Verificação do banco por `run-as ... cat files/planner.sqlite` e
+  `sqlite3` no host.
+
+Evidências: `docs/validacao/aparelho-tarefa-criada.png`,
+`aparelho-arraste.png`, `aparelho-resize.png`, `aparelho-detalhes.png`,
+`aparelho-retrato.png`, `aparelho-mes.png`.
+
+Limitações: gestos foram injetados por `motionevent`, não por toque manual
+contínuo; não foram testados caneta, multitoque, TalkBack nem teclado físico.
+A criação de evento pelo formulário não foi concluída no aparelho (o fluxo
+está coberto por widget tests e o resize foi validado com evento semeado).
+
 ### Problemas encontrados e corrigidos
 
 - Alças de redimensionamento apareciam como faixas brancas sobre a barra;
@@ -362,8 +394,9 @@ widget.
 Itens conhecidos que ainda precisam de decisão/implementação antes de
 considerar a Etapa 3 fechada:
 
-1. **Aparelho físico:** validação feita apenas em emulador. Falta testar em
-   tablet real, incluindo caneta, multitoque, TalkBack ativo e teclado físico.
+1. **Confirmação manual em aparelho:** a validação física foi feita com
+   gestos injetados por `motionevent`. Falta confirmar com dedo/caneta reais,
+   multitoque, TalkBack ativo e teclado físico externo.
 2. **Arraste para fora do período visível:** não há auto-scroll nem navegação
    durante o arraste. Hoje é necessário usar "Mover para data…"; decidir se
    isso basta ou se o arraste deve atravessar semanas/meses.
@@ -382,12 +415,11 @@ considerar a Etapa 3 fechada:
    "Desfazer" no snackbar. Decidir se entra nesta etapa.
 8. **Carga/legibilidade:** falta medir muitos post-its (ex.: 100–200) em modo
    semana/mês no emulador e revisar performance/overflow.
-9. **Evento criado fim-a-fim no emulador:** o formulário e o date picker foram
-   inspecionados no dispositivo, mas a criação completa de evento foi coberta
-   só por teste de widget (o fluxo manual foi interrompido por limitação do
-   `adb input`).
-10. **Testes de gesto em tela real:** arraste e resize foram feitos via
-    sequências de `motionevent`; confirmar sensação/tolerância em toque real.
+9. **Evento criado fim-a-fim no aparelho:** o formulário e o date picker foram
+   inspecionados no aparelho; a criação completa de evento foi coberta só por
+   teste de widget (o resize usou evento semeado no banco).
+10. **Testes de gesto com dedo/caneta:** arraste e resize foram injetados via
+    `motionevent`; confirmar sensação/tolerância em toque real e caneta.
 
 ### Próximo passo
 

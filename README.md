@@ -44,6 +44,10 @@ flutter build apk --debug
 O arquivo `*.g.dart` é gerado pelo drift; não editar manualmente. Rode o
 codegen sempre que alterar `lib/data/db/tables.dart`.
 
+Em HyperOS/MIUI, o `adb install` pode falhar com
+`INSTALL_FAILED_USER_RESTRICTED`; além de habilitar “Instalar via USB”, o
+workaround usado foi `adb install -r -i com.android.vending app-debug.apk`.
+
 ## Estrutura
 
 ```
