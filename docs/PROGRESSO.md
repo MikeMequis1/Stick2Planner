@@ -706,9 +706,8 @@ Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
 
 ### Próximo passo
 
-Etapa 6 — qualidade e documentação final (testes de integração, acessibilidade,
-ajustes de layout, verificação offline e documentação). Não iniciada; aguardando
-avaliação.
+Etapa 6 — qualidade e documentação final: concluída nesta rodada; ver seção
+final `Etapa 6 — qualidade e entrega`.
 
 ## Rodada de ajustes — Markdown, toque longo e agenda (2026-11-03)
 
@@ -870,3 +869,53 @@ avaliação.
 - Animações não alteram dados, persistência ou regras de negócio.
 - Evidência do redimensionamento ao vivo:
   `docs/validacao/rodada-redimensionar-ao-vivo.png`.
+
+## Etapa 6 — qualidade e entrega (2026-11-03)
+
+### Correção de flicker
+
+- Mover e redimensionar agora aplicam uma atualização otimista em memória antes
+  de gravar no banco. A barra assume imediatamente a data/duração nova; a
+  persistência continua transacional.
+- Em falha de escrita, o estado anterior é restaurado e o erro sobe para a UI.
+- Teste com repositório atrasado comprova que o estado muda antes do
+  `saveBatch` concluir.
+
+### Acessibilidade e layout
+
+- Célula de dia expõe rótulo semântico com data completa, “hoje” e
+  “selecionado”, além da ação de toque.
+- Testes com texto ampliado em 1,3× cobrem a agenda e o editor Markdown, sem
+  exceções de layout.
+- Tooltips, rótulos de post-its/eventos, alças de 24×24 dp e alternativas aos
+  gestos revisados.
+
+### Offline e consistência
+
+- Teste de contrato confirma que o manifest Android não declara permissão
+  `INTERNET`.
+- Documento `docs/QUALIDADE.md` consolida matriz de validação, acessibilidade,
+  offline, consistência e limitações conhecidas.
+
+### Testes e resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **167 testes aprovados**.
+- `flutter build apk --debug`: aprovado.
+- Tablet Android validado com o app instalado; dados restaurados após o teste
+  manual de redimensionamento. Evidência: `docs/validacao/etapa6-agenda.png`.
+
+### Limitações finais
+
+- Sem sincronização entre dispositivos.
+- Links Markdown não abrem navegador.
+- Snapshot de texto usa Markdown cru.
+- Um vínculo de nota por post-it; sem undo de exclusão de nota.
+- Sem preferência de “reduzir movimento”.
+- Sem busca própria no caderno.
+- Gutter óptico de 1,5 px na grade do mês.
+
+### Próximo passo
+
+MVP da Etapa 6 concluído. Aguardando avaliação final; nenhuma etapa posterior
+foi iniciada.

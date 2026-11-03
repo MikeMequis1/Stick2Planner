@@ -255,6 +255,18 @@ etapas. Cada item: contexto, decisão, consequência.
 - Seleção de substring arbitrária em listas (MVP: linha ou intervalo; em notas
   de texto o snapshot usa seleção no Markdown cru).
 
+## Consistência otimista e qualidade final
+
+- **Mover/redimensionar:** o estado em memória é atualizado antes do banco para
+  evitar flicker; `saveBatch`/`save` seguem transacionais e o estado anterior é
+  restaurado em falha.
+- **Acessibilidade:** dias têm rótulo completo, estados “hoje/selecionado” e ação
+  de toque; textos ampliados em 1,3× são validados em agenda e notas.
+- **Offline:** teste de contrato garante ausência da permissão `INTERNET`; os
+  dados permanecem em SQLite local.
+- **Entrega:** `docs/QUALIDADE.md` concentra matriz de validação, limitações e
+  critérios finais.
+
 ## Pendente de decisão
 
 Nenhuma no momento.

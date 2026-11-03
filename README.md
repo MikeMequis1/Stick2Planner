@@ -7,8 +7,8 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapas 0 a 5 concluídas. A agenda, organização e caderno de notas já estão
-funcionais; falta a rodada de qualidade/acessibilidade da Etapa 6.
+Etapas 0 a 6 concluídas. A agenda, organização, caderno de notas e a rodada de
+qualidade/acessibilidade estão implementados no MVP offline.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema, repositórios, tema, navegação)
@@ -16,9 +16,10 @@ funcionais; falta a rodada de qualidade/acessibilidade da Etapa 6.
 - [x] Etapa 3 — criação/edição, arraste, reordenação e redimensionamento
 - [x] Etapa 4 — estados, caixinha, tarefas sem data e TO-DO recorrente
 - [x] Etapa 5 — notas, listas, trechos e vínculos com post-its
-- [ ] Etapa 6 — qualidade e documentação final
+- [x] Etapa 6 — qualidade, acessibilidade, offline e documentação final
 
 Histórico detalhado: `docs/PROGRESSO.md`. Decisões: `docs/DECISOES.md`.
+Checklist final: `docs/QUALIDADE.md`.
 
 ## Requisitos
 
@@ -163,6 +164,9 @@ não importa Flutter nem drift.
   feedback de arraste com escala, badges com fade/scale e cross-fade ao trocar
   período ou modo. Ao redimensionar, a barra acompanha a largura do dedo em
   tempo real e a alça ativa recebe destaque.
+- **Soltura sem flicker:** mover ou redimensionar atualiza a barra
+  imediatamente; a persistência acontece em seguida e o estado anterior é
+  restaurado se a escrita falhar.
 
 ## Notas privadas
 

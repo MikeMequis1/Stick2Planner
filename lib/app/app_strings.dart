@@ -20,6 +20,7 @@ abstract final class AppStrings {
       'post-its.';
 
   static const today = 'Hoje';
+  static const selectedDay = 'selecionado';
   static const selectedDate = 'Data selecionada';
   static const postItsOnDay = 'Post-its no dia';
   static const undated = 'Sem data';

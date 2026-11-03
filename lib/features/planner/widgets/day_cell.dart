@@ -61,79 +61,90 @@ class DayCell extends StatelessWidget {
         final borderColor = isDropTarget
             ? scheme.primary
             : (isSelected ? scheme.primary : scheme.outlineVariant);
+        final dayLabel = [
+          DateFormats.fullDate(day.date),
+          if (isToday) AppStrings.today,
+          if (isSelected) AppStrings.selectedDay,
+        ].join(' · ');
 
-        return _DayTapRegion(
-          date: day.date,
-          items: items,
-          today: today,
+        return Semantics(
+          container: true,
+          button: true,
+          label: dayLabel,
           onTap: onTap,
-          onQuickCreateTask: onQuickCreateTask,
-          onQuickCreateEvent: onQuickCreateEvent,
-          child: Padding(
-            padding: const EdgeInsets.all(1.5),
-            child: AnimatedScale(
-              scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: AnimatedContainer(
+          child: _DayTapRegion(
+            date: day.date,
+            items: items,
+            today: today,
+            onTap: onTap,
+            onQuickCreateTask: onQuickCreateTask,
+            onQuickCreateEvent: onQuickCreateEvent,
+            child: Padding(
+              padding: const EdgeInsets.all(1.5),
+              child: AnimatedScale(
+                scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
                 duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: isDropTarget
-                      ? scheme.primaryContainer.withValues(alpha: 0.45)
-                      : (isSelected
-                            ? scheme.primaryContainer.withValues(alpha: 0.28)
-                            : (muted
-                                  ? scheme.surfaceContainerLowest
-                                  : scheme.surface)),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: borderColor,
-                    width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
-                  ),
-                  boxShadow: isSelected || isDropTarget
-                      ? [
-                          BoxShadow(
-                            color: scheme.primary.withValues(
-                              alpha: isDropTarget ? 0.32 : 0.18,
+                curve: Curves.easeOutCubic,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: isDropTarget
+                        ? scheme.primaryContainer.withValues(alpha: 0.45)
+                        : (isSelected
+                              ? scheme.primaryContainer.withValues(alpha: 0.28)
+                              : (muted
+                                    ? scheme.surfaceContainerLowest
+                                    : scheme.surface)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: borderColor,
+                      width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
+                    ),
+                    boxShadow: isSelected || isDropTarget
+                        ? [
+                            BoxShadow(
+                              color: scheme.primary.withValues(
+                                alpha: isDropTarget ? 0.32 : 0.18,
+                              ),
+                              blurRadius: isDropTarget ? 16 : 10,
                             ),
-                            blurRadius: isDropTarget ? 16 : 10,
+                          ]
+                        : const [],
+                  ),
+                  padding: EdgeInsets.all(compact ? 1 : 4),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final tight = constraints.maxHeight < 24;
+                      final showHeader = constraints.maxHeight >= 12;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (showHeader)
+                            _DayHeader(
+                              date: day.date,
+                              isSelected: isSelected,
+                              isToday: isToday,
+                              muted: muted,
+                              compact: compact || tight,
+                              dense: tight,
+                            ),
+                          Expanded(
+                            child: _DayContent(
+                              date: day.date,
+                              today: today,
+                              items: items,
+                              compact: compact || tight,
+                              onPostItTap: onPostItTap,
+                              onShowAll: onShowAll,
+                              onReorderTo: onReorderTo,
+                            ),
                           ),
-                        ]
-                      : const [],
-                ),
-                padding: EdgeInsets.all(compact ? 1 : 4),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final tight = constraints.maxHeight < 24;
-                    final showHeader = constraints.maxHeight >= 12;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (showHeader)
-                          _DayHeader(
-                            date: day.date,
-                            isSelected: isSelected,
-                            isToday: isToday,
-                            muted: muted,
-                            compact: compact || tight,
-                            dense: tight,
-                          ),
-                        Expanded(
-                          child: _DayContent(
-                            date: day.date,
-                            today: today,
-                            items: items,
-                            compact: compact || tight,
-                            onPostItTap: onPostItTap,
-                            onShowAll: onShowAll,
-                            onReorderTo: onReorderTo,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
