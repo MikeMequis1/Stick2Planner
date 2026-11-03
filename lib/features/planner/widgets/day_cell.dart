@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/app_strings.dart';
+import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_drag_data.dart';
+import 'post_it_presentation.dart';
 import 'post_it_tile.dart';
 
 /// Célula de um dia: alvo de soltura, cartões arrastáveis e overflow.
@@ -22,6 +27,8 @@ class DayCell extends StatelessWidget {
     required this.onShowAll,
     required this.onMoveToDay,
     required this.onReorderTo,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
   });
 
   final CalendarDay day;
@@ -35,6 +42,8 @@ class DayCell extends StatelessWidget {
   final VoidCallback onShowAll;
   final ValueChanged<PostIt> onMoveToDay;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -53,20 +62,24 @@ class DayCell extends StatelessWidget {
             ? scheme.primary
             : (isSelected ? scheme.primary : scheme.outlineVariant);
 
-        return Padding(
-          padding: const EdgeInsets.all(1.5),
-          child: Material(
-            color: isDropTarget
-                ? scheme.primaryContainer.withValues(alpha: 0.45)
-                : (isSelected
-                      ? scheme.primaryContainer.withValues(alpha: 0.28)
-                      : (muted
-                            ? scheme.surfaceContainerLowest
-                            : scheme.surface)),
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
+        return _DayTapRegion(
+          date: day.date,
+          items: items,
+          today: today,
+          onTap: onTap,
+          onQuickCreateTask: onQuickCreateTask,
+          onQuickCreateEvent: onQuickCreateEvent,
+          child: Padding(
+            padding: const EdgeInsets.all(1.5),
+            child: Material(
+              color: isDropTarget
+                  ? scheme.primaryContainer.withValues(alpha: 0.45)
+                  : (isSelected
+                        ? scheme.primaryContainer.withValues(alpha: 0.28)
+                        : (muted
+                              ? scheme.surfaceContainerLowest
+                              : scheme.surface)),
               borderRadius: BorderRadius.circular(8),
-              onTap: onTap,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
@@ -112,6 +125,216 @@ class DayCell extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _DayTapRegion extends StatefulWidget {
+  const _DayTapRegion({
+    required this.date,
+    required this.items,
+    required this.today,
+    required this.onTap,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
+    required this.child,
+  });
+
+  final DateOnly date;
+  final List<PostIt> items;
+  final DateOnly today;
+  final VoidCallback onTap;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
+  final Widget child;
+
+  @override
+  State<_DayTapRegion> createState() => _DayTapRegionState();
+}
+
+class _DayTapRegionState extends State<_DayTapRegion> {
+  static const _multiTapWindow = Duration(milliseconds: 300);
+  static const _previewWidth = 280.0;
+  static const _previewHeight = 224.0;
+
+  Timer? _tapTimer;
+  int _tapCount = 0;
+  OverlayEntry? _previewEntry;
+
+  @override
+  void dispose() {
+    _tapTimer?.cancel();
+    _removePreview();
+    super.dispose();
+  }
+
+  void _resetTapCount() {
+    _tapTimer?.cancel();
+    _tapCount = 0;
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _tapTimer?.cancel();
+    _tapCount++;
+    widget.onTap();
+
+    if (_tapCount >= 3) {
+      _tapCount = 0;
+      HapticFeedback.mediumImpact();
+      widget.onQuickCreateEvent(widget.date);
+      return;
+    }
+
+    _tapTimer = Timer(_multiTapWindow, () {
+      final count = _tapCount;
+      _tapCount = 0;
+      if (count == 2) {
+        HapticFeedback.lightImpact();
+        widget.onQuickCreateTask(widget.date);
+      }
+    });
+  }
+
+  void _handleLongPressStart(LongPressStartDetails details) {
+    _resetTapCount();
+    HapticFeedback.selectionClick();
+    _showPreview();
+  }
+
+  void _handleLongPressEnd(LongPressEndDetails details) => _removePreview();
+
+  void _handleLongPressCancel() => _removePreview();
+
+  void _showPreview() {
+    _removePreview();
+    final overlay = Overlay.maybeOf(context);
+    final renderObject = context.findRenderObject();
+    if (overlay == null || renderObject is! RenderBox) return;
+    if (!renderObject.hasSize) return;
+
+    final origin = renderObject.localToGlobal(Offset.zero);
+    final size = renderObject.size;
+    final screen = MediaQuery.sizeOf(context);
+    final maxLeft = screen.width - _previewWidth - 8;
+    final left = (origin.dx + size.width / 2 - _previewWidth / 2)
+        .clamp(8.0, maxLeft < 8 ? 8.0 : maxLeft)
+        .toDouble();
+    final maxTop = screen.height - _previewHeight - 8;
+    var top = origin.dy + size.height + 8;
+    if (top > maxTop) top = origin.dy - _previewHeight - 8;
+    top = top.clamp(8.0, maxTop < 8 ? 8.0 : maxTop).toDouble();
+
+    _previewEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: left,
+        top: top,
+        width: _previewWidth,
+        child: IgnorePointer(
+          child: _DayPreviewCard(date: widget.date, items: widget.items),
+        ),
+      ),
+    );
+    overlay.insert(_previewEntry!);
+  }
+
+  void _removePreview() {
+    _previewEntry?.remove();
+    _previewEntry = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: _handleTapUp,
+      onLongPressStart: _handleLongPressStart,
+      onLongPressEnd: _handleLongPressEnd,
+      onLongPressCancel: _handleLongPressCancel,
+      child: widget.child,
+    );
+  }
+}
+
+class _DayPreviewCard extends StatelessWidget {
+  const _DayPreviewCard({required this.date, required this.items});
+
+  final DateOnly date;
+  final List<PostIt> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final visible = items.take(4).toList(growable: false);
+
+    return Material(
+      key: const Key('day-preview'),
+      elevation: 8,
+      borderRadius: BorderRadius.circular(12),
+      color: scheme.surfaceContainerHigh,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              DateFormats.fullDate(date),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            if (items.isEmpty)
+              Text(
+                AppStrings.emptyDay,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              )
+            else ...[
+              for (final postIt in visible)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        postItIcon(postIt),
+                        size: 16,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          postIt.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            decoration: postIt.status == PostItStatus.active
+                                ? null
+                                : TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (items.length > visible.length)
+                Text(
+                  AppStrings.moreItems(items.length - visible.length),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -306,10 +529,8 @@ class _DraggableItem extends StatelessWidget {
     final theme = Theme.of(context);
 
     return DragTarget<PostItDragData>(
-      onWillAcceptWithDetails: (details) =>
-          details.data.postIt.id != postIt.id,
-      onAcceptWithDetails: (details) =>
-          onReorderTo(details.data.postIt, index),
+      onWillAcceptWithDetails: (details) => details.data.postIt.id != postIt.id,
+      onAcceptWithDetails: (details) => onReorderTo(details.data.postIt, index),
       builder: (context, candidateData, rejectedData) {
         final tile = PostItTile(
           key: Key('post-it-${postIt.id}'),
@@ -321,6 +542,7 @@ class _DraggableItem extends StatelessWidget {
 
         return LongPressDraggable<PostItDragData>(
           data: PostItDragData(postIt),
+          delay: const Duration(milliseconds: 200),
           dragAnchorStrategy: childDragAnchorStrategy,
           feedback: _DragFeedback(postIt: postIt, compact: compact),
           childWhenDragging: Opacity(opacity: 0.35, child: tile),

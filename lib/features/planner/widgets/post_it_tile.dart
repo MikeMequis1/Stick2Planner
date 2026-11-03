@@ -39,7 +39,7 @@ class PostItTile extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 5 : 8,
+              horizontal: compact ? 4 : 8,
               vertical: compact ? 2 : 6,
             ),
             child: Row(

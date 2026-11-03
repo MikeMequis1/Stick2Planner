@@ -23,6 +23,8 @@ class CalendarGrid extends StatelessWidget {
     required this.onReorderTo,
     required this.onResizeEvent,
     required this.onShowHiddenEvents,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
   });
 
   final CalendarPeriod period;
@@ -37,6 +39,8 @@ class CalendarGrid extends StatelessWidget {
   final void Function(PostIt postIt, DateOnly startDate, DateOnly endDate)
   onResizeEvent;
   final ValueChanged<List<PostIt>> onShowHiddenEvents;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
 
   static const _minimumHeight = 160.0;
 
@@ -81,6 +85,8 @@ class CalendarGrid extends StatelessWidget {
                             onReorderTo: onReorderTo,
                             onResizeEvent: onResizeEvent,
                             onShowHiddenEvents: onShowHiddenEvents,
+                            onQuickCreateTask: onQuickCreateTask,
+                            onQuickCreateEvent: onQuickCreateEvent,
                           ),
                         ),
                       ),

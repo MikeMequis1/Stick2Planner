@@ -100,7 +100,8 @@ abstract final class AppStrings {
   static const createPostItError = 'Não foi possível criar o post-it.';
   static const noteLines = 'linhas';
 
-  static String noteCount(int count) => '$count ${count == 1 ? 'nota' : 'notas'}';
+  static String noteCount(int count) =>
+      '$count ${count == 1 ? 'nota' : 'notas'}';
   static String linkedPostItsCount(int count) =>
       '$count ${count == 1 ? 'post-it' : 'post-its'}';
 
@@ -165,8 +166,8 @@ abstract final class AppStrings {
   static const close = 'Fechar';
   static const emptyDay = 'Nenhum post-it neste dia.';
   static const calendarHint =
-      'Toque em um dia para selecionar; toque em um post-it para ver os '
-      'detalhes.';
+      'Toque: selecionar · 2 toques: tarefa · 3 toques: evento · segure: '
+      'prévia';
   static const todayBadge = 'hoje';
   static const continuation = 'continua';
 
@@ -209,10 +210,8 @@ abstract final class AppStrings {
   static const errorEventDate = 'Escolha a data do evento.';
   static const errorEndBeforeStart =
       'A data final não pode ser anterior à inicial.';
-  static const errorEndWithoutStart =
-      'Informe a data inicial antes da final.';
-  static const errorIntervalOnTask =
-      'Apenas eventos podem ocupar vários dias.';
+  static const errorEndWithoutStart = 'Informe a data inicial antes da final.';
+  static const errorIntervalOnTask = 'Apenas eventos podem ocupar vários dias.';
   static const errorHighlightEvent =
       'O símbolo + só pode ser usado em eventos.';
   static const errorSave =

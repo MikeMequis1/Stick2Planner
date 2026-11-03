@@ -138,6 +138,58 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.markdownPreviewTitle), findsOneWidget);
     expect(find.byType(MarkdownBody), findsOneWidget);
+    expect(
+      tester.getCenter(find.byType(MarkdownBody)).dx,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('note-markdown'))).dx,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('note-save')));
+    await tester.pumpAndSettle();
+    expect(dependencies.notes.notes.single.markdown, '# **Linha**');
+  });
+
+  testWidgets('barra Markdown aplica título, negrito e prévia', (tester) async {
+    final dependencies = await pumpPlanner(tester);
+    await openNotes(tester);
+
+    await tester.tap(find.byKey(const Key('add-note')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('note-title')),
+      'Ferramentas',
+    );
+    await tester.enterText(
+      find.byKey(const Key('note-markdown')),
+      'Linha',
+    );
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('note-markdown')),
+    );
+    await tester.tap(find.byKey(const Key('note-md-h1')));
+    await tester.pumpAndSettle();
+    expect(field.controller!.text, '# Linha');
+
+    field.controller!.selection = const TextSelection(
+      baseOffset: 2,
+      extentOffset: 7,
+    );
+    await tester.tap(find.byKey(const Key('note-md-bold')));
+    await tester.pumpAndSettle();
+    expect(field.controller!.text, '# **Linha**');
+
+    await tester.tap(find.byKey(const Key('note-md-preview')));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.markdownPreviewTitle), findsOneWidget);
+    expect(find.byType(MarkdownBody), findsOneWidget);
+    expect(
+      tester.getCenter(find.byType(MarkdownBody)).dx,
+      greaterThan(
+        tester.getCenter(find.byKey(const Key('note-markdown'))).dx,
+      ),
+    );
 
     await tester.tap(find.byKey(const Key('note-save')));
     await tester.pumpAndSettle();

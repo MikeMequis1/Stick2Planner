@@ -50,8 +50,12 @@ class EventBar extends StatelessWidget {
           borderRadius: radius,
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 6),
+            padding: EdgeInsets.only(
+              left: continuesBefore ? (compact ? 4 : 8) : (compact ? 12 : 24),
+              right: continuesAfter ? (compact ? 4 : 8) : (compact ? 12 : 24),
+            ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (continuesBefore)
                   Icon(

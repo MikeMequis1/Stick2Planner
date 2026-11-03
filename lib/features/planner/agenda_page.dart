@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/planner_controller.dart';
+import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
 import '../notes/note_detail_page.dart';
@@ -118,6 +119,10 @@ class AgendaPage extends StatelessWidget {
                 onPostItSelected: (postIt) =>
                     _openDetails(context, planner, postIt),
               ),
+              onQuickCreateTask: (date) =>
+                  _openQuickCreate(context, planner, date, PostItType.task),
+              onQuickCreateEvent: (date) =>
+                  _openQuickCreate(context, planner, date, PostItType.event),
             ),
           ),
           const SizedBox(height: 8),
@@ -139,10 +144,7 @@ class AgendaPage extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(999),
@@ -175,6 +177,21 @@ class AgendaPage extends StatelessWidget {
         SnackBar(content: Text(errorMessage)),
       );
     }
+  }
+
+  void _openQuickCreate(
+    BuildContext context,
+    PlannerController planner,
+    DateOnly date,
+    PostItType type,
+  ) {
+    planner.selectDate(date);
+    showPostItEditorSheet(
+      context,
+      controller: planner,
+      initialDate: date,
+      initialType: type,
+    );
   }
 
   void _openDetails(

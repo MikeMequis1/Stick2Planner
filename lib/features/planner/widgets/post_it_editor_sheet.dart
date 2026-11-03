@@ -14,6 +14,7 @@ Future<void> showPostItEditorSheet(
   required PlannerController controller,
   required DateOnly initialDate,
   PostIt? existing,
+  PostItType initialType = PostItType.task,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -24,6 +25,7 @@ Future<void> showPostItEditorSheet(
       controller: controller,
       initialDate: initialDate,
       existing: existing,
+      initialType: initialType,
     ),
   );
 }
@@ -34,11 +36,13 @@ class PostItEditorSheet extends StatefulWidget {
     required this.controller,
     required this.initialDate,
     this.existing,
+    this.initialType = PostItType.task,
   });
 
   final PlannerController controller;
   final DateOnly initialDate;
   final PostIt? existing;
+  final PostItType initialType;
 
   @override
   State<PostItEditorSheet> createState() => _PostItEditorSheetState();
@@ -67,7 +71,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     final existing = widget.existing;
     _titleController = TextEditingController(text: existing?.title ?? '');
     _detailsController = TextEditingController(text: existing?.details ?? '');
-    _type = existing?.type ?? PostItType.task;
+    _type = existing?.type ?? widget.initialType;
     _isHighlight = existing?.isHighlight ?? false;
     _startDate = existing == null
         ? widget.initialDate

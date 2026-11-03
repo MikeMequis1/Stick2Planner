@@ -3,6 +3,7 @@ import 'package:flutter_schedule/app/app.dart';
 import 'package:flutter_schedule/app/app_strings.dart';
 import 'package:flutter_schedule/app/bootstrap.dart';
 import 'package:flutter_schedule/app/planner_view_mode.dart';
+import 'package:flutter_schedule/core/date_formatting.dart';
 import 'package:flutter_schedule/core/date_only.dart';
 import 'package:flutter_schedule/domain/entities/post_it.dart';
 import 'package:flutter_schedule/features/planner/widgets/day_cell.dart';
@@ -300,6 +301,68 @@ void main() {
 
     expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
     expect(find.text('2 – 8 nov 2026'), findsOneWidget);
+  });
+
+  testWidgets('dois toques criam tarefa e três criam evento', (tester) async {
+    await pumpPlanner(tester, size: const Size(1280, 800));
+    final day = find.byKey(const Key('day-2026-11-05'));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SegmentedButton<PostItType>), findsOneWidget);
+    final taskSelector = tester.widget<SegmentedButton<PostItType>>(
+      find.byType(SegmentedButton<PostItType>),
+    );
+    expect(taskSelector.selected, {PostItType.task});
+
+    await tester.tap(find.text(AppStrings.cancel));
+    await tester.pumpAndSettle();
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SegmentedButton<PostItType>), findsOneWidget);
+    final eventSelector = tester.widget<SegmentedButton<PostItType>>(
+      find.byType(SegmentedButton<PostItType>),
+    );
+    expect(eventSelector.selected, {PostItType.event});
+  });
+
+  testWidgets('segurar um dia mostra prévia e soltar fecha', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 't1',
+          title: 'Revisar prévia',
+          startDate: DateOnly(2026, 11, 5),
+        ),
+      ],
+    );
+
+    final day = find.byKey(const Key('day-2026-11-05'));
+    final gesture = await tester.startGesture(tester.getCenter(day));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.byKey(const Key('day-preview')), findsOneWidget);
+    expect(
+      find.text(DateFormats.fullDate(DateOnly(2026, 11, 5))),
+      findsOneWidget,
+    );
+    expect(find.text('Revisar prévia'), findsWidgets);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-preview')), findsNothing);
   });
 
   testWidgets('retrato inicia em dia e cresce até semana', (tester) async {

@@ -207,15 +207,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final scheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Wrap(
-        spacing: 2,
-        runSpacing: 2,
+        spacing: 4,
+        runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _MarkdownToolButton(
@@ -308,15 +308,89 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
-  Widget _buildMarkdownPreview(ThemeData theme) {
+  Widget _buildMarkdownField(ThemeData theme) {
+    return TextField(
+      key: const Key('note-markdown'),
+      controller: _markdownController,
+      focusNode: _markdownFocus,
+      minLines: 12,
+      maxLines: null,
+      keyboardType: TextInputType.multiline,
+      textCapitalization: TextCapitalization.sentences,
+      textAlignVertical: TextAlignVertical.top,
+      scrollPadding: const EdgeInsets.only(bottom: 160),
+      style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+      decoration: const InputDecoration(
+        hintText: AppStrings.markdownFieldHint,
+        border: OutlineInputBorder(),
+        alignLabelWithHint: true,
+      ),
+    );
+  }
+
+  Widget _buildMarkdownEditor(ThemeData theme) {
+    final field = _buildMarkdownField(theme);
+    final hint = Text(
+      AppStrings.markdownHint,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+
+    if (!_showPreview) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [field, const SizedBox(height: 8), hint],
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 720;
+        final preview = _buildMarkdownPreview(theme, sideBySide: wide);
+
+        if (!wide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              field,
+              const SizedBox(height: 16),
+              preview,
+              const SizedBox(height: 8),
+              hint,
+            ],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: field),
+                const SizedBox(width: 16),
+                Expanded(child: preview),
+              ],
+            ),
+            const SizedBox(height: 8),
+            hint,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMarkdownPreview(ThemeData theme, {required bool sideBySide}) {
     final scheme = theme.colorScheme;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      constraints: BoxConstraints(minHeight: sideBySide ? 320 : 0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
@@ -330,14 +404,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 size: 16,
                 color: scheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 AppStrings.markdownPreviewTitle,
                 style: theme.textTheme.labelLarge,
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: _markdownController,
             builder: (context, value, _) {
@@ -350,7 +424,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 );
               }
               return ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200),
+                constraints: BoxConstraints(maxHeight: sideBySide ? 360 : 200),
                 child: SingleChildScrollView(
                   child: MarkdownBody(
                     data: value.text,
@@ -446,7 +520,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               counterText: '',
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           SegmentedButton<NoteType>(
             showSelectedIcon: false,
             segments: const [
@@ -465,35 +539,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           const SizedBox(height: 16),
           if (_isText) ...[
             _buildMarkdownToolbar(theme),
-            if (_showPreview) ...[
-              const SizedBox(height: 8),
-              _buildMarkdownPreview(theme),
-            ],
             const SizedBox(height: 8),
-            TextField(
-              key: const Key('note-markdown'),
-              controller: _markdownController,
-              focusNode: _markdownFocus,
-              minLines: 12,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-              textAlignVertical: TextAlignVertical.top,
-              scrollPadding: const EdgeInsets.only(bottom: 160),
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
-              decoration: const InputDecoration(
-                hintText: AppStrings.markdownFieldHint,
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppStrings.markdownHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            _buildMarkdownEditor(theme),
           ] else ...[
             for (var index = 0; index < _lines.length; index++)
               Padding(

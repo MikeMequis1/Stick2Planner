@@ -32,6 +32,8 @@ class WeekRow extends StatefulWidget {
     required this.onReorderTo,
     required this.onResizeEvent,
     required this.onShowHiddenEvents,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
   });
 
   final CalendarWeek week;
@@ -48,6 +50,8 @@ class WeekRow extends StatefulWidget {
   final void Function(PostIt postIt, DateOnly startDate, DateOnly endDate)
   onResizeEvent;
   final ValueChanged<List<PostIt>> onShowHiddenEvents;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
 
   @override
   State<WeekRow> createState() => _WeekRowState();
@@ -200,6 +204,8 @@ class _WeekRowState extends State<WeekRow> {
                             widget.onMovePostIt(postIt, day.date),
                         onReorderTo: (postIt, index) =>
                             widget.onReorderTo(postIt, day.date, index),
+                        onQuickCreateTask: widget.onQuickCreateTask,
+                        onQuickCreateEvent: widget.onQuickCreateEvent,
                       ),
                     ),
                 ],
@@ -243,6 +249,7 @@ class _WeekRowState extends State<WeekRow> {
         children: [
           LongPressDraggable<PostItDragData>(
             data: PostItDragData(postIt),
+            delay: const Duration(milliseconds: 200),
             dragAnchorStrategy: childDragAnchorStrategy,
             feedback: Material(
               color: Colors.transparent,
@@ -270,6 +277,7 @@ class _WeekRowState extends State<WeekRow> {
                 key: Key('event-resize-start-${postIt.id}'),
                 tooltip: AppStrings.resizeStart,
                 isStart: true,
+                compact: widget.compact,
                 active: _resize?.postIt.id == postIt.id &&
                     _resize!.isStart,
                 onStart: () => _startResize(postIt, isStart: true),
@@ -285,8 +293,8 @@ class _WeekRowState extends State<WeekRow> {
                 key: Key('event-resize-end-${postIt.id}'),
                 tooltip: AppStrings.resizeEnd,
                 isStart: false,
-                active: _resize?.postIt.id == postIt.id &&
-                    !_resize!.isStart,
+                compact: widget.compact,
+                active: _resize?.postIt.id == postIt.id && !_resize!.isStart,
                 onStart: () => _startResize(postIt, isStart: false),
                 onUpdate: (dx) => _updateResize(dx),
                 onEnd: () => _commitResize(columnWidth),
@@ -384,6 +392,7 @@ class _ResizeHandle extends StatelessWidget {
     super.key,
     required this.tooltip,
     required this.isStart,
+    required this.compact,
     required this.active,
     required this.onStart,
     required this.onUpdate,
@@ -393,6 +402,7 @@ class _ResizeHandle extends StatelessWidget {
 
   final String tooltip;
   final bool isStart;
+  final bool compact;
   final bool active;
   final VoidCallback onStart;
   final ValueChanged<double> onUpdate;
@@ -431,13 +441,13 @@ class _ResizeHandle extends StatelessWidget {
                   ),
                 ),
                 child: Container(
-                  width: 2,
-                  height: 12,
+                  width: compact ? 3 : 4,
+                  height: compact ? 10 : 14,
                   decoration: BoxDecoration(
                     color: active
                         ? scheme.primary
                         : scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
