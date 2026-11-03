@@ -477,7 +477,18 @@ final class PlannerController extends ChangeNotifier {
         }
       }
 
-      await _postItRepository.saveBatch(updates, history: history);
+      // Atualiza a UI antes da persistência para o cartão não voltar à posição
+      // antiga por alguns milissegundos após soltar o arraste.
+      final previous = _postIts;
+      _postIts = _withUpdates(updates);
+      notifyListeners();
+      try {
+        await _postItRepository.saveBatch(updates, history: history);
+      } on Object {
+        _postIts = previous;
+        notifyListeners();
+        rethrow;
+      }
       await _reload();
     });
   }
@@ -503,16 +514,25 @@ final class PlannerController extends ChangeNotifier {
       );
 
       _validatePostIt(updated);
-      await _postItRepository.save(
-        updated,
-        history: _history(
-          updated.id,
-          PostItHistoryAction.resized,
-          updated.updatedAt,
-          fromValue: _rangeLabel(current),
-          toValue: _rangeLabel(updated),
-        ),
-      );
+      final previous = _postIts;
+      _postIts = _withUpdates([updated]);
+      notifyListeners();
+      try {
+        await _postItRepository.save(
+          updated,
+          history: _history(
+            updated.id,
+            PostItHistoryAction.resized,
+            updated.updatedAt,
+            fromValue: _rangeLabel(current),
+            toValue: _rangeLabel(updated),
+          ),
+        );
+      } on Object {
+        _postIts = previous;
+        notifyListeners();
+        rethrow;
+      }
       await _reload();
     });
   }
@@ -567,6 +587,11 @@ final class PlannerController extends ChangeNotifier {
     if (postIt.isEvent || postIt.startDate == null) return false;
     final index = _indexInDay(postIt);
     return index >= 0 && index < _sortedDayItems(postIt.startDate!).length - 1;
+  }
+
+  List<PostIt> _withUpdates(List<PostIt> updates) {
+    final byId = {for (final postIt in updates) postIt.id: postIt};
+    return [for (final postIt in _postIts) byId[postIt.id] ?? postIt];
   }
 
   Future<void> _reload() async {
