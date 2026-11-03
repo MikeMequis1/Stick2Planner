@@ -528,6 +528,7 @@ post-it a partir do texto e vínculos persistidos. Aguardando aprovação.
   formulário mostram erro compreensível e mantêm o estado persistido.
 - **Eventos fim a fim no aparelho:** criados via formulário:
   - evento comum de um dia (`endDate` nulo);
+  - evento comum de vários dias (`03/11` a `05/11`);
   - evento marcante `+` de um dia (`is_highlight = 1`);
   - evento marcante de vários dias (`03/11` a `05/11`).
   Todos persistidos e exibidos como barras; validações e seletores pt-BR
@@ -587,7 +588,9 @@ post-it a partir do texto e vínculos persistidos. Aguardando aprovação.
 ### Evidências
 
 - `docs/validacao/round-evento-comum.png`
+- `round-evento-comum-multidia.png`
 - `round-evento-marcante-multidia.png`
+- `round-evento-marcante-um-dia.png`
 - `round-recorrente-ui.png`
 - `round-eventos-ocultos.png`
 - `round-carga-mes.png`
