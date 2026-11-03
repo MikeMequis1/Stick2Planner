@@ -71,17 +71,22 @@ class DayCell extends StatelessWidget {
           onQuickCreateEvent: onQuickCreateEvent,
           child: Padding(
             padding: const EdgeInsets.all(1.5),
-            child: Material(
-              color: isDropTarget
-                  ? scheme.primaryContainer.withValues(alpha: 0.45)
-                  : (isSelected
-                        ? scheme.primaryContainer.withValues(alpha: 0.28)
-                        : (muted
-                              ? scheme.surfaceContainerLowest
-                              : scheme.surface)),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
+            child: AnimatedScale(
+              scale: isDropTarget ? 1.02 : (isSelected ? 1.008 : 1),
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
+                  color: isDropTarget
+                      ? scheme.primaryContainer.withValues(alpha: 0.45)
+                      : (isSelected
+                            ? scheme.primaryContainer.withValues(alpha: 0.28)
+                            : (muted
+                                  ? scheme.surfaceContainerLowest
+                                  : scheme.surface)),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: borderColor,
@@ -230,7 +235,16 @@ class _DayTapRegionState extends State<_DayTapRegion> {
         top: top,
         width: _previewWidth,
         child: IgnorePointer(
-          child: _DayPreviewCard(date: widget.date, items: widget.items),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) => Opacity(
+              opacity: value.clamp(0, 1),
+              child: Transform.scale(scale: 0.92 + 0.08 * value, child: child),
+            ),
+            child: _DayPreviewCard(date: widget.date, items: widget.items),
+          ),
         ),
       ),
     );
@@ -368,8 +382,10 @@ class _DayHeader extends StatelessWidget {
       padding: EdgeInsets.only(bottom: compact ? 0 : 4),
       child: Row(
         children: [
-          Container(
+          AnimatedContainer(
             key: Key('day-number-${date.toIso8601String()}'),
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
             width: dense ? 12 : (compact ? 15 : 24),
             height: dense ? 12 : (compact ? 15 : 24),
             alignment: Alignment.center,
@@ -545,8 +561,16 @@ class _DraggableItem extends StatelessWidget {
           delay: const Duration(milliseconds: 200),
           dragAnchorStrategy: childDragAnchorStrategy,
           feedback: _DragFeedback(postIt: postIt, compact: compact),
-          childWhenDragging: Opacity(opacity: 0.35, child: tile),
-          child: DecoratedBox(
+          childWhenDragging: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 1, end: 0.35),
+            duration: const Duration(milliseconds: 160),
+            builder: (context, opacity, child) =>
+                Opacity(opacity: opacity, child: child),
+            child: tile,
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
               border: candidateData.isNotEmpty
@@ -569,14 +593,21 @@ class _DragFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      elevation: 6,
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: 200,
-        height: compact ? 26 : 52,
-        child: PostItTile(postIt: postIt, compact: compact),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.92, end: 1),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutBack,
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Material(
+        color: Colors.transparent,
+        elevation: 6,
+        borderRadius: BorderRadius.circular(6),
+        child: SizedBox(
+          width: 200,
+          height: compact ? 26 : 52,
+          child: PostItTile(postIt: postIt, compact: compact),
+        ),
       ),
     );
   }

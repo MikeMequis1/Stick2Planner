@@ -45,13 +45,19 @@ class CalendarToolbar extends StatelessWidget {
           ),
           Flexible(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                periodLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: Text(
+                  periodLabel,
+                  key: ValueKey(periodLabel),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -88,12 +94,27 @@ class CalendarToolbar extends StatelessWidget {
             icon: Icons.remove,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              mode.label,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: SizedBox(
               key: const Key('calendar-mode-label'),
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.9, end: 1).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: Text(
+                  mode.label,
+                  key: ValueKey(mode),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),

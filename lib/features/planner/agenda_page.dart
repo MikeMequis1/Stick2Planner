@@ -76,53 +76,69 @@ class AgendaPage extends StatelessWidget {
           ],
           const SizedBox(height: 8),
           Expanded(
-            child: CalendarGrid(
-              period: period,
-              postIts: planner.postIts,
-              today: planner.today,
-              selectedDate: planner.selectedDate,
-              onDaySelected: planner.selectDate,
-              onPostItTap: (postIt) => _openDetails(context, planner, postIt),
-              onShowDay: (date) => showDayDetailsSheet(
-                context,
-                date: date,
-                postIts: planner.postItsOn(date),
-                onPostItSelected: (postIt) =>
-                    _openDetails(context, planner, postIt),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              layoutBuilder: (current, previous) => Stack(
+                fit: StackFit.expand,
+                children: [...previous, ?current],
               ),
-              onMovePostIt: (postIt, date) => _runGuarded(
-                context,
-                () => planner.movePostIt(postIt, date),
-                AppStrings.errorMove,
-              ),
-              onReorderTo: (postIt, date, index) => _runGuarded(
-                context,
-                () => planner.movePostIt(
-                  postIt,
-                  date,
-                  targetIndex: index,
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: CalendarGrid(
+                key: ValueKey(
+                  'calendar-grid-${mode.name}-'
+                  '${period.start.toIso8601String()}-'
+                  '${period.end.toIso8601String()}',
                 ),
-                AppStrings.errorMove,
-              ),
-              onResizeEvent: (postIt, start, end) => _runGuarded(
-                context,
-                () => planner.resizeEvent(
-                  postIt,
-                  startDate: start,
-                  endDate: end,
+                period: period,
+                postIts: planner.postIts,
+                today: planner.today,
+                selectedDate: planner.selectedDate,
+                onDaySelected: planner.selectDate,
+                onPostItTap: (postIt) => _openDetails(context, planner, postIt),
+                onShowDay: (date) => showDayDetailsSheet(
+                  context,
+                  date: date,
+                  postIts: planner.postItsOn(date),
+                  onPostItSelected: (postIt) =>
+                      _openDetails(context, planner, postIt),
                 ),
-                AppStrings.errorResize,
+                onMovePostIt: (postIt, date) => _runGuarded(
+                  context,
+                  () => planner.movePostIt(postIt, date),
+                  AppStrings.errorMove,
+                ),
+                onReorderTo: (postIt, date, index) => _runGuarded(
+                  context,
+                  () => planner.movePostIt(
+                    postIt,
+                    date,
+                    targetIndex: index,
+                  ),
+                  AppStrings.errorMove,
+                ),
+                onResizeEvent: (postIt, start, end) => _runGuarded(
+                  context,
+                  () => planner.resizeEvent(
+                    postIt,
+                    startDate: start,
+                    endDate: end,
+                  ),
+                  AppStrings.errorResize,
+                ),
+                onShowHiddenEvents: (events) => showHiddenEventsSheet(
+                  context,
+                  events: events,
+                  onPostItSelected: (postIt) =>
+                      _openDetails(context, planner, postIt),
+                ),
+                onQuickCreateTask: (date) =>
+                    _openQuickCreate(context, planner, date, PostItType.task),
+                onQuickCreateEvent: (date) =>
+                    _openQuickCreate(context, planner, date, PostItType.event),
               ),
-              onShowHiddenEvents: (events) => showHiddenEventsSheet(
-                context,
-                events: events,
-                onPostItSelected: (postIt) =>
-                    _openDetails(context, planner, postIt),
-              ),
-              onQuickCreateTask: (date) =>
-                  _openQuickCreate(context, planner, date, PostItType.task),
-              onQuickCreateEvent: (date) =>
-                  _openQuickCreate(context, planner, date, PostItType.event),
             ),
           ),
           const SizedBox(height: 8),

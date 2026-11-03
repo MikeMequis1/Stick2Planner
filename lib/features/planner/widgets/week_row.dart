@@ -111,19 +111,31 @@ class _WeekRowState extends State<WeekRow> {
                       Positioned(
                         right: 4,
                         top: 0,
-                        child: Material(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(6),
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 160),
+                          curve: Curves.easeOutBack,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value.clamp(0, 1),
+                            child: Transform.scale(
+                              scale: 0.85 + 0.15 * value,
+                              child: child,
                             ),
-                            child: Text(
-                              previewLabel,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                          child: Material(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
+                            elevation: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              child: Text(
+                                previewLabel,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
                               ),
                             ),
                           ),
@@ -134,42 +146,54 @@ class _WeekRowState extends State<WeekRow> {
                       Positioned(
                         right: 4,
                         top: 0,
-                        child: Material(
-                          color: theme.colorScheme.surface.withValues(
-                            alpha: 0.82,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 160),
+                          curve: Curves.easeOutBack,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value.clamp(0, 1),
+                            child: Transform.scale(
+                              scale: 0.85 + 0.15 * value,
+                              child: child,
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            key: Key(
-                              'hidden-events-${widget.week.start.toIso8601String()}',
+                          child: Material(
+                            color: theme.colorScheme.surface.withValues(
+                              alpha: 0.82,
                             ),
                             borderRadius: BorderRadius.circular(6),
-                            onTap: () {
-                              final hidden = <String, PostIt>{
-                                for (final segment
-                                    in layout.hiddenSegments)
-                                  segment.postIt.id: segment.postIt,
-                              }.values.toList(growable: false);
-                              widget.onShowHiddenEvents(hidden);
-                            },
-                            child: SizedBox(
-                              height: 20,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    AppStrings.hiddenEvents(
-                                      layout.hiddenCount,
+                            child: InkWell(
+                              key: Key(
+                                'hidden-events-${widget.week.start.toIso8601String()}',
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                              onTap: () {
+                                final hidden = <String, PostIt>{
+                                  for (final segment
+                                      in layout.hiddenSegments)
+                                    segment.postIt.id: segment.postIt,
+                                }.values.toList(growable: false);
+                                widget.onShowHiddenEvents(hidden);
+                              },
+                              child: SizedBox(
+                                height: 20,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      AppStrings.hiddenEvents(
+                                        layout.hiddenCount,
+                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .primary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(
-                                          color: theme
-                                              .colorScheme
-                                              .primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
                                   ),
                                 ),
                               ),
@@ -251,23 +275,36 @@ class _WeekRowState extends State<WeekRow> {
             data: PostItDragData(postIt),
             delay: const Duration(milliseconds: 200),
             dragAnchorStrategy: childDragAnchorStrategy,
-            feedback: Material(
-              color: Colors.transparent,
-              elevation: 6,
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 220,
-                height: barHeight,
-                child: EventBar(
-                  postIt: postIt,
-                  continuesBefore: false,
-                  continuesAfter: false,
-                  showTitle: true,
-                  compact: widget.compact,
+            feedback: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.92, end: 1),
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) =>
+                  Transform.scale(scale: scale, child: child),
+              child: Material(
+                color: Colors.transparent,
+                elevation: 6,
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 220,
+                  height: barHeight,
+                  child: EventBar(
+                    postIt: postIt,
+                    continuesBefore: false,
+                    continuesAfter: false,
+                    showTitle: true,
+                    compact: widget.compact,
+                  ),
                 ),
               ),
             ),
-            childWhenDragging: Opacity(opacity: 0.35, child: bar),
+            childWhenDragging: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1, end: 0.35),
+              duration: const Duration(milliseconds: 160),
+              builder: (context, opacity, child) =>
+                  Opacity(opacity: opacity, child: child),
+              child: bar,
+            ),
             child: bar,
           ),
           if (!segment.continuesBefore)
@@ -294,7 +331,8 @@ class _WeekRowState extends State<WeekRow> {
                 tooltip: AppStrings.resizeEnd,
                 isStart: false,
                 compact: widget.compact,
-                active: _resize?.postIt.id == postIt.id && !_resize!.isStart,
+                active: _resize?.postIt.id == postIt.id &&
+                    !_resize!.isStart,
                 onStart: () => _startResize(postIt, isStart: false),
                 onUpdate: (dx) => _updateResize(dx),
                 onEnd: () => _commitResize(columnWidth),
