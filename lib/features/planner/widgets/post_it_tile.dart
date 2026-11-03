@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_strings.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_presentation.dart';
 
@@ -10,11 +11,15 @@ class PostItTile extends StatelessWidget {
     required this.postIt,
     required this.compact,
     this.onTap,
+    this.isPostponed = false,
   });
 
   final PostIt postIt;
   final bool compact;
   final VoidCallback? onTap;
+
+  /// TO-DO recorrente adiado manualmente (usa ícone/rótulo, não só cor).
+  final bool isPostponed;
 
   @override
   Widget build(BuildContext context) {
@@ -46,21 +51,49 @@ class PostItTile extends StatelessWidget {
                 ),
                 SizedBox(width: compact ? 3 : 6),
                 Expanded(
-                  child: Text(
-                    postIt.title,
-                    maxLines: compact ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: compact ? 10 : 12.5,
-                      height: 1.2,
-                      fontWeight: FontWeight.w500,
-                      color: colors.foreground,
-                      decoration: isResolved
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        postIt.title,
+                        maxLines: compact || isPostponed ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 10 : 12.5,
+                          height: 1.2,
+                          fontWeight: FontWeight.w500,
+                          color: colors.foreground,
+                          decoration: isResolved
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                      if (isPostponed && !compact)
+                        Text(
+                          AppStrings.postponed.toLowerCase(),
+                          style: TextStyle(
+                            fontSize: 9,
+                            height: 1.1,
+                            fontWeight: FontWeight.w600,
+                            color: colors.foreground,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+                if (isPostponed)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Tooltip(
+                      message: AppStrings.postponed,
+                      child: Icon(
+                        Icons.schedule,
+                        size: compact ? 12 : 16,
+                        color: colors.foreground,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

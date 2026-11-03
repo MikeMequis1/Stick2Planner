@@ -59,6 +59,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
 
   bool get _isEvent => _type == PostItType.event;
 
+  bool get _isRecurringType => _type == PostItType.recurringTodo;
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +99,11 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       } else {
         _endDate = null;
         _isHighlight = false;
+        if (type == PostItType.recurringTodo) {
+          _startDate = null;
+        } else {
+          _startDate ??= widget.initialDate;
+        }
       }
     });
   }
@@ -151,7 +158,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     try {
       final title = _titleController.text;
       final details = _detailsController.text;
-      final startDate = _isRecurring ? widget.existing?.startDate : _startDate;
+      final startDate = _isRecurringType
+          ? widget.existing?.startDate
+          : _startDate;
       final endDate = _isEvent ? _endDate : null;
 
       if (widget.existing == null) {
@@ -229,16 +238,19 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 )
               else
                 SegmentedButton<PostItType>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(
                       value: PostItType.task,
-                      icon: Icon(Icons.check_box_outlined),
                       label: Text(AppStrings.taskType),
                     ),
                     ButtonSegment(
                       value: PostItType.event,
-                      icon: Icon(Icons.star_border),
                       label: Text(AppStrings.eventType),
+                    ),
+                    ButtonSegment(
+                      value: PostItType.recurringTodo,
+                      label: Text(AppStrings.recurringShort),
                     ),
                   ],
                   selected: {_type},
@@ -269,7 +281,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   alignLabelWithHint: true,
                 ),
               ),
-              if (!_isRecurring) ...[
+              if (!_isRecurringType) ...[
                 const SizedBox(height: 8),
                 Text(
                   _isEvent
@@ -317,6 +329,32 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                         setState(() => _isHighlight = value),
                   ),
                 ],
+              ] else ...[
+                const SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.repeat,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            AppStrings.recurringHelp,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
               if (_errors.isNotEmpty) ...[
                 const SizedBox(height: 8),

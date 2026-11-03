@@ -152,6 +152,7 @@ class _WeekRowState extends State<WeekRow> {
                         items: singleDayItemsOn(widget.postIts, day.date),
                         isSelected: day.date.isSameDay(widget.selectedDate),
                         isToday: day.date.isSameDay(widget.today),
+                        today: widget.today,
                         compact: widget.compact,
                         onTap: () => widget.onDaySelected(day.date),
                         onPostItTap: widget.onPostItTap,

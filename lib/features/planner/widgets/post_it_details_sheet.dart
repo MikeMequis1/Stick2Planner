@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_strings.dart';
 import '../../../app/controllers/planner_controller.dart';
+import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_presentation.dart';
@@ -81,8 +82,21 @@ Future<void> showPostItDetailsSheet(
         }
       }
 
-      Future<void> delete() async {
-        final confirmed = await showDialog<bool>(
+      Future<void> setStatus(PostItStatus status) async {
+        try {
+          await planner.setPostItStatus(postIt, status);
+          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+          if (context.mounted) {
+            _showMessage(context, AppStrings.statusUpdatedMessage);
+          }
+        } on Object {
+          if (context.mounted) {
+            _showMessage(context, AppStrings.errorSave);
+          }
+        }
+      }
+
+      Future<void> delete() async {        final confirmed = await showDialog<bool>(
           context: sheetContext,
           builder: (dialogContext) => AlertDialog(
             title: const Text(AppStrings.deleting),
@@ -150,6 +164,18 @@ Future<void> showPostItDetailsSheet(
                       ),
                     ),
                     Chip(label: Text(postItStatusLabel(postIt.status))),
+                    if (postIt.isRecurring &&
+                        postIt.status == PostItStatus.active)
+                      Chip(
+                        avatar: const Icon(Icons.repeat, size: 18),
+                        label: Text(
+                          planner.isPostponed(postIt) &&
+                                  postIt.startDate != null
+                              ? '${AppStrings.postponedUntil} '
+                                    '${DateFormats.shortDate(postIt.startDate!)}'
+                              : AppStrings.advancesDaily,
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -195,6 +221,14 @@ Future<void> showPostItDetailsSheet(
                     text: '${AppStrings.linkedNoteTitle}: ${postIt.noteId}',
                   ),
                 ],
+                if (postIt.isRecurring &&
+                    planner.isPostponed(postIt)) ...[
+                  const SizedBox(height: 8),
+                  _InfoRow(
+                    icon: Icons.schedule,
+                    text: AppStrings.recurringPostponedHelp,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(
                   AppStrings.actions,
@@ -205,6 +239,33 @@ Future<void> showPostItDetailsSheet(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    if (postIt.status == PostItStatus.active)
+                      FilledButton.tonalIcon(
+                        key: const Key('details-complete'),
+                        onPressed: () =>
+                            setStatus(PostItStatus.done),
+                        icon: const Icon(Icons.check),
+                        label: const Text(AppStrings.statusDoneAction),
+                      )
+                    else
+                      FilledButton.tonalIcon(
+                        key: const Key('details-reopen'),
+                        onPressed: () =>
+                            setStatus(PostItStatus.active),
+                        icon: const Icon(Icons.undo),
+                        label: const Text(AppStrings.statusReopenAction),
+                      ),
+                    if (postIt.status != PostItStatus.cancelled)
+                      OutlinedButton.icon(
+                        key: const Key('details-cancel'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                        ),
+                        onPressed: () =>
+                            setStatus(PostItStatus.cancelled),
+                        icon: const Icon(Icons.close),
+                        label: const Text(AppStrings.statusCancelAction),
+                      ),
                     FilledButton.tonalIcon(
                       key: const Key('details-edit'),
                       onPressed: edit,

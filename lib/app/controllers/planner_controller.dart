@@ -12,6 +12,7 @@ import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
 import '../../domain/repositories/post_it_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
+import '../../domain/usecases/ensure_recurring_rollover.dart';
 import '../../domain/usecases/validate_post_it.dart';
 import '../planner_view_mode.dart';
 import '../settings_keys.dart';
@@ -71,6 +72,7 @@ final class PlannerController extends ChangeNotifier {
         AgendaViewMode.week,
       );
       _postIts = await _postItRepository.loadAll();
+      await _applyRecurringRollover();
       _error = null;
     } on Object {
       _error = 'load_failed';
@@ -165,6 +167,58 @@ final class PlannerController extends ChangeNotifier {
   int countByStatus(PostItStatus status) =>
       _postIts.where((postIt) => postIt.status == status).length;
 
+  /// TO-DO recorrente pendente adiado para uma data futura.
+  bool isPostponed(PostIt postIt) => postIt.isPostponedOn(today);
+
+  /// Avança TO-DOs recorrentes pendentes conforme a data local atual.
+  ///
+  /// Idempotente; chamado na inicialização, no retorno do app e antes de
+  /// operações relevantes. Não depende de timers.
+  Future<void> ensureRecurringRollover() {
+    return _exclusive(() async {
+      await _applyRecurringRollover();
+      notifyListeners();
+    });
+  }
+
+  /// Hook do ciclo de vida (`AppLifecycleState.resumed`).
+  Future<void> handleAppResumed() => ensureRecurringRollover();
+
+  Future<void> setPostItStatus(
+    PostIt postIt,
+    PostItStatus status,
+  ) {
+    return _exclusive(() async {
+      await _applyRecurringRollover();
+      final current = _findCurrent(postIt.id);
+      if (current == null || current.status == status) return;
+
+      final now = _clock.now().toUtc();
+      var updated = current.copyWith(status: status, updatedAt: now);
+      if (current.isRecurring && status == PostItStatus.active) {
+        final start = current.startDate;
+        if (start == null || start.isBefore(today)) {
+          updated = updated.copyWith(
+            startDate: today,
+            lastRolloverAt: now,
+          );
+        }
+      }
+
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          updated.id,
+          PostItHistoryAction.statusChanged,
+          now,
+          fromValue: current.status.name,
+          toValue: status.name,
+        ),
+      );
+      await _reload();
+    });
+  }
+
   /// Valida e persiste a criação/edição de um post-it já montado.
   Future<void> savePostIt(PostIt postIt) => _exclusive(() async {
     _validatePostIt(postIt);
@@ -189,7 +243,11 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
   }) {
     return _exclusive(() async {
+      await _applyRecurringRollover();
       final now = _clock.now().toUtc();
+      final resolvedStart = type == PostItType.recurringTodo
+          ? _initialRecurringDate(startDate)
+          : startDate;
       final postIt = PostIt(
         id: const Uuid().v4(),
         title: title.trim(),
@@ -197,9 +255,10 @@ final class PlannerController extends ChangeNotifier {
         status: PostItStatus.active,
         isHighlight: type == PostItType.event && isHighlight,
         details: _normalizeDetails(details),
-        startDate: startDate,
-        endDate: _normalizeEndDate(type, startDate, endDate),
-        sortOrder: _nextOrderFor(startDate),
+        startDate: resolvedStart,
+        endDate: _normalizeEndDate(type, resolvedStart, endDate),
+        sortOrder: _nextOrderFor(resolvedStart),
+        lastRolloverAt: type == PostItType.recurringTodo ? now : null,
         createdAt: now,
         updatedAt: now,
       );
@@ -224,10 +283,15 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
   }) {
     return _exclusive(() async {
+      await _applyRecurringRollover();
       final current = _findCurrent(existing.id) ?? existing;
       final effectiveType = current.isRecurring ? current.type : type;
+      final effectiveStart = current.isRecurring
+          ? current.startDate
+          : startDate;
       final dateChanged =
-          current.startDate?.toIso8601String() != startDate?.toIso8601String();
+          current.startDate?.toIso8601String() !=
+          effectiveStart?.toIso8601String();
       final now = _clock.now().toUtc();
       final updated = current.copyWith(
         title: title.trim(),
@@ -235,11 +299,15 @@ final class PlannerController extends ChangeNotifier {
         isHighlight:
             effectiveType == PostItType.event ? isHighlight : false,
         details: _normalizeDetails(details),
-        startDate: startDate,
-        endDate: _normalizeEndDate(effectiveType, startDate, endDate),
+        startDate: effectiveStart,
+        endDate: _normalizeEndDate(
+          effectiveType,
+          effectiveStart,
+          endDate,
+        ),
         sortOrder:
             dateChanged && effectiveType != PostItType.event
-            ? _nextOrderFor(startDate)
+            ? _nextOrderFor(effectiveStart)
             : current.sortOrder,
         updatedAt: now,
       );
@@ -279,27 +347,39 @@ final class PlannerController extends ChangeNotifier {
     int? targetIndex,
   }) {
     return _exclusive(() async {
+      await _applyRecurringRollover();
       final current = _findCurrent(postIt.id);
       if (current == null) return;
+
+      final today = this.today;
+      var target = targetDate;
+      var postponed = false;
+      if (current.isRecurring) {
+        if (target.isBefore(today)) target = today;
+        postponed = target.isAfter(today);
+      }
+
       final sourceDate = current.startDate;
       if (current.isEvent) {
-        if (sourceDate != null && sourceDate.isSameDay(targetDate)) return;
+        if (sourceDate != null && sourceDate.isSameDay(target)) return;
       } else if (sourceDate != null &&
-          sourceDate.isSameDay(targetDate) &&
+          sourceDate.isSameDay(target) &&
           targetIndex == null) {
         return;
       }
 
       final now = _clock.now().toUtc();
-      final moved = _movedCopy(current, targetDate, now);
+      final moved = _movedCopy(current, target, now);
       final updates = <PostIt>[];
       final history = <PostItHistoryEntry>[
         _history(
           current.id,
-          PostItHistoryAction.moved,
+          postponed
+              ? PostItHistoryAction.manualPostponed
+              : PostItHistoryAction.moved,
           now,
           fromValue: sourceDate?.toIso8601String(),
-          toValue: targetDate.toIso8601String(),
+          toValue: target.toIso8601String(),
         ),
       ];
 
@@ -307,7 +387,7 @@ final class PlannerController extends ChangeNotifier {
         updates.add(moved);
       } else {
         final targetItems = _sortedDayItems(
-          targetDate,
+          target,
         ).where((item) => item.id != current.id).toList();
         final insertion = (targetIndex ?? targetItems.length).clamp(
           0,
@@ -316,7 +396,7 @@ final class PlannerController extends ChangeNotifier {
         targetItems.insert(insertion, moved);
         updates.addAll(_reindex(targetItems, now));
 
-        if (sourceDate != null && !sourceDate.isSameDay(targetDate)) {
+        if (sourceDate != null && !sourceDate.isSameDay(target)) {
           final sourceItems = _sortedDayItems(
             sourceDate,
           ).where((item) => item.id != current.id).toList();
@@ -420,6 +500,28 @@ final class PlannerController extends ChangeNotifier {
     _postIts = await _postItRepository.loadAll();
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> _applyRecurringRollover() async {
+    final plan = const EnsureRecurringRollover()(
+      postIts: _postIts,
+      today: today,
+      now: _clock.now().toUtc(),
+      idGenerator: () => const Uuid().v4(),
+    );
+    if (!plan.hasChanges) return;
+
+    await _postItRepository.saveBatch(
+      plan.updates,
+      history: plan.history,
+    );
+    _postIts = await _postItRepository.loadAll();
+  }
+
+  DateOnly _initialRecurringDate(DateOnly? startDate) {
+    final today = this.today;
+    if (startDate == null || startDate.isBefore(today)) return today;
+    return startDate;
   }
 
   Future<T> _exclusive<T>(Future<T> Function() action) {

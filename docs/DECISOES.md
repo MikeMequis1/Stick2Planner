@@ -108,13 +108,32 @@ etapas. Cada item: contexto, decisão, consequência.
 - Uma única linha; nunca gera cópias. Pendente e com data nula/atrasada →
   `startDate = hoje local`. Recálculo é absoluto e idempotente; executar várias
   vezes não duplica nem avança além do necessário.
+- Implementado em `EnsureRecurringRollover` (domínio puro), que só atualiza
+  `startDate`/`lastRolloverAt` e registra `rolloverAdvanced` no histórico;
+  identidade, título, detalhes, nota e estado são preservados.
 - Executado no boot, no `resumed` do ciclo de vida e antes de operações de
-  agenda. Sem timers contínuos e sem serviço em background.
-- Concluído/cancelado para de avançar e permanece na caixinha.
+  agenda. Sem timers contínuos e sem serviço em background. Fechado por vários
+  dias → salta direto para o dia atual na próxima abertura.
+- Concluído/cancelado para de avançar e permanece na caixinha. Reabrir um
+  recorrente atrasado recarrega para hoje.
 - **Adiamento manual:** soltar em data futura fixa a data e suspende o avanço
-  até ela; soltar em data passada/hoje normaliza para hoje. O cartão recebe
-  indicação visual de "adiado" (distinta do avanço automático), e a regra é
-  explicada na interface.
+  até ela; soltar em data passada/hoje normaliza para hoje. O histórico recebe
+  `manualPostponed`; o cartão mostra ícone de agenda + “adiado” (texto, não só
+  cor), e o detalhe explica que volta a avançar se continuar pendente.
+- Tipo “Recorrente” no editor não pede data; a data corrente é derivada de
+  hoje, sem duplicar o registro.
+
+## Estados e caixinha
+
+- `status` (`active`, `done`, `cancelled`) nunca implica exclusão. Concluir
+  risca o cartão; cancelar mostra `X`; ambos continuam no banco e no histórico.
+  Reabrir volta para ativa (recorrente atrasado recarrega para hoje).
+- Ações de estado ficam no detalhe (acessíveis) e no menu da caixinha; mudar de
+  estado não altera data, ordem ou vínculo.
+- A caixinha lista todos os post-its (com e sem data), com filtros por estado e
+  “sem data”, busca em título/detalhes/trecho e ordenação por data,
+  atualização ou título.
+- O estado é independente da posição temporal; arrastar não altera status.
 
 ## Notas
 

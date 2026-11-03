@@ -19,10 +19,31 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell>
+    with WidgetsBindingObserver {
   static const _wideBreakpoint = 720.0;
 
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    AppScope.of(
+      context,
+    ).planner.handleAppResumed().catchError((Object _) {});
+  }
 
   static const _pages = <Widget>[
     AgendaPage(),

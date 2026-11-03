@@ -33,6 +33,16 @@ abstract final class AppStrings {
   static const loadError = 'Não foi possível carregar os dados locais.';
   static const emptyInbox = 'Nada na caixinha ainda.';
   static const emptyNotes = 'Nenhuma nota criada ainda.';
+  static const allFilter = 'Todas';
+  static const itemsCount = 'itens';
+  static const searchHint = 'Buscar por título, detalhe ou nota';
+  static const sortBy = 'Ordenar';
+  static const sortDate = 'Data';
+  static const sortUpdated = 'Atualização';
+  static const sortTitle = 'Título';
+  static const noResults = 'Nenhum post-it encontrado.';
+  static const editInInbox = 'Editar';
+  static const statusMenu = 'Ações de estado';
 
   static const nextStage = 'Próxima etapa';
   static const offlineNotice = 'Funciona offline: dados salvos neste tablet.';
@@ -42,6 +52,20 @@ abstract final class AppStrings {
   static const viewModeWeek = 'Semana';
   static const viewModeTwoWeeks = '2 semanas';
   static const viewModeMonth = 'Mês';
+  static const recurringShort = 'Recorrente';
+  static const recurringHelp =
+      'Aparece hoje e avança sozinho para o próximo dia enquanto estiver '
+      'pendente, até ser concluído ou cancelado.';
+  static const postponed = 'Adiado';
+  static const advancesDaily = 'Avança diariamente';
+  static const postponedUntil = 'Adiado até';
+  static const recurringPostponedHelp =
+      'Enquanto adiado, não avança. Depois da data, volta a ser carregado '
+      'para o dia atual se continuar pendente.';
+  static const statusDoneAction = 'Concluir';
+  static const statusCancelAction = 'Cancelar tarefa';
+  static const statusReopenAction = 'Reabrir';
+  static const statusUpdatedMessage = 'Estado atualizado.';
 
   static const previousPeriod = 'Período anterior';
   static const nextPeriod = 'Próximo período';

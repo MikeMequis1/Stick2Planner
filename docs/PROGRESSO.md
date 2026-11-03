@@ -426,3 +426,93 @@ considerar a Etapa 3 fechada:
 Etapa 4 — organização: estados (concluir/cancelar sem apagar), caixinha com
 filtros/busca, tarefas sem data e TO-DO recorrente com avanço diário
 idempotente. Aguardando aprovação.
+
+## Etapa 4 — Estados, caixinha e TO-DO recorrente (implementada em 2026-11-03; aguardando revisão)
+
+### Implementado
+
+- Domínio: `EnsureRecurringRollover` calcula o avanço pendente → hoje, preserva
+  adiamentos futuros e não mexe em concluídos/cancelados; retorna atualizações
+  e histórico em lote.
+- Controller: avanço na inicialização, no `resumed` (observer) e antes de
+  operações relevantes; fila `_exclusive` mantém idempotência/concorrência.
+  `setPostItStatus` grava `statusChanged`, reabre e recarrega recorrente
+  atrasado para hoje.
+- Editor: terceiro tipo “Recorrente”, sem data obrigatória; dica sobre o
+  avanço diário. Criação sem data usa a data local de hoje.
+- Agenda: concluídos riscados com check; cancelados com `X`; adiados mostram
+  ícone de agenda + rótulo “adiado”, distinto do avanço automático.
+- Detalhe: ações explícitas Concluir/Cancelar/Reabrir, chip de recorrente
+  (“Avança diariamente”/“Adiado até…”) e explicação de que o adiado volta a
+  avançar se continuar pendente.
+- Caixinha: lista completa com busca (título/detalhes/trecho), filtros Todas/
+  Ativas/Concluídas/Canceladas/Sem data, ordenação por data/atualização/
+  título e menu rápido de estado. Tarefas sem data aparecem na lista.
+- Movimento de recorrente: data futura vira adiamento (`manualPostponed`);
+  data passada normaliza para hoje; concluir/cancelar interrompe o avanço.
+
+### Comandos e resultados
+
+```bash
+flutter analyze
+flutter test
+flutter build apk --debug
+adb install -r -i com.android.vending build/app/outputs/flutter-apk/app-debug.apk
+```
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **123 testes aprovados** (24 novos).
+- `flutter build apk --debug`: aprovado (~15 s com cache).
+- Instalação no aparelho físico com o workaround de installer spoof.
+
+### Validação no aparelho físico (2026-11-03)
+
+- Banco semeado com recorrente atrasado (`02/11`), recorrente adiado (`06/11`),
+  tarefa sem data, concluída e cancelada.
+- Ao abrir o app, o atrasado foi carregado para `03/11`, com **um** registro
+  `rolloverAdvanced` (`02/11 → 03/11`); o adiado permaneceu em `06/11`.
+- Fechar/reabrir não duplicou o avanço (histórico continuou com 1 entrada) nem
+  moveu o adiado.
+- UI escura: “Feito” riscado/check, “Cancelado” com X, “Tomar remedio” com
+  ícone de repetição e “Alongar” com ícone de agenda + “adiado”.
+- Caixinha com 7 itens, busca, chips de filtro e ordenação visíveis; datas,
+  tipo e estado recorrente exibidos abaixo de cada cartão.
+- `run-as` + `sqlite3` confirmaram datas e histórico no banco.
+
+Evidências: `docs/validacao/etapa4-recorrente-adiado.png` e
+`docs/validacao/etapa4-caixinha.png`.
+
+### Arquivos principais
+
+- `lib/domain/usecases/ensure_recurring_rollover.dart`
+- `lib/app/controllers/planner_controller.dart`
+- `lib/features/planner/widgets/post_it_editor_sheet.dart`
+- `lib/features/planner/widgets/post_it_details_sheet.dart`
+- `lib/features/planner/widgets/post_it_tile.dart`,
+  `day_cell.dart`, `week_row.dart`
+- `lib/features/inbox/inbox_page.dart`
+- `lib/features/shell/home_shell.dart` (lifecycle)
+- Testes: `test/domain/ensure_recurring_rollover_test.dart`,
+  `test/app/recurring_and_status_test.dart`,
+  `test/app/inbox_and_recurring_test.dart`
+
+### Pendências e limitações
+
+1. O avanço não usa timer: app aberto durante a virada da meia-noite só
+   atualiza no próximo `resumed`/operação relevante. Isso é intencional
+   (requisito), mas deve ser confirmado na revisão.
+2. Ações de estado no aparelho foram cobertas por testes de widget; a
+   validação física focou em rollover, adiamento e caixinha.
+3. Criação de recorrente pelo formulário foi validada em teste de widget; no
+   aparelho, os dados de recorrência foram semeados para testar o avanço.
+4. Filtros/busca/ordenação da caixinha não são persistidos entre reinícios.
+5. Sem “Desfazer” após exclusão; segue confirmação + tombstone.
+6. Gestos continuam validados por `motionevent`; falta teste manual com dedo,
+   caneta e TalkBack.
+7. Carga com 100–200 post-its e acessibilidade completa continuam para a
+   Etapa 6.
+
+### Próximo passo
+
+Etapa 5 — notas privadas: caderno, listas, seleção de linha/trecho, criação de
+post-it a partir do texto e vínculos persistidos. Aguardando aprovação.

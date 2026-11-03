@@ -15,6 +15,7 @@ class DayCell extends StatelessWidget {
     required this.items,
     required this.isSelected,
     required this.isToday,
+    required this.today,
     required this.compact,
     required this.onTap,
     required this.onPostItTap,
@@ -27,6 +28,7 @@ class DayCell extends StatelessWidget {
   final List<PostIt> items;
   final bool isSelected;
   final bool isToday;
+  final DateOnly today;
   final bool compact;
   final VoidCallback onTap;
   final ValueChanged<PostIt> onPostItTap;
@@ -87,6 +89,7 @@ class DayCell extends StatelessWidget {
                     Expanded(
                       child: _DayContent(
                         date: day.date,
+                        today: today,
                         items: items,
                         compact: compact,
                         onPostItTap: onPostItTap,
@@ -179,6 +182,7 @@ class _DayHeader extends StatelessWidget {
 class _DayContent extends StatelessWidget {
   const _DayContent({
     required this.date,
+    required this.today,
     required this.items,
     required this.compact,
     required this.onPostItTap,
@@ -187,6 +191,7 @@ class _DayContent extends StatelessWidget {
   });
 
   final DateOnly date;
+  final DateOnly today;
   final List<PostIt> items;
   final bool compact;
   final ValueChanged<PostIt> onPostItTap;
@@ -230,6 +235,7 @@ class _DayContent extends StatelessWidget {
                     postIt: items[index],
                     index: index,
                     compact: compact,
+                    isPostponed: items[index].isPostponedOn(today),
                     onTap: () => onPostItTap(items[index]),
                     onReorderTo: onReorderTo,
                   ),
@@ -266,6 +272,7 @@ class _DraggableItem extends StatelessWidget {
     required this.postIt,
     required this.index,
     required this.compact,
+    required this.isPostponed,
     required this.onTap,
     required this.onReorderTo,
   });
@@ -273,6 +280,7 @@ class _DraggableItem extends StatelessWidget {
   final PostIt postIt;
   final int index;
   final bool compact;
+  final bool isPostponed;
   final VoidCallback onTap;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
 
@@ -290,6 +298,7 @@ class _DraggableItem extends StatelessWidget {
           key: Key('post-it-${postIt.id}'),
           postIt: postIt,
           compact: compact,
+          isPostponed: isPostponed,
           onTap: onTap,
         );
 

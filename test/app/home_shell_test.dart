@@ -38,7 +38,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.inboxPlaceholderTitle), findsOneWidget);
+    expect(find.byKey(const Key('inbox-search')), findsOneWidget);
 
     await tester.tap(
       find.descendant(

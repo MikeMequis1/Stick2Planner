@@ -7,16 +7,15 @@ funcionalidade essencial depende de internet.
 
 ## Estado do projeto
 
-Etapas 0 a 3 concluídas. A agenda já permite criar, editar, excluir, mover,
-reordenar e redimensionar post-its, com alternativas explícitas aos gestos.
-A caixinha e a recorrência entram na Etapa 4.
+Etapas 0 a 4 concluídas. Além da agenda visual e das manipulações, o app já
+organiza estados, oferece a caixinha com filtros/busca e mantém TO-DOs
+recorrentes com avanço diário idempotente. Notas entram na Etapa 5.
 
 - [x] Etapa 0 — preparação, dependências, persistência básica e build Android
 - [x] Etapa 1 — fundação (domínio, esquema v2, repositórios, tema, navegação)
 - [x] Etapa 2 — agenda visual (períodos, grade, eventos contínuos, overflow)
 - [x] Etapa 3 — criação/edição, arraste, reordenação e redimensionamento
-  (implementação e testes; revisão/validação física pendente)
-- [ ] Etapa 4 — organização (estados, caixinha, recorrente)
+- [x] Etapa 4 — estados, caixinha, tarefas sem data e TO-DO recorrente
 - [ ] Etapa 5 — notas
 - [ ] Etapa 6 — qualidade e documentação final
 
@@ -118,6 +117,22 @@ não importa Flutter nem drift.
   falhar, a interface mantém o último estado persistido.
 - Mover para outro período visível pode ser feito por arraste; para períodos
   fora da tela use "Mover para data…".
+
+## Estados, caixinha e TO-DO recorrente
+
+- Concluir risca o post-it; cancelar usa `X`. Nenhum dos dois apaga o registro:
+  o estado fica no banco, com histórico. Reabrir restaura para ativa.
+- A caixinha lista todos os post-its, inclusive sem data, com filtros (todas,
+  ativas, concluídas, canceladas, sem data), busca por título/detalhes/trecho e
+  ordenação por data, atualização ou título.
+- TO-DO recorrente: uma única pendência sem cópias. Pendente e atrasada avança
+  para o dia local na abertura/retomada e antes de mutações; a operação é
+  idempotente e registra histórico.
+- Adiamento manual: arrastar para uma data futura fixa a pendência até lá e
+  mostra “adiado”/ícone de agenda; arrastar para o passado normaliza para hoje.
+  Concluir ou cancelar interrompe o avanço.
+- Não há timers nem serviços contínuos: o cálculo usa a data local na
+  inicialização, no `resumed` e em operações relevantes.
 
 ## Domínio e persistência
 
