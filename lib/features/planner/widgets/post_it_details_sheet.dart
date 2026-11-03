@@ -118,7 +118,28 @@ Future<void> showPostItDetailsSheet(
         try {
           await planner.deletePostIt(postIt);
           if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-          if (context.mounted) _showMessage(context, AppStrings.deletedMessage);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(AppStrings.deletedMessage),
+                action: SnackBarAction(
+                  label: AppStrings.undo,
+                  onPressed: () async {
+                    try {
+                      await planner.restorePostIt(postIt);
+                      if (context.mounted) {
+                        _showMessage(context, AppStrings.restoredMessage);
+                      }
+                    } on Object {
+                      if (context.mounted) {
+                        _showMessage(context, AppStrings.errorSave);
+                      }
+                    }
+                  },
+                ),
+              ),
+            );
+          }
         } on Object {
           if (context.mounted) _showMessage(context, AppStrings.errorDelete);
         }

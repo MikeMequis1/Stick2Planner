@@ -94,14 +94,28 @@ class _HomeShellState extends State<HomeShell>
 
   @override
   Widget build(BuildContext context) {
-    final useRail = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final width = MediaQuery.sizeOf(context).width;
+    final useRail = width >= _wideBreakpoint;
+    final isCompact = width < 600;
     final planner = AppScope.of(context).planner;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text(AppStrings.appName),
-        actions: const [
-          Padding(
+        actions: [
+          if (isCompact)
+            IconButton(
+              key: const Key('add-post-it'),
+              tooltip: AppStrings.newPostIt,
+              onPressed: () => showPostItEditorSheet(
+                context,
+                controller: planner,
+                initialDate: planner.selectedDate,
+              ),
+              icon: const Icon(Icons.add),
+            ),
+          const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Tooltip(
               message: AppStrings.offlineNotice,
@@ -135,7 +149,7 @@ class _HomeShellState extends State<HomeShell>
               onDestinationSelected: _select,
               destinations: _barDestinations,
             ),
-      floatingActionButton: _index == 0
+      floatingActionButton: _index == 0 && !isCompact
           ? FloatingActionButton.extended(
               key: const Key('add-post-it'),
               onPressed: () => showPostItEditorSheet(

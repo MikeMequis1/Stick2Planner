@@ -125,9 +125,10 @@ class _InboxPageState extends State<InboxPage> {
         }
 
         final items = _visiblePostIts(planner);
+        final compactWidth = MediaQuery.sizeOf(context).width < 600;
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 72),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, compactWidth ? 12 : 72),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

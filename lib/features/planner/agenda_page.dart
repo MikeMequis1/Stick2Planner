@@ -9,6 +9,7 @@ import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_labels.dart';
 import 'widgets/calendar_toolbar.dart';
 import 'widgets/day_details_sheet.dart';
+import 'widgets/hidden_events_sheet.dart';
 import 'widgets/post_it_details_sheet.dart';
 import 'widgets/post_it_editor_sheet.dart';
 
@@ -39,8 +40,10 @@ class AgendaPage extends StatelessWidget {
       mode: mode,
     );
 
+    final compactWidth = MediaQuery.sizeOf(context).width < 600;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 72),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, compactWidth ? 12 : 72),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -106,6 +109,12 @@ class AgendaPage extends StatelessWidget {
                   endDate: end,
                 ),
                 AppStrings.errorResize,
+              ),
+              onShowHiddenEvents: (events) => showHiddenEventsSheet(
+                context,
+                events: events,
+                onPostItSelected: (postIt) =>
+                    _openDetails(context, planner, postIt),
               ),
             ),
           ),

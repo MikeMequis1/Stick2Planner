@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_schedule/app/app.dart';
+import 'package:flutter_schedule/app/app_strings.dart';
 import 'package:flutter_schedule/app/bootstrap.dart';
 import 'package:flutter_schedule/app/planner_view_mode.dart';
 import 'package:flutter_schedule/core/date_only.dart';
@@ -111,10 +112,80 @@ void main() {
     expect(find.byKey(const ValueKey('post-it-e1')), findsNothing);
   });
 
-  testWidgets('mês compacto combina barra de evento e overflow', (
+  testWidgets('alças de resize têm pelo menos 24dp lógicos', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+
+    for (final key in const [
+      Key('event-resize-start-e1'),
+      Key('event-resize-end-e1'),
+    ]) {
+      final size = tester.getSize(find.byKey(key));
+      expect(size.width, greaterThanOrEqualTo(24));
+      expect(size.height, greaterThanOrEqualTo(24));
+    }
+  });
+
+  testWidgets('indicador de eventos ocultos abre a lista e preserva IDs', (
     tester,
   ) async {
     await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      landscapeMode: AgendaViewMode.month,
+      postIts: [
+        buildPostIt(
+          id: 'visible',
+          title: 'Evento visível',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 2),
+          endDate: DateOnly(2026, 11, 4),
+        ),
+        buildPostIt(
+          id: 'hidden-1',
+          title: 'Evento oculto A',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 3),
+          endDate: DateOnly(2026, 11, 5),
+        ),
+        buildPostIt(
+          id: 'hidden-2',
+          title: 'Evento oculto B',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 3),
+          endDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    final indicator = find.byKey(
+      const Key('hidden-events-2026-11-02'),
+    );
+    expect(indicator, findsOneWidget);
+
+    await tester.tap(indicator);
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.hiddenEventsTitle), findsOneWidget);
+    expect(find.text('Evento oculto A'), findsOneWidget);
+    expect(find.text('Evento oculto B'), findsOneWidget);
+    expect(find.text('Evento visível'), findsOneWidget);
+  });
+
+  testWidgets('mês compacto combina barra de evento e overflow', (
+    tester,
+  ) async {    await pumpPlanner(
       tester,
       size: const Size(1280, 800),
       landscapeMode: AgendaViewMode.month,

@@ -121,6 +121,8 @@ abstract final class AppStrings {
   static const confirmDelete = 'Excluir';
   static const savedMessage = 'Post-it salvo.';
   static const deletedMessage = 'Post-it excluído.';
+  static const restoredMessage = 'Post-it restaurado.';
+  static const undo = 'Desfazer';
   static const movedMessage = 'Post-it movido.';
   static const resizedMessage = 'Duração atualizada.';
   static const reorderedMessage = 'Ordem atualizada.';
@@ -144,5 +146,8 @@ abstract final class AppStrings {
   static const errorReorder = 'Não foi possível alterar a ordem.';
 
   static String moreItems(int count) => '+$count mais';
+  static const hiddenEventsTitle = 'Eventos adicionais';
+  static const hiddenEventsHelp =
+      'Eventos que não couberam nas faixas desta semana.';
   static String hiddenEvents(int count) => '+$count eventos';
 }

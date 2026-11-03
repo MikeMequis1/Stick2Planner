@@ -27,14 +27,19 @@ final class CalendarEventSegment {
 }
 
 final class EventBarLayout {
-  const EventBarLayout({required this.segments, required this.hiddenCount});
+  const EventBarLayout({
+    required this.segments,
+    this.hiddenSegments = const [],
+  });
 
   final List<CalendarEventSegment> segments;
 
-  /// Eventos que não couberam no limite de faixas da linha.
-  final int hiddenCount;
+  /// Segmentos que não couberam no limite de faixas (lane -1).
+  final List<CalendarEventSegment> hiddenSegments;
 
-  static const empty = EventBarLayout(segments: [], hiddenCount: 0);
+  int get hiddenCount => hiddenSegments.length;
+
+  static const empty = EventBarLayout(segments: []);
 }
 
 /// Distribui eventos multi-dia em faixas sem sobreposição.
@@ -84,7 +89,7 @@ EventBarLayout layoutEventSegments(
 
   final laneEnds = <int>[];
   final segments = <CalendarEventSegment>[];
-  var hidden = 0;
+  final hiddenSegments = <CalendarEventSegment>[];
 
   for (final candidate in candidates) {
     var lane = -1;
@@ -96,7 +101,16 @@ EventBarLayout layoutEventSegments(
     }
     if (lane == -1) {
       if (laneEnds.length >= maxLanes) {
-        hidden++;
+        hiddenSegments.add(
+          CalendarEventSegment(
+            postIt: candidate.postIt,
+            startColumn: candidate.startColumn,
+            endColumn: candidate.endColumn,
+            lane: -1,
+            continuesBefore: candidate.continuesBefore,
+            continuesAfter: candidate.continuesAfter,
+          ),
+        );
         continue;
       }
       laneEnds.add(candidate.endColumn);
@@ -117,7 +131,10 @@ EventBarLayout layoutEventSegments(
     );
   }
 
-  return EventBarLayout(segments: segments, hiddenCount: hidden);
+  return EventBarLayout(
+    segments: segments,
+    hiddenSegments: hiddenSegments,
+  );
 }
 
 final class _SegmentDraft {

@@ -340,6 +340,26 @@ final class PlannerController extends ChangeNotifier {
     });
   }
 
+  /// Desfaz uma exclusão lógica restaurando o registro e registrando histórico.
+  Future<void> restorePostIt(PostIt postIt) {
+    return _exclusive(() async {
+      final now = _clock.now().toUtc();
+      final restored = postIt.copyWith(
+        deletedAt: null,
+        updatedAt: now,
+      );
+      await _postItRepository.save(
+        restored,
+        history: _history(
+          restored.id,
+          PostItHistoryAction.restored,
+          now,
+        ),
+      );
+      await _reload();
+    });
+  }
+
   /// Move um post-it para [targetDate]; eventos mantêm a duração.
   Future<void> movePostIt(
     PostIt postIt,

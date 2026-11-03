@@ -27,6 +27,7 @@ void main() {
     expect(find.text(AppStrings.agenda), findsWidgets);
     expect(find.text(AppStrings.inbox), findsWidgets);
     expect(find.text(AppStrings.notes), findsWidgets);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.byType(DayCell), findsNWidgets(7));
     expect(find.byKey(const Key('day-2026-10-31')), findsOneWidget);
 
@@ -62,7 +63,15 @@ void main() {
 
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byKey(const Key('add-post-it')), findsOneWidget);
     expect(find.byType(DayCell), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('add-post-it')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-title')), findsOneWidget);
+    await tester.tap(find.text(AppStrings.cancel));
+    await tester.pumpAndSettle();
 
     await tester.tap(
       find.descendant(

@@ -301,5 +301,33 @@ void main() {
       reopened.planner.dispose();
       reopened.notes.dispose();
     });
+
+    test('desfazer exclusão restaura registro e histórico', () async {
+      final task = await dependencies.planner.createPostIt(
+        title: 'Recuperável',
+        type: PostItType.task,
+        startDate: DateOnly(2026, 11, 3),
+      );
+
+      await dependencies.planner.deletePostIt(task);
+      expect(dependencies.planner.postIts, isEmpty);
+
+      await dependencies.planner.restorePostIt(task);
+
+      final restored = dependencies.planner.postIts.single;
+      expect(restored.id, task.id);
+      expect(restored.title, 'Recuperável');
+      expect(restored.deletedAt, isNull);
+      expect(
+        (await repository.loadAll()).single.id,
+        task.id,
+      );
+
+      final history = await repository.loadHistory(task.id);
+      expect(
+        history.map((entry) => entry.action),
+        contains(PostItHistoryAction.restored),
+      );
+    });
   });
 }

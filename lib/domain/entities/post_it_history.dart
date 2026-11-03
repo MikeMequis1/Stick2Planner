@@ -10,6 +10,7 @@ enum PostItHistoryAction {
   rolloverAdvanced,
   manualPostponed,
   noteLinked,
+  restored,
 }
 
 /// Registro imutável de auditoria de um post-it.

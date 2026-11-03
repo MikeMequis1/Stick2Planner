@@ -155,8 +155,7 @@ void main() {
     expect(find.byKey(const Key('inbox-postit-active')), findsOneWidget);
   });
 
-  testWidgets('conclui pelo detalhe da agenda', (tester) async {
-    final dependencies = await pumpPlanner(
+  testWidgets('conclui pelo detalhe da agenda', (tester) async {    final dependencies = await pumpPlanner(
       tester,
       postIts: [
         buildPostIt(
@@ -177,6 +176,36 @@ void main() {
       dependencies.planner.postIts.single.status,
       PostItStatus.done,
     );
+  });
+
+  testWidgets('desfaz exclusão pelo snackbar', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'undo',
+          title: 'Recuperável',
+          startDate: DateOnly(2026, 11, 3),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('post-it-undo')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('details-delete')));
+    await tester.tap(find.byKey(const Key('details-delete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-delete')));
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.postIts, isEmpty);
+    expect(find.text(AppStrings.undo), findsOneWidget);
+
+    await tester.tap(find.text(AppStrings.undo));
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.postIts.single.id, 'undo');
+    expect(find.byKey(const Key('post-it-undo')), findsOneWidget);
   });
 
   testWidgets('recorrente adiado é sinalizado e preservado na caixinha', (

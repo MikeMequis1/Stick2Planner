@@ -31,6 +31,7 @@ class WeekRow extends StatefulWidget {
     required this.onMovePostIt,
     required this.onReorderTo,
     required this.onResizeEvent,
+    required this.onShowHiddenEvents,
   });
 
   final CalendarWeek week;
@@ -46,6 +47,7 @@ class WeekRow extends StatefulWidget {
   final void Function(PostIt postIt, DateOnly date, int newIndex) onReorderTo;
   final void Function(PostIt postIt, DateOnly startDate, DateOnly endDate)
   onResizeEvent;
+  final ValueChanged<List<PostIt>> onShowHiddenEvents;
 
   @override
   State<WeekRow> createState() => _WeekRowState();
@@ -60,11 +62,13 @@ class _WeekRowState extends State<WeekRow> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final barHeight = widget.compact ? 18.0 : 26.0;
+        final barHeight = widget.compact ? 24.0 : 26.0;
         final barGap = 4.0;
-        final maxLanes = ((constraints.maxHeight * 0.42) / (barHeight + barGap))
-            .floor()
-            .clamp(1, 3);
+        final maxLanes = widget.compact
+            ? 1
+            : ((constraints.maxHeight * 0.42) / (barHeight + barGap))
+                  .floor()
+                  .clamp(1, 3);
         final layout = layoutEventSegments(
           widget.postIts,
           widget.week,
@@ -76,9 +80,7 @@ class _WeekRowState extends State<WeekRow> {
                       .map((segment) => segment.lane)
                       .reduce(math.max) +
                   1;
-        final barAreaHeight =
-            laneCount * (barHeight + barGap) +
-            (layout.hiddenCount > 0 ? 14 : 0);
+        final barAreaHeight = laneCount * (barHeight + barGap);
         final columnWidth = constraints.maxWidth / widget.week.days.length;
         final previewLabel = _resize == null
             ? null
@@ -123,14 +125,51 @@ class _WeekRowState extends State<WeekRow> {
                           ),
                         ),
                       ),
-                    if (layout.hiddenCount > 0 && previewLabel == null)
+                    if (layout.hiddenSegments.isNotEmpty &&
+                        previewLabel == null)
                       Positioned(
                         right: 4,
-                        bottom: 0,
-                        child: Text(
-                          AppStrings.hiddenEvents(layout.hiddenCount),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                        top: 0,
+                        child: Material(
+                          color: theme.colorScheme.surface.withValues(
+                            alpha: 0.82,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                          child: InkWell(
+                            key: Key(
+                              'hidden-events-${widget.week.start.toIso8601String()}',
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                            onTap: () {
+                              final hidden = <String, PostIt>{
+                                for (final segment
+                                    in layout.hiddenSegments)
+                                  segment.postIt.id: segment.postIt,
+                              }.values.toList(growable: false);
+                              widget.onShowHiddenEvents(hidden);
+                            },
+                            child: SizedBox(
+                              height: 20,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    AppStrings.hiddenEvents(
+                                      layout.hiddenCount,
+                                    ),
+                                    style: theme.textTheme.labelSmall
+                                        ?.copyWith(
+                                          color: theme
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -377,26 +416,29 @@ class _ResizeHandle extends StatelessWidget {
           child: Semantics(
             label: tooltip,
             button: true,
-            child: Container(
-              width: 20,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: active
-                    ? scheme.primary.withValues(alpha: 0.30)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.horizontal(
-                  left: Radius.circular(isStart ? 8 : 2),
-                  right: Radius.circular(isStart ? 2 : 8),
-                ),
-              ),
+            child: SizedBox(
+              width: 24,
+              height: 24,
               child: Container(
-                width: 2,
-                height: 12,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: active
-                      ? scheme.primary
-                      : scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(1),
+                      ? scheme.primary.withValues(alpha: 0.30)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.horizontal(
+                    left: Radius.circular(isStart ? 8 : 2),
+                    right: Radius.circular(isStart ? 2 : 8),
+                  ),
+                ),
+                child: Container(
+                  width: 2,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
                 ),
               ),
             ),

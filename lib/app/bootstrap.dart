@@ -5,6 +5,7 @@ import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
+import 'services/screen_wake_service.dart';
 
 /// Composição das dependências do aplicativo.
 ///
@@ -15,7 +16,8 @@ final class AppDependencies {
     required this.database,
     required this.planner,
     required this.notes,
-  });
+    ScreenWakeService? screenWake,
+  }) : screenWake = screenWake ?? const WakelockPlusScreenWakeService();
 
   factory AppDependencies.fromDatabase(
     AppDatabase database, {
@@ -42,6 +44,7 @@ final class AppDependencies {
   final AppDatabase database;
   final PlannerController planner;
   final NotesController notes;
+  final ScreenWakeService screenWake;
 
   Future<void> initialize() async {
     await Future.wait([planner.initialize(), notes.initialize()]);

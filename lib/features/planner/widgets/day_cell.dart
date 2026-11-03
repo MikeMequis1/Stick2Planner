@@ -76,28 +76,36 @@ class DayCell extends StatelessWidget {
                   ),
                 ),
                 padding: EdgeInsets.all(compact ? 2 : 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _DayHeader(
-                      date: day.date,
-                      isSelected: isSelected,
-                      isToday: isToday,
-                      muted: muted,
-                      compact: compact,
-                    ),
-                    Expanded(
-                      child: _DayContent(
-                        date: day.date,
-                        today: today,
-                        items: items,
-                        compact: compact,
-                        onPostItTap: onPostItTap,
-                        onShowAll: onShowAll,
-                        onReorderTo: onReorderTo,
-                      ),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final tight = constraints.maxHeight < 24;
+                    final showHeader = constraints.maxHeight >= 12;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showHeader)
+                          _DayHeader(
+                            date: day.date,
+                            isSelected: isSelected,
+                            isToday: isToday,
+                            muted: muted,
+                            compact: compact || tight,
+                            dense: tight,
+                          ),
+                        Expanded(
+                          child: _DayContent(
+                            date: day.date,
+                            today: today,
+                            items: items,
+                            compact: compact || tight,
+                            onPostItTap: onPostItTap,
+                            onShowAll: onShowAll,
+                            onReorderTo: onReorderTo,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -115,6 +123,7 @@ class _DayHeader extends StatelessWidget {
     required this.isToday,
     required this.muted,
     required this.compact,
+    this.dense = false,
   });
 
   final DateOnly date;
@@ -122,6 +131,7 @@ class _DayHeader extends StatelessWidget {
   final bool isToday;
   final bool muted;
   final bool compact;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -132,13 +142,13 @@ class _DayHeader extends StatelessWidget {
         : (muted ? scheme.outline : scheme.onSurface);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: compact ? 1 : 4),
+      padding: EdgeInsets.only(bottom: compact ? 0 : 4),
       child: Row(
         children: [
           Container(
             key: Key('day-number-${date.toIso8601String()}'),
-            width: compact ? 17 : 24,
-            height: compact ? 17 : 24,
+            width: dense ? 12 : (compact ? 15 : 24),
+            height: dense ? 12 : (compact ? 15 : 24),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isSelected ? scheme.primary : null,
@@ -150,7 +160,7 @@ class _DayHeader extends StatelessWidget {
             child: Text(
               '${date.day}',
               style: TextStyle(
-                fontSize: compact ? 9.5 : 12,
+                fontSize: dense ? 7.5 : (compact ? 9.5 : 12),
                 height: 1,
                 fontWeight: isSelected || isToday
                     ? FontWeight.w700
@@ -203,9 +213,9 @@ class _DayContent extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-    final itemHeight = compact ? 20.0 : 46.0;
-    final gap = compact ? 2.0 : 4.0;
-    final footerHeight = compact ? 14.0 : 18.0;
+    final itemHeight = compact ? 18.0 : 46.0;
+    final gap = compact ? 1.0 : 4.0;
+    final footerHeight = compact ? 12.0 : 18.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -223,44 +233,51 @@ class _DayContent extends StatelessWidget {
           showFooter = available >= footerHeight && visibleCount < items.length;
         }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var index = 0; index < visibleCount; index++)
-              Padding(
-                padding: EdgeInsets.only(bottom: gap),
-                child: SizedBox(
-                  height: itemHeight,
-                  child: _DraggableItem(
-                    postIt: items[index],
-                    index: index,
-                    compact: compact,
-                    isPostponed: items[index].isPostponedOn(today),
-                    onTap: () => onPostItTap(items[index]),
-                    onReorderTo: onReorderTo,
-                  ),
-                ),
-              ),
-            if (showFooter)
-              SizedBox(
-                height: footerHeight,
-                child: InkWell(
-                  key: Key('day-overflow-${date.toIso8601String()}'),
-                  onTap: onShowAll,
-                  borderRadius: BorderRadius.circular(4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      AppStrings.moreItems(items.length - visibleCount),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+        return ClipRect(
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var index = 0; index < visibleCount; index++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: gap),
+                    child: SizedBox(
+                      height: itemHeight,
+                      child: _DraggableItem(
+                        postIt: items[index],
+                        index: index,
+                        compact: compact,
+                        isPostponed: items[index].isPostponedOn(today),
+                        onTap: () => onPostItTap(items[index]),
+                        onReorderTo: onReorderTo,
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
+                if (showFooter)
+                  SizedBox(
+                    height: footerHeight,
+                    child: InkWell(
+                      key: Key('day-overflow-${date.toIso8601String()}'),
+                      onTap: onShowAll,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          AppStrings.moreItems(items.length - visibleCount),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: compact ? 9 : null,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         );
       },
     );
