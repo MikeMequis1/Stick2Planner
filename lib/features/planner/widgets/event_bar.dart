@@ -64,7 +64,7 @@ class EventBar extends StatelessWidget {
                   size: compact ? 12 : 15,
                   color: colors.foreground,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     showTitle ? postIt.title : AppStrings.continuation,

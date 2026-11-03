@@ -75,7 +75,7 @@ class DayCell extends StatelessWidget {
                     width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
                   ),
                 ),
-                padding: EdgeInsets.all(compact ? 2 : 4),
+                padding: EdgeInsets.all(compact ? 1 : 4),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final tight = constraints.maxHeight < 24;

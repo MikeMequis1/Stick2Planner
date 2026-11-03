@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../app/app_scope.dart';
@@ -583,35 +584,42 @@ class _NoteLineRow extends StatelessWidget {
             ? theme.colorScheme.primaryContainer
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onSelect,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              children: [
-                if (checklist)
-                  Checkbox(
-                    value: line.isChecked,
-                    onChanged: (value) => onChecked(value ?? false),
-                  ),
-                Expanded(
-                  child: Text(
-                    line.text,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      decoration: checklist && line.isChecked
-                          ? TextDecoration.lineThrough
-                          : null,
+        child: Semantics(
+          button: true,
+          hint: AppStrings.selectLinesHint,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onLongPress: () {
+              HapticFeedback.selectionClick();
+              onSelect();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  if (checklist)
+                    Checkbox(
+                      value: line.isChecked,
+                      onChanged: (value) => onChecked(value ?? false),
+                    ),
+                  Expanded(
+                    child: Text(
+                      line.text,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        decoration: checklist && line.isChecked
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
                     ),
                   ),
-                ),
-                if (selected)
-                  Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-              ],
+                  if (selected)
+                    Icon(
+                      Icons.check_circle,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

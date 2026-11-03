@@ -41,6 +41,22 @@ abstract final class AppStrings {
   static const markdownHint =
       'Markdown: # título, **negrito**, *itálico*, - item, 1. item, '
       '[link](url), `código`.';
+  static const markdownToolsHeading1 = 'Título 1';
+  static const markdownToolsHeading2 = 'Título 2';
+  static const markdownToolsHeading3 = 'Título 3';
+  static const markdownToolsBold = 'Negrito';
+  static const markdownToolsItalic = 'Itálico';
+  static const markdownToolsBulletList = 'Lista com marcadores';
+  static const markdownToolsNumberedList = 'Lista numerada';
+  static const markdownToolsLink = 'Link';
+  static const markdownToolsInlineCode = 'Código inline';
+  static const markdownToolsCodeBlock = 'Bloco de código';
+  static const markdownToolsQuote = 'Citação';
+  static const markdownToolsShowPreview = 'Mostrar prévia';
+  static const markdownToolsHidePreview = 'Ocultar prévia';
+  static const markdownPreviewTitle = 'Prévia';
+  static const markdownPreviewEmpty = 'Nada para pré-visualizar.';
+  static const markdownLinkPlaceholder = 'texto';
   static const createPostItFromMarkdown = 'Criar post-it de trecho…';
   static const snapshotSelectionHint =
       'Selecione um trecho abaixo. Sem seleção, será usada a nota inteira.';
@@ -52,7 +68,7 @@ abstract final class AppStrings {
   static const noteSaveError = 'Não foi possível salvar a nota.';
   static const noteDeleteError = 'Não foi possível excluir a nota.';
   static const selectLinesHint =
-      'Toque nas linhas para selecionar um trecho.';
+      'Mantenha pressionada uma linha para selecionar um trecho.';
   static const createPostItFromSelection = 'Criar post-it do trecho';
   static const clearSelection = 'Limpar seleção';
   static const noteLinkedPostIts = 'Post-its vinculados';

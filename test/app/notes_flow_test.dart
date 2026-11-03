@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_schedule/app/app.dart';
 import 'package:flutter_schedule/app/app_strings.dart';
 import 'package:flutter_schedule/app/bootstrap.dart';
@@ -77,8 +78,16 @@ void main() {
     expect(find.text('Leite'), findsOneWidget);
 
     await tester.tap(find.text('Pão'));
-    await tester.tap(find.text('Leite'));
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('note-create-from-selection')),
+      findsNothing,
+    );
+
+    await tester.longPress(find.text('Pão'));
+    await tester.longPress(find.text('Leite'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selecionada(s)'), findsOneWidget);
     await tester.tap(
       find.byKey(const Key('note-create-from-selection')),
     );
@@ -93,6 +102,46 @@ void main() {
     expect(postIt.noteExcerpt, 'Pão\nLeite');
     expect(postIt.type, PostItType.task);
     expect(postIt.startDate, isNull);
+  });
+
+  testWidgets('barra Markdown aplica título, negrito e prévia', (tester) async {
+    final dependencies = await pumpPlanner(tester);
+    await openNotes(tester);
+
+    await tester.tap(find.byKey(const Key('add-note')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('note-title')),
+      'Ferramentas',
+    );
+    await tester.enterText(
+      find.byKey(const Key('note-markdown')),
+      'Linha',
+    );
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('note-markdown')),
+    );
+    await tester.tap(find.byKey(const Key('note-md-h1')));
+    await tester.pumpAndSettle();
+    expect(field.controller!.text, '# Linha');
+
+    field.controller!.selection = const TextSelection(
+      baseOffset: 2,
+      extentOffset: 7,
+    );
+    await tester.tap(find.byKey(const Key('note-md-bold')));
+    await tester.pumpAndSettle();
+    expect(field.controller!.text, '# **Linha**');
+
+    await tester.tap(find.byKey(const Key('note-md-preview')));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.markdownPreviewTitle), findsOneWidget);
+    expect(find.byType(MarkdownBody), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('note-save')));
+    await tester.pumpAndSettle();
+    expect(dependencies.notes.notes.single.markdown, '# **Linha**');
   });
 
   testWidgets('cria nota Markdown e renderiza a formatação', (tester) async {

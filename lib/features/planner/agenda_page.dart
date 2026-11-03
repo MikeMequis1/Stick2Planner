@@ -28,7 +28,8 @@ class AgendaPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, PlannerController planner) {    final theme = Theme.of(context);
+  Widget _buildContent(BuildContext context, PlannerController planner) {
+    final theme = Theme.of(context);
     final orientation = MediaQuery.orientationOf(context);
 
     if (planner.isLoading) {
@@ -119,15 +120,15 @@ class AgendaPage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Row(
             children: [
               Icon(
                 Icons.touch_app_outlined,
-                size: 14,
+                size: 16,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   AppStrings.calendarHint,
@@ -136,11 +137,22 @@ class AgendaPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '${AppStrings.undated}: ${planner.undatedPostIts.length}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                ),
+                child: Text(
+                  '${AppStrings.undated}: ${planner.undatedPostIts.length}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

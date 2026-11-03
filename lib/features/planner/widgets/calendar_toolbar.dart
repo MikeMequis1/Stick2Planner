@@ -31,69 +31,80 @@ class CalendarToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-    final navigation = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          key: const Key('calendar-previous'),
-          tooltip: AppStrings.previousPeriod,
-          onPressed: onPreviousPeriod,
-          icon: const Icon(Icons.chevron_left),
-        ),
-        Flexible(
-          child: Text(
-            periodLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+    final navigation = _ToolbarCapsule(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ToolbarIconButton(
+            key: const Key('calendar-previous'),
+            tooltip: AppStrings.previousPeriod,
+            onPressed: onPreviousPeriod,
+            icon: Icons.chevron_left,
+          ),
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                periodLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        ),
-        IconButton(
-          key: const Key('calendar-next'),
-          tooltip: AppStrings.nextPeriod,
-          onPressed: onNextPeriod,
-          icon: const Icon(Icons.chevron_right),
-        ),
-      ],
+          _ToolbarIconButton(
+            key: const Key('calendar-next'),
+            tooltip: AppStrings.nextPeriod,
+            onPressed: onNextPeriod,
+            icon: Icons.chevron_right,
+          ),
+        ],
+      ),
     );
 
-    final controls = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextButton(
-          key: const Key('calendar-today'),
-          onPressed: onToday,
-          child: const Text(AppStrings.today),
-        ),
-        const SizedBox(width: 4),
-        IconButton(
-          key: const Key('calendar-mode-decrease'),
-          tooltip: AppStrings.decreaseDays,
-          onPressed: canDecreaseMode ? onDecreaseMode : null,
-          icon: const Icon(Icons.remove_circle_outline),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+    final controls = _ToolbarCapsule(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            key: const Key('calendar-today'),
+            onPressed: onToday,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 38),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: const StadiumBorder(),
+            ),
+            child: const Text(AppStrings.today),
           ),
-          child: Text(
-            mode.label,
-            key: const Key('calendar-mode-label'),
-            style: theme.textTheme.labelMedium,
+          _ToolbarDivider(color: scheme.outlineVariant),
+          _ToolbarIconButton(
+            key: const Key('calendar-mode-decrease'),
+            tooltip: AppStrings.decreaseDays,
+            onPressed: canDecreaseMode ? onDecreaseMode : null,
+            icon: Icons.remove,
           ),
-        ),
-        IconButton(
-          key: const Key('calendar-mode-increase'),
-          tooltip: AppStrings.increaseDays,
-          onPressed: canIncreaseMode ? onIncreaseMode : null,
-          icon: const Icon(Icons.add_circle_outline),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              mode.label,
+              key: const Key('calendar-mode-label'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          _ToolbarIconButton(
+            key: const Key('calendar-mode-increase'),
+            tooltip: AppStrings.increaseDays,
+            onPressed: canIncreaseMode ? onIncreaseMode : null,
+            icon: Icons.add,
+          ),
+        ],
+      ),
     );
 
     return LayoutBuilder(
@@ -102,6 +113,7 @@ class CalendarToolbar extends StatelessWidget {
           return Row(
             children: [
               Flexible(child: navigation),
+              const SizedBox(width: 16),
               const Spacer(),
               controls,
             ],
@@ -110,12 +122,79 @@ class CalendarToolbar extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            navigation,
-            const SizedBox(height: 4),
-            Align(alignment: Alignment.centerRight, child: controls),
+            Align(alignment: Alignment.centerLeft, child: navigation),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(fit: BoxFit.scaleDown, child: controls),
+            ),
           ],
         );
       },
+    );
+  }
+}
+
+class _ToolbarCapsule extends StatelessWidget {
+  const _ToolbarCapsule({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _ToolbarIconButton extends StatelessWidget {
+  const _ToolbarIconButton({
+    super.key,
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20),
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        minimumSize: const Size(36, 36),
+        padding: EdgeInsets.zero,
+        shape: const CircleBorder(),
+      ),
+    );
+  }
+}
+
+class _ToolbarDivider extends StatelessWidget {
+  const _ToolbarDivider({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 22,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: color,
     );
   }
 }
