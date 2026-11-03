@@ -721,8 +721,9 @@ avaliação.
   atingidas. H1/H2/H3 substituem o nível anterior em vez de acumular `#`; listas
   numeradas renumeram o bloco.
 - O campo recupera o foco e a seleção após usar a barra.
-- Prévia rápida é um painel compacto acima do campo, com renderização Markdown,
-  altura máxima de 200 px e rolagem própria; alterna pelo botão de olho.
+- Prévia rápida fica à direita do campo em telas largas (abaixo em telas
+  estreitas), com renderização Markdown, rolagem própria e alternância pelo botão
+  de olho.
 
 ### Seleção de notas
 
@@ -766,7 +767,8 @@ avaliação.
 
 - A barra insere sintaxe Markdown; o editor não é WYSIWYG e os marcadores
   continuam visíveis.
-- A prévia é um painel compacto de conferência, não uma edição lado a lado.
+- A prévia fica à direita do editor em telas largas e empilhada abaixo em telas
+  estreitas; não é um editor WYSIWYG.
 - Não há undo/redo próprio na barra; vale o undo do campo de texto do sistema.
 - Selecionar linhas exige toque longo; toque simples não seleciona (decisão
   deliberada para evitar seleção acidental).
@@ -774,3 +776,66 @@ avaliação.
   negócio.
 - Permanecem as limitações anteriores: links não abrem navegador, snapshot de
   texto usa Markdown cru, um vínculo por post-it, sem busca/histórico de notas.
+
+## Rodada de gestos e ajustes visuais (2026-11-03)
+
+### Prévia do editor
+
+- Em telas largas, a prévia Markdown fica **à direita** do campo de edição, com
+  a barra de ferramentas ocupando a largura total acima dos dois.
+- Em telas estreitas, editor e prévia são empilhados.
+- O painel tem altura mínima de 320 px e rolagem própria até 360 px; a altura do
+  campo acompanha o conteúdo.
+
+### Barras de eventos e agenda
+
+- Conteúdo das barras de evento recebeu recuo nas pontas para não ficar sob as
+  alças de redimensionamento; o ícone deixou de coincidir com o início da barra.
+- Alças de redimensionamento ficaram mais visíveis (grip arredondado) e mantêm
+  área de toque de 24 px.
+- Arraste de eventos e post-its começa após 200 ms, reduzindo a sensação de
+  travamento sem transformar rolagem em arraste acidental.
+- Cabeçalho, rodapé e espaçamentos principais normalizados para múltiplos de
+  8 px; ajustes finos usam múltiplos de 4 px.
+- App passou a usar **edge-to-edge**: barras de status e navegação transparentes
+  e fundo do app cobrindo a área útil da tela.
+
+### Gestos na grade
+
+- **Um toque:** seleciona o dia imediatamente.
+- **Dois toques:** abre a criação de tarefa já com a data e o tipo Tarefa.
+- **Três toques:** abre a criação de evento já com a data e o tipo Evento.
+- **Toque longo:** abre uma janela de prévia do dia; ao soltar o dedo, a janela
+  fecha. A prévia lista até quatro post-its e indica o restante.
+- O intervalo para encadear 2/3 toques é de 300 ms; a seleção do dia não espera
+  esse intervalo.
+
+### Testes e resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **162 testes aprovados**.
+- `flutter build apk --debug`: aprovado.
+- Novos testes: dois toques abrem tarefa e três abrem evento; toque longo mostra
+  prévia e soltar remove; prévia Markdown fica à direita do campo.
+
+### Validação física
+
+- Prévia Markdown à direita conferida no tablet.
+- Dois toques abriram “Novo post-it” em Tarefa com a data correta; três toques
+  abriram o mesmo formulário em Evento.
+- Barras de evento com conteúdo recuado e grips visíveis nas pontas.
+- Evidências: `docs/validacao/rodada-agenda-gestos.png`,
+  `rodada-agenda-toque-duplo.png`, `rodada-agenda-toque-triplo.png` e
+  `etapa5-markdown-previa-direita.png`.
+
+### Limitações
+
+- Dois/três toques abrem o formulário de criação já configurado; o post-it só é
+  gravado ao salvar, evitando títulos provisórios.
+- O encadeamento de três toques precisa ocorrer dentro de 300 ms.
+- Gestos de múltiplos toques não são disparados quando o toque começa sobre um
+  post-it; nesse caso vale o cartão.
+- A prévia por toque longo fecha apenas ao soltar; não é uma janela modal.
+- O ajuste de margens cobre os espaçamentos principais; a grade mantém um
+  gutter óptico de 1,5 px entre células para não perder densidade no mês.
+- Permanecem as limitações anteriores de notas, links e vínculos.

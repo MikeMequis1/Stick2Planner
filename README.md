@@ -104,9 +104,9 @@ não importa Flutter nem drift.
   (data/intervalo obrigatórios, com marcação `+` opcional) ou TO-DO recorrente.
 - Tarefas aceitam data única ou "Sem data"; intervalo só existe em eventos.
   Erros de validação aparecem no próprio formulário.
-- Arrastar o corpo de um post-it move o registro (long press no toque). Eventos
-  mantêm a duração ao mudar de dia; no mesmo dia, soltar sobre outro cartão
-  reordena.
+- Arrastar o corpo de um post-it move o registro (long press de 200 ms no
+  toque). Eventos mantêm a duração ao mudar de dia; no mesmo dia, soltar sobre
+  outro cartão reordena.
 - Alças nas extremidades dos eventos redimensionam início/fim, com prévia da
   nova data; soltar aplica e persiste. O corpo move; as alças redimensionam.
   A área de toque é de 24×24 dp lógicos (grip visual discreto).
@@ -151,7 +151,14 @@ não importa Flutter nem drift.
 - **Telas estreitas:** abaixo de 600 dp o FAB é substituído por um ícone “+”
   na AppBar, evitando cobrir a agenda; a grade rola quando necessário.
 - **Cabeçalho:** navegação de período e controles de modo ficam em cápsulas
-  separadas, com “Hoje”, `+`/`−` e espaçamento uniforme entre os ícones.
+  separadas, com "Hoje", `+`/`-` e espaçamento uniforme entre os ícones.
+- **Gestos na grade:** um toque seleciona o dia; dois toques abrem a criação de
+  tarefa; três abrem a criação de evento; segurar mostra uma prévia do dia que
+  fecha ao soltar.
+- **Barras de evento:** conteúdo recuado das alças, grips visíveis nas pontas e
+  arraste após 200 ms; as alças mantêm área de toque de 24×24 dp lógicos.
+- **Bordas:** o app usa edge-to-edge, com barras de sistema transparentes e
+  fundo cobrindo a área útil.
 
 ## Notas privadas
 
@@ -161,7 +168,8 @@ não importa Flutter nem drift.
   (títulos, negrito/itálico, listas, links, parágrafos e blocos de código).
 - Barra rápida no editor: H1/H2/H3, negrito, itálico, listas, citação, link,
   código inline, bloco de código e prévia rápida. As ações respeitam a seleção
-  e o nível de título é substituído ao trocar H1/H2/H3.
+  e o nível de título é substituído ao trocar H1/H2/H3. Em telas largas a prévia
+  fica à direita do campo; em telas estreitas, abaixo dele.
 - **Lista:** linhas individuais com adicionar/remover, reordenar e marcar;
   **mantenha pressionada** uma linha para selecionar e converter o trecho em
   post-it pela barra inferior.
@@ -176,8 +184,9 @@ não importa Flutter nem drift.
 - Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
   snapshots existentes permanecem. A nota usa tombstone.
 - Limitações conscientes: a barra insere sintaxe (não é WYSIWYG); a prévia é
-  um painel compacto; links não abrem navegador; o snapshot de texto é
-  escolhido no Markdown cru; em listas a seleção é por linha/intervalo.
+  um painel de conferência; dois/três toques abrem o formulário já configurado e
+  só gravam ao salvar; links não abrem navegador; o snapshot de texto é escolhido
+  no Markdown cru; em listas a seleção é por linha/intervalo.
 
 ## Domínio e persistência
 

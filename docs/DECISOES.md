@@ -188,9 +188,10 @@ etapas. Cada item: contexto, decisão, consequência.
   itálico, listas, citação, link, código inline, bloco de código e prévia. As
   ações operam sobre a seleção ou a linha atual; títulos trocam de nível em vez
   de acumular `#`.
-- **Prévia rápida:** painel compacto (até 200 px) acima do campo, com rolagem
-  própria. É uma conferência, não um editor WYSIWYG; a sintaxe permanece no
-  campo. Não há undo/redo próprio — usa o undo do campo do sistema.
+- **Prévia rápida:** em telas largas fica à direita do campo; em telas
+  estreitas, empilhada abaixo. Tem altura mínima de 320 px, rolagem própria até
+  360 px e é uma conferência, não um editor WYSIWYG. Não há undo/redo próprio —
+  usa o undo do campo do sistema.
 - **Seleção de linhas:** exige toque longo (com feedback tátil), evitando
   seleção acidental ao rolar ou tocar no checkbox. Toque simples não seleciona;
   a barra inferior e o snapshot continuam iguais.
@@ -213,7 +214,17 @@ etapas. Cada item: contexto, decisão, consequência.
 - Paisagem: semana, duas semanas, mês compacto.
 - Retrato: dia, quatro dias, semana.
 - **Cabeçalho:** navegação e controles de modo em cápsulas visuais separadas,
-  com ícones `+`/`−`, "Hoje" e divisor; apenas layout, sem mudança de regras.
+  com ícones `+`/`-`, "Hoje" e divisor; apenas layout, sem mudança de regras.
+- **Gestos de data:** um toque seleciona; dois toques abrem a criação de tarefa;
+  três abrem a criação de evento; toque longo abre uma prévia flutuante que
+  fecha ao soltar. O encadeamento de múltiplos toques usa janela de 300 ms.
+- **Barras de evento:** o conteúdo é recuado das alças para o ícone não ficar sob
+  o início; as alças têm grip visível e 24×24 dp de toque. O arraste começa após
+  200 ms, evitando a sensação de travamento sem arrastar por acidente.
+- **Moldura:** app em edge-to-edge com barras de status/navegação transparentes;
+  espaçamentos principais em múltiplos de 8 px e ajustes finos em múltiplos de
+  4 px. A grade mantém gutter óptico de 1,5 px entre células para preservar a
+  densidade do mês.
 - No mês compacto, o padding interno da célula é reduzido para preservar ao
   menos uma tarefa visível junto do indicador de overflow.
 - A data selecionada é a âncora. Anterior/próximo move a seleção em um
