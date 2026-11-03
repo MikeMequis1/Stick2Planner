@@ -184,6 +184,16 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Markdown:** `flutter_markdown_plus 1.0.12`, pois `flutter_markdown` está
   descontinuado. O detalhe renderiza a formatação; `softLineBreak: true` trata
   Enter como quebra visível, mantendo parágrafos separados por linha em branco.
+- **Barra rápida:** acima do campo Markdown há atalhos para H1/H2/H3, negrito,
+  itálico, listas, citação, link, código inline, bloco de código e prévia. As
+  ações operam sobre a seleção ou a linha atual; títulos trocam de nível em vez
+  de acumular `#`.
+- **Prévia rápida:** painel compacto (até 200 px) acima do campo, com rolagem
+  própria. É uma conferência, não um editor WYSIWYG; a sintaxe permanece no
+  campo. Não há undo/redo próprio — usa o undo do campo do sistema.
+- **Seleção de linhas:** exige toque longo (com feedback tátil), evitando
+  seleção acidental ao rolar ou tocar no checkbox. Toque simples não seleciona;
+  a barra inferior e o snapshot continuam iguais.
 - **Snapshot de texto:** diálogo com o Markdown cru selecionável e título
   preenchido; sem seleção, usa a nota inteira. O snapshot é cópia literal do
   trecho, incluindo a sintaxe Markdown escolhida.
@@ -202,6 +212,10 @@ etapas. Cada item: contexto, decisão, consequência.
 
 - Paisagem: semana, duas semanas, mês compacto.
 - Retrato: dia, quatro dias, semana.
+- **Cabeçalho:** navegação e controles de modo em cápsulas visuais separadas,
+  com ícones `+`/`−`, "Hoje" e divisor; apenas layout, sem mudança de regras.
+- No mês compacto, o padding interno da célula é reduzido para preservar ao
+  menos uma tarefa visível junto do indicador de overflow.
 - A data selecionada é a âncora. Anterior/próximo move a seleção em um
   período (1, 4, 7, 14 dias; mês com dia preservado e clampado).
 - Mês compacto: grade dinâmica de 35 ou 42 células conforme o mês, incluindo

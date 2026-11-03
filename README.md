@@ -150,6 +150,8 @@ não importa Flutter nem drift.
   disponível ao tocar na célula.
 - **Telas estreitas:** abaixo de 600 dp o FAB é substituído por um ícone “+”
   na AppBar, evitando cobrir a agenda; a grade rola quando necessário.
+- **Cabeçalho:** navegação de período e controles de modo ficam em cápsulas
+  separadas, com “Hoje”, `+`/`−` e espaçamento uniforme entre os ícones.
 
 ## Notas privadas
 
@@ -157,8 +159,11 @@ não importa Flutter nem drift.
   dois modos.
 - **Texto:** um único editor Markdown, renderizado formatado no detalhe
   (títulos, negrito/itálico, listas, links, parágrafos e blocos de código).
+- Barra rápida no editor: H1/H2/H3, negrito, itálico, listas, citação, link,
+  código inline, bloco de código e prévia rápida. As ações respeitam a seleção
+  e o nível de título é substituído ao trocar H1/H2/H3.
 - **Lista:** linhas individuais com adicionar/remover, reordenar e marcar;
-  toque nas linhas para selecionar uma ou várias e converter o trecho em
+  **mantenha pressionada** uma linha para selecionar e converter o trecho em
   post-it pela barra inferior.
 - Em notas de texto, “Criar post-it de trecho…” abre o Markdown selecionável;
   sem seleção, usa a nota inteira.
@@ -170,7 +175,8 @@ não importa Flutter nem drift.
   do post-it. O detalhe mostra “Nota vinculada”.
 - Excluir a nota remove os vínculos vivos, com aviso, mas não apaga as tarefas;
   snapshots existentes permanecem. A nota usa tombstone.
-- Limitações conscientes: links não abrem navegador; o snapshot de texto é
+- Limitações conscientes: a barra insere sintaxe (não é WYSIWYG); a prévia é
+  um painel compacto; links não abrem navegador; o snapshot de texto é
   escolhido no Markdown cru; em listas a seleção é por linha/intervalo.
 
 ## Domínio e persistência

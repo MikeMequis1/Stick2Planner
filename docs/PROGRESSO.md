@@ -709,3 +709,68 @@ Etapa 5 — notas privadas. Aguardando avaliação desta rodada; não iniciada.
 Etapa 6 — qualidade e documentação final (testes de integração, acessibilidade,
 ajustes de layout, verificação offline e documentação). Não iniciada; aguardando
 avaliação.
+
+## Rodada de ajustes — Markdown, toque longo e agenda (2026-11-03)
+
+### Editor Markdown
+
+- Barra de ferramentas acima do campo de texto com H1, H2, H3, negrito,
+  itálico, lista com marcadores, lista numerada, citação, link, código inline,
+  bloco de código e prévia rápida.
+- As ações respeitam a seleção: envolvem o texto escolhido ou prefixam as linhas
+  atingidas. H1/H2/H3 substituem o nível anterior em vez de acumular `#`; listas
+  numeradas renumeram o bloco.
+- O campo recupera o foco e a seleção após usar a barra.
+- Prévia rápida é um painel compacto acima do campo, com renderização Markdown,
+  altura máxima de 200 px e rolagem própria; alterna pelo botão de olho.
+
+### Seleção de notas
+
+- Linhas de lista agora são selecionadas por **toque longo**, com feedback
+  tátil; toque simples não seleciona.
+- Checkbox continua marcando/desmarcando; a barra inferior, o snapshot e o
+  vínculo vivo não mudaram.
+- As dicas no detalhe e no editor foram atualizadas para “Mantenha pressionada
+  uma linha…”.
+
+### Agenda
+
+- Navegação de período e controles de modo agrupados em cápsulas com borda,
+  “Hoje” separado por divisor e ícones `+`/`−` alinhados.
+- Rodapé com ícone de dica alinhado e contagem “Sem data” em pill.
+- Célula compacta do mês com 1 px a menos de padding interno para preservar ao
+  menos uma tarefa visível junto do indicador de overflow quando a altura é
+  reduzida.
+- Ajustes somente visuais; gestos, regras e persistência permanecem iguais.
+
+### Testes e resultados
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **159 testes aprovados** (1 novo nesta rodada).
+- `flutter build apk --debug`: aprovado.
+- Novo teste: barra Markdown aplica H1 e negrito, abre a prévia e persiste o
+  conteúdo; teste de lista confirma que toque simples não seleciona e toque
+  longo seleciona.
+
+### Validação física
+
+- Barra Markdown, prévia e detalhe renderizado verificados no tablet.
+- Toque longo em linha de lista mostrou “1 selecionada(s)” e a ação de criar
+  post-it; toque simples não abriu seleção.
+- Cabeçalho da agenda, cápsulas, rodapé e grade verificados no tablet.
+- Evidências: `docs/validacao/etapa5-markdown-barra.png`,
+  `etapa5-markdown-previa.png`, `etapa5-selecao-toque-longo.png` e
+  `rodada-agenda-cabecalho.png`.
+
+### Limitações
+
+- A barra insere sintaxe Markdown; o editor não é WYSIWYG e os marcadores
+  continuam visíveis.
+- A prévia é um painel compacto de conferência, não uma edição lado a lado.
+- Não há undo/redo próprio na barra; vale o undo do campo de texto do sistema.
+- Selecionar linhas exige toque longo; toque simples não seleciona (decisão
+  deliberada para evitar seleção acidental).
+- Os ajustes da agenda são visuais e não alteram atalhos, arraste ou regras de
+  negócio.
+- Permanecem as limitações anteriores: links não abrem navegador, snapshot de
+  texto usa Markdown cru, um vínculo por post-it, sem busca/histórico de notas.
