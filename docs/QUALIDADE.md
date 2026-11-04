@@ -30,7 +30,7 @@ Checklist final do MVP local do Planner.
 | Layout | 1280×800, 800×1280, 500×800 e texto ampliado em 1,3× |
 | Aparelho | tablet Android 3200×2136, tema escuro |
 | Carga | 200 post-its na agenda |
-| Offline | ausência de permissão `INTERNET` e banco local |
+| Offline | sem servidor o app segue local; `INTERNET` só para sync opcional |
 
 ## Acessibilidade
 
@@ -46,10 +46,12 @@ Checklist final do MVP local do Planner.
 
 ## Offline e privacidade
 
-- Nenhuma permissão de internet no `AndroidManifest.xml`.
-- Dados ficam em SQLite no aparelho; não há sincronização nesta etapa.
-- O único serviço de plataforma é o wakelock, usado para manter a tela ativa
-  durante o uso do planner.
+- `INTERNET`/`ACCESS_NETWORK_STATE` existem apenas para sincronização opcional;
+  sem servidor o app abre e opera normalmente.
+- Dados ficam em SQLite no aparelho; o servidor é opcional e usa token por
+  dispositivo guardado em armazenamento seguro.
+- Serviços de plataforma: wakelock (tela ativa) e WorkManager (sync periódico
+  best-effort).
 
 ## Consistência
 
@@ -94,5 +96,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 218 testes aprovados.
+- `flutter test`: 231 testes aprovados.
 - `flutter build apk --debug`: aprovado.

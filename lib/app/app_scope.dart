@@ -6,6 +6,7 @@ import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
+import 'services/sync_coordinator.dart';
 
 /// Expõe os controllers para a árvore de widgets.
 ///
@@ -19,6 +20,7 @@ class AppScope extends InheritedWidget {
     required this.settings,
     required this.backup,
     required this.backupFiles,
+    required this.sync,
     required super.child,
   });
 
@@ -28,6 +30,7 @@ class AppScope extends InheritedWidget {
   final AppSettingsController settings;
   final BackupService backup;
   final BackupFileGateway backupFiles;
+  final SyncCoordinator sync;
 
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
@@ -42,5 +45,6 @@ class AppScope extends InheritedWidget {
       navigation != oldWidget.navigation ||
       settings != oldWidget.settings ||
       backup != oldWidget.backup ||
-      backupFiles != oldWidget.backupFiles;
+      backupFiles != oldWidget.backupFiles ||
+      sync != oldWidget.sync;
 }

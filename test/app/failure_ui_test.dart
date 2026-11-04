@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
 import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
@@ -39,14 +40,13 @@ void main() {
     final failing = FailingPostItRepository(realRepository);
     final dependencies = AppDependencies(
       database: database,
+      tokens: InMemoryTokenStore(),
       planner: PlannerController(
         postItRepository: failing,
         settingsRepository: DriftSettingsRepository(database),
         clock: FixedClock(DateTime(2026, 11, 3, 9)),
       ),
-      notes: NotesController(
-        noteRepository: DriftNoteRepository(database),
-      ),
+      notes: NotesController(noteRepository: DriftNoteRepository(database)),
     );
     await dependencies.initialize();
     addTearDown(dependencies.dispose);
@@ -82,7 +82,10 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.text(AppStrings.errorMove), findsOneWidget);
-    expect(dependencies.planner.postIts.single.startDate, DateOnly(2026, 11, 3));
+    expect(
+      dependencies.planner.postIts.single.startDate,
+      DateOnly(2026, 11, 3),
+    );
     expect(
       find.descendant(
         of: find.byKey(const Key('day-2026-11-03')),
@@ -92,15 +95,14 @@ void main() {
     );
   });
 
-  testWidgets('falha ao salvar mantém formulário e mostra erro', (tester) async {
+  testWidgets('falha ao salvar mantém formulário e mostra erro', (
+    tester,
+  ) async {
     await pumpWithFailingRepository(tester);
 
     await tester.tap(find.byKey(const Key('add-post-it')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('editor-title')),
-      'Não salvar',
-    );
+    await tester.enterText(find.byKey(const Key('editor-title')), 'Não salvar');
     await tester.tap(find.byKey(const Key('editor-save')));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));

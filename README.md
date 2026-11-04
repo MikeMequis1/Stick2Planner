@@ -28,26 +28,32 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
   vivos. Post-its da nota abrem detalhes ou a Agenda.
 - **Configurações:** tema Sistema/Claro/Escuro, idioma Português/English,
   paletas Verde/Oceano/Pôr do sol/Lavanda, animações, wakelock e dicas.
+- **Sincronização:** servidor próprio com URL manual ou QR, token seguro por
+  dispositivo, sync manual/automático e cópia de conflitos.
 - **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
   por substituição integral, com snapshot automático antes de importar.
 
 ## Stack
 
 - Flutter 3.47.9 / Dart 3.13.7
-- drift + SQLite (esquema v4, migrações v1 → v4)
+- drift + SQLite (esquema v5, migrações v1 → v5)
 - `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`, `crypto`,
-  `file_picker`
-- Servidor de sync em server/ (Dart/shelf + SQLite, Docker Compose)\n- Android SDK 36; alvo principal: tablet Android
+  `file_picker`, `http`, `flutter_secure_storage`, `mobile_scanner`,
+  `connectivity_plus`, `workmanager`
+- Servidor de sync em `server/` (Dart/shelf + SQLite, Docker Compose)
+- Android SDK 36; alvo principal: tablet Android
 
 Arquitetura: `features -> app -> domain`, `data -> domain`. `domain` não
 depende de Flutter nem drift.
 
 ## Offline, tamanho e desempenho
 
-- Sem permissão `INTERNET`; nenhuma funcionalidade essencial depende de rede.
+- Sincronização é opcional: `INTERNET` existe apenas para o servidor
+  configurado; sem ele o app funciona normalmente offline.
+- HTTP é aceito na LAN/Tailscale (cleartext habilitado para servidor próprio).
 - O APK **debug** é grande (~188 MB) porque carrega runtime e símbolos de
-  depuração. O APK **release split por ABI** fica em ~19–22 MB; usar release
-  para avaliar fluidez e armazenamento.
+  depuração. O APK **release split por ABI** fica em ~25–31 MB (o leitor de QR
+  adiciona o ML Kit); usar release para avaliar fluidez e armazenamento.
 - O banco local é compacto: ~80 KB para 17 post-its, 3 notas e 58 registros de
   histórico. O histórico preserva auditoria; não é removido automaticamente.
 - Animações e transições podem ser desativadas em Configurações. O build release
@@ -92,7 +98,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 218 testes aprovados.
+- `flutter test`: 231 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

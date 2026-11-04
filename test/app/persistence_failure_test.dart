@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
@@ -24,14 +25,13 @@ void main() {
     AppDependencies buildDependencies() {
       return AppDependencies(
         database: database,
+        tokens: InMemoryTokenStore(),
         planner: PlannerController(
           postItRepository: failingRepository,
           settingsRepository: DriftSettingsRepository(database),
           clock: FixedClock(DateTime(2026, 11, 3, 9)),
         ),
-        notes: NotesController(
-          noteRepository: DriftNoteRepository(database),
-        ),
+        notes: NotesController(noteRepository: DriftNoteRepository(database)),
       );
     }
 
@@ -80,7 +80,10 @@ void main() {
       );
 
       expect(dependencies.planner.postIts.single.title, 'Original');
-      expect(dependencies.planner.postIts.single.startDate, DateOnly(2026, 11, 3));
+      expect(
+        dependencies.planner.postIts.single.startDate,
+        DateOnly(2026, 11, 3),
+      );
       final persisted = await realRepository.findById('t1');
       expect(persisted!.title, 'Original');
       expect(persisted.startDate, DateOnly(2026, 11, 3));
@@ -190,10 +193,7 @@ void main() {
       );
 
       expect(dependencies.planner.postIts.single.id, 't1');
-      expect(
-        await realRepository.loadAll(includeDeleted: true),
-        hasLength(1),
-      );
+      expect(await realRepository.loadAll(includeDeleted: true), hasLength(1));
       expect(
         (await realRepository.loadAll(includeDeleted: true)).single.deletedAt,
         isNull,

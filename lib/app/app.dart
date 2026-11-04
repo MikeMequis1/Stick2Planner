@@ -23,6 +23,7 @@ class PlannerApp extends StatelessWidget {
       settings: dependencies.settings,
       backup: dependencies.backup,
       backupFiles: dependencies.backupFiles,
+      sync: dependencies.sync,
       child: ListenableBuilder(
         listenable: dependencies.settings,
         builder: (context, _) {

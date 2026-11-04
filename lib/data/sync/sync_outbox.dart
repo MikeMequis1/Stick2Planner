@@ -63,6 +63,18 @@ final class SyncOutboxRecorder {
             ))
             .getSingleOrNull();
 
+    var baseRev = existing?.baseRev;
+    if (baseRev == null) {
+      final state =
+          await (_db.select(_db.syncRowStates)..where(
+                (table) =>
+                    table.entity.equals(entity) &
+                    table.entityId.equals(entityId),
+              ))
+              .getSingleOrNull();
+      baseRev = state?.serverRev ?? 0;
+    }
+
     await _db
         .into(_db.syncOutbox)
         .insertOnConflictUpdate(
@@ -72,7 +84,7 @@ final class SyncOutboxRecorder {
             payload: canonicalJsonEncode(payload),
             changeId: _uuid.v4(),
             updatedAt: dateTimeToStorage(at),
-            baseRev: Value(existing?.baseRev ?? 0),
+            baseRev: Value(baseRev),
             attempts: const Value(0),
             lastError: const Value(null),
           ),

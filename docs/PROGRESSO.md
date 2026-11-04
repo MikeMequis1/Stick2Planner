@@ -858,8 +858,10 @@ final `Etapa 6 — qualidade e entrega`.
 
 ### Offline e consistência
 
-- Teste de contrato confirma que o manifest Android não declara permissão
-  `INTERNET`.
+- Naquela etapa, teste de contrato confirmava que o manifest Android não
+  declarava `INTERNET`. A partir da Etapa 5 a permissão existe apenas para o
+  sync opcional; o teste foi atualizado (sem foreground service nem isenção de
+  bateria).
 - Documento `docs/QUALIDADE.md` consolida matriz de validação, acessibilidade,
   offline, consistência e limitações conhecidas.
 
@@ -1096,6 +1098,35 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
   pós-revogação 401. Nenhum token foi impresso.
 - `sudo` não está disponível sem senha; firewall e TLS via Tailscale ficam
   pendentes de ação do usuário.
+
+## Etapa 5 — configuração, pareamento e status (2026-11-04)
+
+- Seção “Sincronização” em Configurações: endereço do servidor, salvar, testar
+  conexão, habilitar automático, sincronizar agora, parear e desconectar.
+- Pareamento por JSON/código do servidor ou QR (`mobile_scanner`); token vai
+  para `flutter_secure_storage`, nunca para o banco/backup/logs.
+- `SyncCoordinator` mantém URL, habilitado, deviceId, pendências, último sync,
+  relatório e erro; botão manual usa o mesmo motor da Etapa 4.
+- Desconectar limpa token e URL e desabilita o automático.
+- Android: `INTERNET`, `ACCESS_NETWORK_STATE`, `CAMERA` (opcional) e
+  `usesCleartextTraffic` para servidor na LAN; o app segue offline-first.
+- Teste de contrato de offline atualizado: internet existe apenas para sync
+  opcional; sem foreground service nem pedido de isenção de bateria.
+
+## Etapa 6 — automação e validação entre dispositivos (2026-11-04)
+
+- Gatilhos: mudança local (watch da outbox + debounce de 2 s), retomada do app,
+  reconexão (`connectivity_plus`), botão manual e WorkManager periódico (15 min,
+  restrito a rede, best-effort).
+- Sync nunca bloqueia a UI; falhas viram estado/erro e a outbox permanece.
+- WorkManager roda em isolate próprio com banco + token seguro; sem servidor
+  configurado, a tarefa apenas encerra.
+- Testes entre dispositivos com servidor em memória: convergência, conflito
+  com cópia e vitória local com reenvio.
+- Aviso de build: plugin `workmanager_android` ainda aplica KGP; funciona hoje,
+  mas exigirá atualização quando o Flutter migrar para Built-in Kotlin.
+- Release maior por causa do ML Kit do leitor de QR (~24,7/28,5/30,8 MB).
+
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)
 

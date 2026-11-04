@@ -1,0 +1,232 @@
+// ignore_for_file: prefer_initializing_formals
+
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
+import '../../data/db/app_database.dart';
+import '../../data/sync/pairing_payload.dart';
+import '../../data/sync/sync_engine.dart';
+import '../../data/sync/sync_models.dart';
+import '../../data/sync/sync_state_store.dart';
+import '../../data/sync/sync_transport.dart';
+import 'token_store.dart';
+
+typedef SyncTransportFactory = SyncTransport Function(
+  Uri baseUrl,
+  String token,
+);
+
+/// Orquestra configuração, pareamento, gatilhos e execução da sincronização.
+final class SyncCoordinator extends ChangeNotifier {
+  SyncCoordinator({
+    required AppDatabase database,
+    required SyncStateStore state,
+    required TokenStore tokens,
+    SyncTransportFactory? transportFactory,
+    this.debounce = const Duration(seconds: 2),
+    Stream<bool>? connectivityChanges,
+    DateTime Function()? now,
+  }) : _db = database,
+       _state = state,
+       _tokens = tokens,
+       _transportFactory =
+           transportFactory ??
+           ((baseUrl, token) =>
+               HttpSyncTransport(baseUrl: baseUrl, token: token)),
+       _connectivity = connectivityChanges,
+       _now = now ?? DateTime.now;
+
+  final AppDatabase _db;
+  final SyncStateStore _state;
+  final TokenStore _tokens;
+  final SyncTransportFactory _transportFactory;
+  final Stream<bool>? _connectivity;
+  final DateTime Function() _now;
+  final Duration debounce;
+
+  StreamSubscription<List<SyncOutboxRow>>? _outboxWatch;
+  StreamSubscription<bool>? _connectivityWatch;
+  Timer? _debounceTimer;
+  bool _busy = false;
+  bool _configured = false;
+  bool _enabled = false;
+  int _pending = 0;
+  String? _serverUrl;
+  String? _deviceId;
+  DateTime? _lastSyncAt;
+  String? _lastError;
+  SyncReport? _lastReport;
+
+  bool get busy => _busy;
+  bool get enabled => _enabled;
+  bool get configured => _configured;
+  int get pendingCount => _pending;
+  String? get serverUrl => _serverUrl;
+  String? get deviceId => _deviceId;
+  DateTime? get lastSyncAt => _lastSyncAt;
+  String? get lastError => _lastError;
+  SyncReport? get lastReport => _lastReport;
+
+  Future<void> initialize() async {
+    _deviceId = await _state.ensureDeviceId();
+    _serverUrl = await _state.serverUrl();
+    _enabled = await _state.enabled();
+    _lastSyncAt = await _state.lastSyncAt();
+    _lastError = await _state.lastError();
+    _configured = await _hasCredentials();
+
+    _outboxWatch = _db.select(_db.syncOutbox).watch().listen((rows) {
+      _pending = rows.length;
+      notifyListeners();
+      if (rows.isNotEmpty) _schedule();
+    });
+
+    _connectivityWatch = _connectivity?.listen((online) {
+      if (online) _schedule(immediate: true);
+    });
+
+    notifyListeners();
+  }
+
+  Future<bool> _hasCredentials() async {
+    final url = await _state.serverUrl();
+    String? token;
+    try {
+      token = await _tokens.read();
+    } on Object {
+      token = null;
+    }
+    return url != null && url.isNotEmpty && token != null && token.isNotEmpty;
+  }
+
+  Future<void> refreshConfig() async {
+    _serverUrl = await _state.serverUrl();
+    _enabled = await _state.enabled();
+    _configured = await _hasCredentials();
+    _pending = (await _db.select(_db.syncOutbox).get()).length;
+    notifyListeners();
+  }
+
+  Future<void> setServerUrl(String? value) async {
+    final normalized = value == null ? null : _normalize(value);
+    if (value != null && normalized == null) {
+      throw const FormatException('endereço do servidor inválido');
+    }
+    await _state.setServerUrl(normalized);
+    _serverUrl = normalized;
+    _configured = await _hasCredentials();
+    notifyListeners();
+    if (_enabled) _schedule(immediate: true);
+  }
+
+  Future<void> setEnabled(bool value) async {
+    await _state.setEnabled(value);
+    _enabled = value;
+    notifyListeners();
+    if (value) {
+      _schedule(immediate: true);
+    } else {
+      _debounceTimer?.cancel();
+    }
+  }
+
+  /// Testa saúde sem exigir token, para validar o endereço.
+  Future<ServerHealth> testConnection(String url) async {
+    final normalized = _normalize(url);
+    if (normalized == null) {
+      throw const FormatException('endereço do servidor inválido');
+    }
+    return _transportFactory(Uri.parse(normalized), '').health();
+  }
+
+  /// Troca código/QR de pareamento por token individual e habilita o sync.
+  Future<void> pair(String code, {String deviceName = 'Tablet'}) async {
+    final payload = PairingPayload.parse(code);
+    _deviceId ??= await _state.ensureDeviceId();
+    final transport = _transportFactory(payload.url, '');
+    final result = await transport.pair(
+      pairingToken: payload.pairingToken,
+      deviceId: _deviceId!,
+      deviceName: deviceName,
+    );
+    await _tokens.write(result.token);
+    await _state.setServerUrl(_normalize(payload.url.toString()));
+    await _state.setEnabled(true);
+    await refreshConfig();
+    _schedule(immediate: true);
+  }
+
+  Future<void> disconnect() async {
+    await _tokens.clear();
+    await _state.setServerUrl(null);
+    await _state.setEnabled(false);
+    await refreshConfig();
+  }
+
+  Future<SyncReport?> syncNow() async {
+    if (_busy) return null;
+    if (!await _hasCredentials()) {
+      _lastError = 'sync_not_configured';
+      notifyListeners();
+      return null;
+    }
+    _busy = true;
+    notifyListeners();
+    try {
+      final url = (await _state.serverUrl())!;
+      final token = (await _tokens.read())!;
+      final engine = SyncEngine(
+        database: _db,
+        transport: _transportFactory(Uri.parse(url), token),
+        state: _state,
+        now: _now,
+      );
+      final report = await engine.run();
+      _lastReport = report;
+      _lastSyncAt = report.finishedAt;
+      _lastError = null;
+      return report;
+    } on Object catch (error) {
+      _lastError = error.toString();
+      return null;
+    } finally {
+      _busy = false;
+      _pending = (await _db.select(_db.syncOutbox).get()).length;
+      notifyListeners();
+    }
+  }
+
+  void handleAppResumed() {
+    if (_enabled) _schedule(immediate: true);
+  }
+
+  void _schedule({bool immediate = false}) {
+    if (!_enabled) return;
+    _debounceTimer?.cancel();
+    final delay = immediate ? Duration.zero : debounce;
+    _debounceTimer = Timer(delay, () {
+      if (!_busy) unawaited(syncNow());
+    });
+  }
+
+  String? _normalize(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    final path = uri.path.endsWith('/')
+        ? uri.path.substring(0, uri.path.length - 1)
+        : uri.path;
+    return uri.replace(path: path).toString();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _outboxWatch?.cancel();
+    _connectivityWatch?.cancel();
+    super.dispose();
+  }
+}

@@ -310,10 +310,23 @@ etapas. Cada item: contexto, decisão, consequência.
 - Em HyperOS/MIUI, instalar com `adb install -r -i com.android.vending` quando o
   install direto for bloqueado.
 
-## Interoperabilidade, backup e sincronização (etapa futura)
+## Interoperabilidade, backup e sincronização
 
-**Status:** decisões registradas; nada implementado nesta rodada. Não há
-servidor, CalDAV, importação, exportação ou sincronização no código atual.
+**Status:** backup e sincronização implementados (Etapas 1–6). CalDAV/iCalendar
+continua como interoperabilidade futura; não há conta pública nem multiusuário.
+
+### Configuração, pareamento e automação
+
+- URL do servidor em `sync_state`; token individual em `flutter_secure_storage`.
+- Pareamento por JSON/QR gerado no servidor, com token de uso único (TTL 5 min);
+  cada dispositivo recebe token próprio, revogável no servidor.
+- Gatilhos: mudança local (watch da outbox + debounce), retomada, reconexão,
+  botão manual e WorkManager periódico (15 min, best-effort, restrito a rede).
+- Falha de sync não bloqueia a UI; estado e erro ficam visíveis em Configurações.
+- `INTERNET`/`ACCESS_NETWORK_STATE` entraram apenas para o sync opcional;
+  cleartext é aceito para servidor próprio na LAN/Tailscale.
+- Cópia de conflito é o último recurso para não perder conteúdo; o vencedor é
+  reenviado uma vez com `baseRev` alinhado.
 
 ### Banco local como fonte principal
 

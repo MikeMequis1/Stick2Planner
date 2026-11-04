@@ -7,6 +7,7 @@ import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
+import 'qr_scan_page.dart';
 
 /// Preferências básicas e chaves de ativação/desativação de funções.
 class SettingsPage extends StatelessWidget {
@@ -147,6 +148,10 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24),
+              Text(AppStrings.settingsSync, style: theme.textTheme.titleSmall),
+              SizedBox(height: 8),
+              const _SyncSection(),
+              SizedBox(height: 24),
               Text(
                 AppStrings.settingsBackup,
                 style: theme.textTheme.titleSmall,
@@ -165,6 +170,292 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SyncSection extends StatefulWidget {
+  const _SyncSection();
+
+  @override
+  State<_SyncSection> createState() => _SyncSectionState();
+}
+
+class _SyncSectionState extends State<_SyncSection> {
+  final TextEditingController _url = TextEditingController();
+  bool _seeded = false;
+  bool _busy = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_seeded) return;
+    _url.text = AppScope.of(context).sync.serverUrl ?? '';
+    _seeded = true;
+  }
+
+  @override
+  void dispose() {
+    _url.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveUrl() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await AppScope.of(context).sync.setServerUrl(_url.text);
+      messenger.showSnackBar(SnackBar(content: Text(AppStrings.syncUrlSaved)));
+    } on FormatException {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.syncUrlInvalid)),
+      );
+    }
+  }
+
+  Future<void> _test() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final sync = AppScope.of(context).sync;
+    setState(() => _busy = true);
+    try {
+      final health = await sync.testConnection(_url.text);
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.syncTestOk(health.serverId))),
+      );
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.syncTestFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _pair() async {
+    final code = await showDialog<String>(
+      context: context,
+      builder: (_) => const _PairingDialog(),
+    );
+    if (code == null || code.isEmpty || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final sync = AppScope.of(context).sync;
+    setState(() => _busy = true);
+    try {
+      await sync.pair(code, deviceName: 'Tablet');
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.syncPairSuccess)),
+      );
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.syncPairFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _syncNow() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final sync = AppScope.of(context).sync;
+    final report = await sync.syncNow();
+    if (!mounted) return;
+    if (report == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            sync.configured
+                ? AppStrings.syncError
+                : AppStrings.syncNotConfigured,
+          ),
+        ),
+      );
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          AppStrings.syncDone(report.pushed, report.pulled, report.copies),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _disconnect() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final sync = AppScope.of(context).sync;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.syncDisconnect),
+        content: Text(AppStrings.syncDisconnectConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await sync.disconnect();
+    if (!mounted) return;
+    _url.clear();
+    messenger.showSnackBar(
+      SnackBar(content: Text(AppStrings.syncDisconnected)),
+    );
+  }
+
+  String _lastSyncLabel(DateTime? value) {
+    if (value == null) return AppStrings.syncNever;
+    final local = value.toLocal();
+    final label =
+        '${local.year.toString().padLeft(4, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    return AppStrings.syncLastSync(label);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sync = AppScope.of(context).sync;
+    return ListenableBuilder(
+      listenable: sync,
+      builder: (context, _) {
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  AppStrings.settingsSyncHelp,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('settings-sync-url'),
+                  controller: _url,
+                  keyboardType: TextInputType.url,
+                  decoration: InputDecoration(
+                    labelText: AppStrings.syncServerUrl,
+                    hintText: AppStrings.syncServerUrlHint,
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _saveUrl(),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonalIcon(
+                      key: const Key('settings-sync-save'),
+                      onPressed: _busy ? null : _saveUrl,
+                      icon: const Icon(Icons.save_outlined),
+                      label: Text(AppStrings.syncSaveUrl),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('settings-sync-test'),
+                      onPressed: _busy ? null : _test,
+                      icon: const Icon(Icons.wifi_tethering),
+                      label: Text(AppStrings.syncTest),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  key: const Key('settings-sync-enabled'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(AppStrings.syncEnabled),
+                  subtitle: Text(AppStrings.syncEnabledHelp),
+                  value: sync.enabled,
+                  onChanged: sync.configured && !_busy
+                      ? (value) => sync.setEnabled(value)
+                      : null,
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      key: const Key('settings-sync-now'),
+                      onPressed: sync.configured && !sync.busy && !_busy
+                          ? _syncNow
+                          : null,
+                      icon: sync.busy
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.sync),
+                      label: Text(
+                        sync.busy ? AppStrings.syncRunning : AppStrings.syncNow,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('settings-sync-pair'),
+                      onPressed: _busy ? null : _pair,
+                      icon: const Icon(Icons.link),
+                      label: Text(AppStrings.syncPair),
+                    ),
+                    if (sync.configured)
+                      TextButton(
+                        key: const Key('settings-sync-disconnect'),
+                        onPressed: _busy ? null : _disconnect,
+                        child: Text(AppStrings.syncDisconnect),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  sync.configured
+                      ? AppStrings.syncPending(sync.pendingCount)
+                      : AppStrings.syncNotConfiguredShort,
+                  key: const Key('settings-sync-status'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  _lastSyncLabel(sync.lastSyncAt),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (sync.lastError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.syncError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                  Text(
+                    sync.lastError!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       },
@@ -467,6 +758,75 @@ class _BackupSectionState extends State<_BackupSection> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PairingDialog extends StatefulWidget {
+  const _PairingDialog();
+
+  @override
+  State<_PairingDialog> createState() => _PairingDialogState();
+}
+
+class _PairingDialogState extends State<_PairingDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _scan() async {
+    final scanned = await Navigator.of(context)
+        .push<String>(MaterialPageRoute(builder: (_) => const QrScanPage()));
+    if (scanned != null) _controller.text = scanned;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppStrings.syncPairTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(AppStrings.syncPairHelp),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('sync-pair-code'),
+            controller: _controller,
+            minLines: 2,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: AppStrings.syncPairCodeHint,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: const Key('sync-pair-scan'),
+              onPressed: _scan,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: Text(AppStrings.syncScanQr),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(AppStrings.cancel),
+        ),
+        FilledButton(
+          key: const Key('sync-pair-confirm'),
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(AppStrings.syncPair),
+        ),
+      ],
     );
   }
 }

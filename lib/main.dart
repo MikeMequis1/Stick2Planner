@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'app/app.dart';
 import 'app/bootstrap.dart';
+import 'app/services/background_sync.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ Future<void> main() async {
 
   final dependencies = AppDependencies.open();
   await dependencies.initialize();
+  await scheduleBackgroundSync();
 
   runApp(PlannerApp(dependencies: dependencies));
 }

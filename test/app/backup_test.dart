@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
 import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
@@ -82,6 +83,7 @@ void main() {
         now: () => DateTime.utc(2026, 11, 3, 9),
       ),
       backupFiles: gateway,
+      tokens: InMemoryTokenStore(),
     );
     await dependencies.initialize();
     addTearDown(dependencies.dispose);

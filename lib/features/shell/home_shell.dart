@@ -39,7 +39,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
-    AppScope.of(context).planner.handleAppResumed().catchError((Object _) {});
+    final scope = AppScope.of(context);
+    scope.planner.handleAppResumed().catchError((Object _) {});
+    scope.sync.handleAppResumed();
   }
 
   static final _pages = <Widget>[AgendaPage(), InboxPage(), NotesPage()];

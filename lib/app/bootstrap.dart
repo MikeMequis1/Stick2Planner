@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -10,11 +11,14 @@ import '../data/db/app_database.dart';
 import '../data/repositories/drift_note_repository.dart';
 import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
+import '../data/sync/sync_state_store.dart';
 import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
 import 'services/screen_wake_service.dart';
+import 'services/sync_coordinator.dart';
+import 'services/token_store.dart';
 
 /// Diretório privado dos snapshots automáticos de backup.
 Future<Directory> defaultBackupDirectory() async {
@@ -36,6 +40,10 @@ final class AppDependencies {
     ScreenWakeService? screenWake,
     BackupService? backup,
     BackupFileGateway? backupFiles,
+    TokenStore? tokens,
+    SyncCoordinator? sync,
+    SyncTransportFactory? syncTransportFactory,
+    Stream<bool>? connectivityChanges,
   }) : navigation = navigation ?? AppNavigationController(),
        screenWake = screenWake ?? const WakelockPlusScreenWakeService(),
        backupFiles = backupFiles ?? const FilePickerBackupGateway(),
@@ -50,13 +58,28 @@ final class AppDependencies {
            AppSettingsController(
              settingsRepository: DriftSettingsRepository(database),
              screenWake: screenWake ?? const WakelockPlusScreenWakeService(),
-           );
+           ) {
+    this.tokens = tokens ?? SecureTokenStore();
+    this.sync =
+        sync ??
+        SyncCoordinator(
+          database: database,
+          state: SyncStateStore(database),
+          tokens: this.tokens,
+          transportFactory: syncTransportFactory,
+          connectivityChanges: connectivityChanges,
+        );
+  }
 
   factory AppDependencies.fromDatabase(
     AppDatabase database, {
     Clock clock = const SystemClock(),
     BackupService? backup,
     BackupFileGateway? backupFiles,
+    TokenStore? tokens,
+    SyncCoordinator? sync,
+    SyncTransportFactory? syncTransportFactory,
+    Stream<bool>? connectivityChanges,
   }) {
     final postItRepository = DriftPostItRepository(database);
     final noteRepository = DriftNoteRepository(database);
@@ -66,6 +89,10 @@ final class AppDependencies {
       database: database,
       backup: backup,
       backupFiles: backupFiles,
+      tokens: tokens,
+      sync: sync,
+      syncTransportFactory: syncTransportFactory,
+      connectivityChanges: connectivityChanges,
       planner: PlannerController(
         postItRepository: postItRepository,
         settingsRepository: settingsRepository,
@@ -76,7 +103,14 @@ final class AppDependencies {
   }
 
   static AppDependencies open({Clock clock = const SystemClock()}) =>
-      AppDependencies.fromDatabase(AppDatabase.open(), clock: clock);
+      AppDependencies.fromDatabase(
+        AppDatabase.open(),
+        clock: clock,
+        connectivityChanges: Connectivity().onConnectivityChanged.map(
+          (results) =>
+              results.any((result) => result != ConnectivityResult.none),
+        ),
+      );
 
   final AppDatabase database;
   final PlannerController planner;
@@ -86,6 +120,8 @@ final class AppDependencies {
   final ScreenWakeService screenWake;
   final BackupService backup;
   final BackupFileGateway backupFiles;
+  late final TokenStore tokens;
+  late final SyncCoordinator sync;
 
   Future<void> initialize() async {
     await Future.wait([
@@ -93,9 +129,11 @@ final class AppDependencies {
       notes.initialize(),
       settings.initialize(),
     ]);
+    await sync.initialize();
   }
 
   Future<void> dispose() async {
+    sync.dispose();
     planner.dispose();
     notes.dispose();
     navigation.dispose();

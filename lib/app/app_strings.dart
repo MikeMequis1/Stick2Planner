@@ -246,6 +246,84 @@ abstract final class AppStrings {
     'Mostra a dica de gestos e a contagem de post-its sem data.',
     'Shows gesture hints and the undated post-it count.',
   );
+  static String get settingsSync => _t('Sincronização', 'Sync');
+  static String get settingsSyncHelp => _t(
+    'Envie e receba alterações de um servidor próprio. O app continua funcionando offline.',
+    'Send and receive changes from your own server. The app keeps working offline.',
+  );
+  static String get syncServerUrl =>
+      _t('Endereço do servidor', 'Server address');
+  static String get syncServerUrlHint =>
+      _t('http://192.168.0.10:8090', 'http://192.168.0.10:8090');
+  static String get syncSaveUrl => _t('Salvar endereço', 'Save address');
+  static String get syncUrlSaved => _t('Endereço salvo.', 'Address saved.');
+  static String get syncUrlInvalid => _t(
+    'Endereço inválido. Use http:// ou https://.',
+    'Invalid address. Use http:// or https://.',
+  );
+  static String get syncTest => _t('Testar conexão', 'Test connection');
+  static String syncTestOk(String serverId) => _language == AppLanguage.en
+      ? 'Server reachable ($serverId).'
+      : 'Servidor acessível ($serverId).';
+  static String get syncTestFailed => _t(
+    'Não foi possível alcançar o servidor.',
+    'Could not reach the server.',
+  );
+  static String get syncEnabled =>
+      _t('Sincronizar automaticamente', 'Sync automatically');
+  static String get syncEnabledHelp => _t(
+    'Tenta sincronizar ao abrir, ao alterar dados, ao reconectar e periodicamente.',
+    'Tries to sync on open, on data changes, on reconnect and periodically.',
+  );
+  static String get syncNow => _t('Sincronizar agora', 'Sync now');
+  static String get syncRunning => _t('Sincronizando…', 'Syncing…');
+  static String syncDone(int pushed, int pulled, int copies) =>
+      _language == AppLanguage.en
+      ? 'Sync done: $pushed sent, $pulled received, $copies conflict copies.'
+      : 'Sync concluído: $pushed enviados, $pulled recebidos, $copies cópias de conflito.';
+  static String syncPending(int count) =>
+      _language == AppLanguage.en ? '$count pending' : '$count pendentes';
+  static String syncLastSync(String date) =>
+      _language == AppLanguage.en ? 'Last sync: $date' : 'Último sync: $date';
+  static String get syncNever => _t('Nunca sincronizado.', 'Never synced.');
+  static String get syncNotConfigured => _t(
+    'Configure o endereço e pareie o dispositivo.',
+    'Set the address and pair this device.',
+  );
+  static String get syncError => _t(
+    'Falha na sincronização. Verifique servidor e rede.',
+    'Sync failed. Check server and network.',
+  );
+  static String get syncPair => _t('Parear dispositivo', 'Pair device');
+  static String get syncPairTitle => _t('Pareamento', 'Pairing');
+  static String get syncPairHelp => _t(
+    'Cole o JSON/código gerado no servidor ou escaneie o QR.',
+    'Paste the JSON/code from the server or scan the QR.',
+  );
+  static String get syncPairCodeHint =>
+      _t('Código de pareamento', 'Pairing code');
+  static String get syncPairSuccess =>
+      _t('Dispositivo pareado.', 'Device paired.');
+  static String get syncPairFailed =>
+      _t('Pareamento recusado ou expirado.', 'Pairing refused or expired.');
+  static String get syncScanQr => _t('Escanear QR', 'Scan QR');
+  static String get syncScanHint =>
+      _t('Aponte para o QR de pareamento', 'Point at the pairing QR');
+  static String get syncScannerError => _t(
+    'Câmera indisponível. Use o código manual.',
+    'Camera unavailable. Use the manual code.',
+  );
+  static String get syncDisconnect => _t('Desconectar', 'Disconnect');
+  static String get syncDisconnectConfirm => _t(
+    'Remover servidor e token deste dispositivo?',
+    'Remove server and token from this device?',
+  );
+  static String get syncDisconnected =>
+      _t('Servidor desconectado.', 'Server disconnected.');
+  static String get syncNotConfiguredShort =>
+      _t('Não configurado', 'Not configured');
+  static String get syncErrorDetail => _t('Detalhes', 'Details');
+
   static String get settingsAbout => _t('Sobre', 'About');
   static String get settingsLocalData => _t(
     'Dados salvos localmente neste tablet, sem sincronização nesta versão.',
