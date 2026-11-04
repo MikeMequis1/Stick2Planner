@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
+import '../../app/services/sync_coordinator.dart';
 import '../../app/app_strings.dart';
 import '../../app/theme/app_palette.dart';
 import '../../core/date_formatting.dart';
@@ -191,19 +192,32 @@ class _SyncSection extends StatefulWidget {
 
 class _SyncSectionState extends State<_SyncSection> {
   final TextEditingController _url = TextEditingController();
-  bool _seeded = false;
+  final FocusNode _urlFocus = FocusNode();
+  SyncCoordinator? _sync;
   bool _busy = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_seeded) return;
-    _url.text = AppScope.of(context).sync.serverUrl ?? '';
-    _seeded = true;
+    final sync = AppScope.of(context).sync;
+    if (identical(sync, _sync)) return;
+    _sync?.removeListener(_syncUrlFromState);
+    _sync = sync;
+    _sync!.addListener(_syncUrlFromState);
+    _url.text = sync.serverUrl ?? '';
+  }
+
+  /// Mantém o campo alinhado quando pareamento/desconexão mudam a URL.
+  void _syncUrlFromState() {
+    if (!mounted || _urlFocus.hasFocus) return;
+    final value = _sync?.serverUrl ?? '';
+    if (_url.text != value) _url.text = value;
   }
 
   @override
   void dispose() {
+    _sync?.removeListener(_syncUrlFromState);
+    _urlFocus.dispose();
     _url.dispose();
     super.dispose();
   }
@@ -353,6 +367,7 @@ class _SyncSectionState extends State<_SyncSection> {
                 TextField(
                   key: const Key('settings-sync-url'),
                   controller: _url,
+                  focusNode: _urlFocus,
                   keyboardType: TextInputType.url,
                   decoration: InputDecoration(
                     labelText: AppStrings.syncServerUrl,

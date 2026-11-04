@@ -109,6 +109,10 @@ void main() {
     expect(await tokens.read(), 'token-ui');
     expect(dependencies.sync.enabled, isTrue);
     expect(dependencies.sync.configured, isTrue);
+    final urlField = tester.widget<TextField>(
+      find.byKey(const Key('settings-sync-url')),
+    );
+    expect(urlField.controller?.text, 'http://192.168.0.10:8090');
     await dependencies.sync.setEnabled(false);
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
