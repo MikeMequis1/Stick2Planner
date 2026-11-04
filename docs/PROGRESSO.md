@@ -1142,6 +1142,12 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Tablet ainda não tem Tailscale: continua sincronizando pelo túnel USB
   (`127.0.0.1:8090`). Para uso sem fio, instalar Tailscale no tablet ou mover o
   tablet para a LAN do servidor.
+- Tailscale instalado no tablet: o túnel USB foi removido e o sync passou a usar
+  `http://100.83.146.74:8090` (IP do host no Tailnet). MagicDNS não resolveu no
+  tablet, então o hostname HTTPS não foi usado; o nó `planner` do tsdproxy só
+  expõe 443. Com MagicDNS habilitado, trocar para
+  `https://planner.crayfish-saturation.ts.net`.
+- Post-its de teste confirmados no servidor após o corte do cabo.
 
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)
