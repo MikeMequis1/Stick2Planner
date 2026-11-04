@@ -300,6 +300,16 @@ etapas. Cada item: contexto, decisão, consequência.
   histórico). Histórico é mantido por auditoria, não por duplicação de eventos.
 - README enxuto; detalhes históricos ficam em `docs/PROGRESSO.md`.
 
+## Ambiente de validação
+
+- **Somente dispositivo físico**, via `adb` (tablet Android 16 / HyperOS 3.0).
+  Não há AVD, system image ou pacote `emulator` instalado; nada no projeto
+  depende do emulador.
+- Gestos podem ser injetados com `adb shell input`/`motionevent` no próprio
+  aparelho; o build release é a referência de fluidez e tamanho.
+- Em HyperOS/MIUI, instalar com `adb install -r -i com.android.vending` quando o
+  install direto for bloqueado.
+
 ## Interoperabilidade, backup e sincronização (etapa futura)
 
 **Status:** decisões registradas; nada implementado nesta rodada. Não há

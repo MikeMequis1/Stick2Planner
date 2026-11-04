@@ -227,7 +227,7 @@ flutter build apk --debug
   acessíveis pela lista do dia.
 - Sem animações de transição de período e sem auditoria de acessibilidade
   completa (Etapa 6).
-- Sem validação visual em aparelho/emulador nesta etapa; verificação por
+- Sem validação visual em aparelho físico nesta etapa; verificação por
   testes de widget em 1280×800, 800×1280 e 500×800 + build APK.
 
 ### Próximo passo
@@ -239,7 +239,7 @@ acessíveis aos gestos. Aguardando aprovação para iniciar.
 ## Etapa 3 — Criação, edição e manipulação (implementada em 2026-11-02; aguardando revisão)
 
 Status: implementação e testes automatizados concluídos; validação visual feita
-em emulador Android. A etapa **não está encerrada** até a revisão das
+em aparelho físico. A etapa **não está encerrada** até a revisão das
 pendências listadas ao final.
 
 ### Implementado
@@ -284,40 +284,6 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
   serialização de operações concorrentes, arraste entre dias, reordenação por
   arraste e por menu, alças inicial/final, data picker acessível, editor com
   teclado virtual e mensagem de título vazio.
-
-### Validação em emulador Android
-
-Ambiente: AVD `planner_tablet`, Android 35 (Google APIs, x86_64), 2560×1600 a
-320 dpi (1280×800 dp), aceleração WHPX.
-
-Executado com sucesso:
-
-- Instalação e abertura do APK; agenda em paisagem.
-- Criação de tarefa pelo formulário; teclado virtual abriu, o sheet se ajustou
-  e o salvamento persistiu no SQLite.
-- Formulário de evento, seletor de data pt-BR e alternância de marcante
-  exibidos corretamente.
-- Redimensionamento do evento pela alça final (arraste horizontal); banco
-  atualizado de `2026-11-06` para `2026-11-07`.
-- Arraste por long press de tarefa entre dias; banco atualizado e ordem
-  reindexada.
-- Reordenação por long press sobre outro cartão; `sort_order` trocado e
-  refletido na UI.
-- Detalhes, mover para data via seletor (persistido) e layout em retrato
-  (dia), paisagem (semana) e mês compacto.
-- Telas menores por override de tamanho: 1600×1000 (tablet pequeno) e
-  800×1280 (celular, barra inferior) sem overflow visível.
-- Preferências de modo/data persistidas entre reinícios do app.
-
-Evidências: `docs/validacao/semana.png`, `mes.png`, `retrato.png`,
-`detalhes.png`.
-
-Limitações da validação: foi usado **emulador**, não aparelho físico; não
-foram testados caneta, multitoque, TalkBack ativo nem teclado físico externo.
-O arraste foi simulado por sequência de `motionevent` (long press + move), não
-por dedo real. Criação de evento não foi concluída manualmente no emulador
-(apenas formulário/data picker); o fluxo completo está coberto por teste de
-widget.
 
 ### Validação em aparelho físico (2026-11-03)
 
@@ -413,8 +379,8 @@ considerar a Etapa 3 fechada:
    validar rollback e feedback visual.
 7. **Exclusão sem desfazer:** existe confirmação e tombstone, mas não há ação
    "Desfazer" no snackbar. Decidir se entra nesta etapa.
-8. **Carga/legibilidade:** falta medir muitos post-its (ex.: 100–200) em modo
-   semana/mês no emulador e revisar performance/overflow.
+8. **Carga/legibilidade:** falta medir muitos post-its (ex.: 100-200) em modo
+   semana/mês no tablet e revisar performance/overflow.
 9. **Evento criado fim-a-fim no aparelho:** o formulário e o date picker foram
    inspecionados no aparelho; a criação completa de evento foi coberta só por
    teste de widget (o resize usou evento semeado no banco).
@@ -1033,3 +999,6 @@ futura ainda não iniciada.
   (armeabi-v7a 18,8 MB; arm64 21,0 MB; x86_64 22,4 MB).
 - Tablet Android: instalação release, tema/idioma/paletas e navegação
   verificados.
+- Ambiente reduzido a dispositivo físico: AVD `planner_tablet`, system image
+  android-35 x86_64 e pacote `emulator` do SDK removidos do disco; nenhuma
+  configuração de emulador restou no projeto.

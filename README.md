@@ -62,6 +62,7 @@ flutter build apk --release --split-per-abi
 ```
 
 O arquivo `*.g.dart` é gerado pelo drift; rode o codegen ao alterar o esquema.
+Validação em tablet Android físico via `adb`; o projeto não usa emulador.
 Em HyperOS/MIUI, use `adb install -r -i com.android.vending app-debug.apk` se o
 install direto for bloqueado.
 
