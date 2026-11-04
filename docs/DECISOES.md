@@ -358,16 +358,31 @@ servidor, CalDAV, importação, exportação ou sincronização no código atual
 
 ### Possível serviço próprio de sincronização
 
-Uma sincronização completa entre instalações pode exigir um serviço próprio,
-também executável em Docker. A arquitetura poderá considerar:
+Implementado como pacote Dart independente em `server/` (shelf + SQLite), sem
+dependência de Flutter:
 
-- outbox de alterações;
-- UUIDs estáveis;
-- versionamento;
-- tombstones;
-- ETags;
-- detecção e resolução de conflitos;
-- sincronização oportunística, sem impedir o uso offline.
+- entidades opacas com `rev` monotônica por item, log de mudanças com `seq` e
+  cursor de pull;
+- outbox local coalescente, com `changeId` para idempotência;
+- tombstones transportados no payload;
+- conflito por `baseRev`: servidor devolve a versão atual e o cliente resolve
+  por `updatedAt` (cópia de conflito + reenvio do vencedor na Etapa 4);
+- tokens individuais por dispositivo, revogáveis, guardados como SHA-256;
+- pareamento por token de uso único (conteúdo do QR), TTL de 5 min;
+- limite de corpo/payload/lote e comparação de token em tempo constante;
+- importação de backup descarta outbox/cursor locais e preserva configuração.
+
+### Fundação local de sincronização (esquema v5)
+
+- `sync_outbox`: payload canônico completo, `base_rev`, `change_id`, tentativas e
+  erro; coalescência por `(entity, entity_id)`.
+- `sync_row_states`: revisão do servidor aplicada por entidade.
+- `sync_states`: `device_id`, cursor, servidor, habilitado, último sync/erro.
+- Repositórios Drift gravam a outbox na mesma transação; aplicação remota usa
+  caminho separado e não realimenta a fila.
+- Nota é a unidade atômica (linhas/checklists no payload); histórico é
+  append-only; preferências/credenciais não sincronizam.
+
 
 ### Escopo
 

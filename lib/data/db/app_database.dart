@@ -16,16 +16,25 @@ part 'app_database.g.dart';
 
 /// Banco local do aplicativo.
 ///
-/// Esquema v4: preferências, post-its, notas (texto Markdown ou linhas),
-/// histórico; snapshots guardam a nota de origem.
+/// Esquema v5: preferências, post-its, notas (texto Markdown ou linhas),
+/// histórico, snapshots, fila de sincronização e revisões por entidade.
 @DriftDatabase(
-  tables: [AppSettings, Notes, NoteLines, PostIts, PostItHistoryEntries],
+  tables: [
+    AppSettings,
+    Notes,
+    NoteLines,
+    PostIts,
+    PostItHistoryEntries,
+    SyncOutbox,
+    SyncRowStates,
+    SyncStates,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -64,6 +73,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4 && from >= 2) {
         // Proveniência de snapshots; bancos v1 já criam a tabela atual.
         await migrator.addColumn(postIts, postIts.sourceNoteId);
+      }
+      if (from < 5) {
+        // Fundação de sincronização; nenhuma tabela de domínio muda.
+        await migrator.createTable(syncOutbox);
+        await migrator.createTable(syncRowStates);
+        await migrator.createTable(syncStates);
       }
     },
     beforeOpen: (details) async {

@@ -91,3 +91,44 @@ class PostItHistoryEntries extends Table {
   @override
   Set<Column<Object>> get primaryKey => {id};
 }
+
+/// Fila local de alterações pendentes de envio ao servidor.
+///
+/// O payload é o estado completo da entidade em JSON canônico; edições
+/// sucessivas coalescem em uma única linha por `(entity, entityId)`.
+@DataClassName('SyncOutboxRow')
+class SyncOutbox extends Table {
+  TextColumn get entity => text()();
+  TextColumn get entityId => text()();
+  TextColumn get payload => text()();
+  IntColumn get baseRev => integer().withDefault(const Constant(0))();
+  TextColumn get changeId => text()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {entity, entityId};
+}
+
+/// Revisão do servidor já aplicada localmente, por entidade.
+@DataClassName('SyncRowStateRow')
+class SyncRowStates extends Table {
+  TextColumn get entity => text()();
+  TextColumn get entityId => text()();
+  IntColumn get serverRev => integer()();
+  IntColumn get lastSyncedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {entity, entityId};
+}
+
+/// Estado global da sincronização (deviceId, cursor, servidor, erros).
+@DataClassName('SyncStateRow')
+class SyncStates extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}

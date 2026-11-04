@@ -37,7 +37,7 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
 - drift + SQLite (esquema v4, migrações v1 → v4)
 - `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`, `crypto`,
   `file_picker`
-- Android SDK 36; alvo principal: tablet Android
+- Servidor de sync em server/ (Dart/shelf + SQLite, Docker Compose)\n- Android SDK 36; alvo principal: tablet Android
 
 Arquitetura: `features -> app -> domain`, `data -> domain`. `domain` não
 depende de Flutter nem drift.
@@ -62,9 +62,15 @@ flutter analyze
 flutter test
 flutter build apk --debug
 flutter build apk --release --split-per-abi
+
+cd server
+dart pub get
+dart analyze
+dart test
 ```
 
 O arquivo `*.g.dart` é gerado pelo drift; rode o codegen ao alterar o esquema.
+Servidor: ver `server/README.md` (Compose, pareamento e tokens).
 Validação em tablet Android físico via `adb`; o projeto não usa emulador.
 Em HyperOS/MIUI, use `adb install -r -i com.android.vending app-debug.apk` se o
 install direto for bloqueado.
@@ -78,14 +84,15 @@ lib/
   data/        drift/SQLite, mappers e repositórios
   app/         bootstrap, controllers, tema, strings e paletas
   features/    agenda, caixinha, notas, configurações e casca
-test/          domínio, banco, UI e fluxos
+test/          domínio, banco, sync, backup, UI e fluxos
+server/        API Dart/shelf, Dockerfile e Compose
 docs/          progresso, decisões, qualidade e evidências
 ```
 
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 195 testes aprovados.
+- `flutter test`: 207 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

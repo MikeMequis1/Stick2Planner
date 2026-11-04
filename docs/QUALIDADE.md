@@ -24,6 +24,8 @@ Checklist final do MVP local do Planner.
 | Domínio | datas, recorrência, validação, layout de eventos |
 | Banco | repositórios, transações, rollback, migrações |
 | Backup | canonicalização, checksum, versões, round-trip, snapshots |
+| Sync | outbox transacional, coalescência, migração v5, apply remoto |
+| Servidor | auth, pareamento, idempotência, conflito, paginação, revogação |
 | UI | agenda, caixinha, notas, editor, detalhes, vínculos, backup |
 | Layout | 1280×800, 800×1280, 500×800 e texto ampliado em 1,3× |
 | Aparelho | tablet Android 3200×2136, tema escuro |
@@ -92,5 +94,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 195 testes aprovados.
+- `flutter test`: 207 testes aprovados.
 - `flutter build apk --debug`: aprovado.

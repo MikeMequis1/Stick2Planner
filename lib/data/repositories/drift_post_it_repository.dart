@@ -6,11 +6,15 @@ import '../../domain/repositories/post_it_repository.dart';
 import '../db/app_database.dart';
 import '../db/converters.dart';
 import '../mappers/mappers.dart';
+import '../sync/sync_outbox.dart';
 
 final class DriftPostItRepository implements PostItRepository {
-  DriftPostItRepository(this._db);
+  DriftPostItRepository(this._db, {SyncOutboxRecorder? outbox}) {
+    _outbox = outbox ?? SyncOutboxRecorder(_db);
+  }
 
   final AppDatabase _db;
+  late final SyncOutboxRecorder _outbox;
 
   @override
   Future<List<PostIt>> loadAll({bool includeDeleted = false}) async {
@@ -38,14 +42,16 @@ final class DriftPostItRepository implements PostItRepository {
   @override
   Future<void> save(PostIt postIt, {PostItHistoryEntry? history}) {
     return _db.transaction(() async {
-      await _db.into(_db.postIts).insertOnConflictUpdate(
-        postItToCompanion(postIt),
-      );
+      await _db
+          .into(_db.postIts)
+          .insertOnConflictUpdate(postItToCompanion(postIt));
       if (history != null) {
         await _db
             .into(_db.postItHistoryEntries)
             .insert(postItHistoryToCompanion(history));
       }
+      await _outbox.recordPostIt(postIt);
+      if (history != null) await _outbox.recordHistory(history);
     });
   }
 
@@ -65,6 +71,8 @@ final class DriftPostItRepository implements PostItRepository {
             .into(_db.postItHistoryEntries)
             .insert(postItHistoryToCompanion(entry));
       }
+      await _outbox.recordPostIts(postIts);
+      await _outbox.recordHistoryEntries(history);
     });
   }
 
@@ -89,6 +97,12 @@ final class DriftPostItRepository implements PostItRepository {
             .into(_db.postItHistoryEntries)
             .insert(postItHistoryToCompanion(history));
       }
+
+      final row = await (_db.select(
+        _db.postIts,
+      )..where((table) => table.id.equals(id))).getSingleOrNull();
+      if (row != null) await _outbox.recordPostIt(postItFromRow(row));
+      if (history != null) await _outbox.recordHistory(history);
     });
   }
 

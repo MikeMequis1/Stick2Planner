@@ -5,11 +5,15 @@ import '../../domain/repositories/note_repository.dart';
 import '../db/app_database.dart';
 import '../db/converters.dart';
 import '../mappers/mappers.dart';
+import '../sync/sync_outbox.dart';
 
 final class DriftNoteRepository implements NoteRepository {
-  DriftNoteRepository(this._db);
+  DriftNoteRepository(this._db, {SyncOutboxRecorder? outbox}) {
+    _outbox = outbox ?? SyncOutboxRecorder(_db);
+  }
 
   final AppDatabase _db;
+  late final SyncOutboxRecorder _outbox;
 
   @override
   Future<List<Note>> loadAll({bool includeDeleted = false}) async {
@@ -22,10 +26,9 @@ final class DriftNoteRepository implements NoteRepository {
     final noteRows = await notesQuery.get();
     if (noteRows.isEmpty) return const [];
 
-    final lineRows =
-        await (_db.select(_db.noteLines)
-              ..orderBy([(table) => OrderingTerm(expression: table.position)]))
-            .get();
+    final lineRows = await (_db.select(
+      _db.noteLines,
+    )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
     final linesByNote = <String, List<NoteLineRow>>{};
     for (final line in lineRows) {
       linesByNote.putIfAbsent(line.noteId, () => []).add(line);
@@ -68,28 +71,46 @@ final class DriftNoteRepository implements NoteRepository {
           );
         });
       }
+      await _outbox.recordNote(note);
     });
   }
 
   @override
-  Future<void> softDelete({
-    required String id,
-    required DateTime deletedAt,
-  }) {
+  Future<void> softDelete({required String id, required DateTime deletedAt}) {
     final timestamp = dateTimeToStorage(deletedAt);
     return _db.transaction(() async {
-      await (_db.update(_db.notes)..where((table) => table.id.equals(id))).write(
+      final linked = await (_db.select(
+        _db.postIts,
+      )..where((table) => table.noteId.equals(id))).get();
+
+      await (_db.update(
+        _db.notes,
+      )..where((table) => table.id.equals(id))).write(
         NotesCompanion(
           deletedAt: Value(timestamp),
           updatedAt: Value(timestamp),
         ),
       );
       // Vínculo deixa de ser válido; o snapshot (noteExcerpt) é preservado.
-      await (_db.update(
-        _db.postIts,
-      )..where((table) => table.noteId.equals(id))).write(
-        const PostItsCompanion(noteId: Value(null)),
-      );
+      await (_db.update(_db.postIts)..where((table) => table.noteId.equals(id)))
+          .write(const PostItsCompanion(noteId: Value(null)));
+
+      final noteRow = await (_db.select(
+        _db.notes,
+      )..where((table) => table.id.equals(id))).getSingleOrNull();
+      if (noteRow != null) {
+        final lineRows =
+            await (_db.select(_db.noteLines)
+                  ..where((table) => table.noteId.equals(id))
+                  ..orderBy([
+                    (table) => OrderingTerm(expression: table.position),
+                  ]))
+                .get();
+        await _outbox.recordNote(noteFromRows(noteRow, lineRows));
+      }
+      for (final row in linked) {
+        await _outbox.recordPostIt(postItFromRow(row).copyWith(noteId: null));
+      }
     });
   }
 }

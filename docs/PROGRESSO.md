@@ -1060,3 +1060,41 @@ Levantamento read-only via SSH, sem alterações na máquina:
 - Porta **8090** livre para o serviço do Planner; UFW ausente/inativo.
 - `sudo` exige senha; operações privilegiadas dependem do usuário.
 
+## Etapa 2 — fundação local de sincronização (2026-11-04)
+
+- Esquema **v5**: `sync_outbox`, `sync_row_states`, `sync_states`; migração
+  testada a partir de fixture v4 com dados preservados.
+- Outbox grava o estado completo da entidade em JSON canônico, coalesce por
+  `(entity, entityId)` e é escrita **na mesma transação** dos repositórios
+  (post-it, nota, histórico, exclusões).
+- Nota é unidade atômica (linhas/checklists no payload); post-it é individual;
+  histórico é append-only. Preferências e credenciais ficam locais.
+- Excluir nota enfileira a nota e os post-its desvinculados.
+- `SyncApplyService` aplica alterações remotas sem gerar outbox e registra a
+  revisão do servidor por entidade.
+- `SyncStateStore` mantém `deviceId`, cursor, servidor, último sync e erro.
+- Importar backup descarta outbox/revisões/cursor antigos, mantendo deviceId e
+  configuração do servidor.
+
+Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
+`data/repositories/*`, `test/data/sync_outbox_test.dart`,
+`test/data/migration_v5_test.dart`.
+
+## Etapa 3 — servidor e deploy inicial (2026-11-04)
+
+- Pacote Dart independente em `server/`: shelf, SQLite, tokens por dispositivo,
+  pareamento de uso único, revisão por entidade, idempotência e cursor.
+- Endpoints: `/v1/health`, `/v1/sync`, `/v1/pair`, `/v1/admin/*`.
+- Testes de servidor: 10 casos (auth, pareamento, idempotência, conflito,
+  paginação, revogação, validação e limites).
+- Dockerfile multi-stage com `dart build cli` (build hooks do sqlite3) e imagem
+  Debian slim non-root; Compose na porta **8090** com volume nomeado
+  `planner-data` e healthcheck.
+- Deploy em `~/stick2planner` na máquina Ubuntu 26.04; container
+  `stick2planner-api` saudável e acessível na LAN.
+- Smoke test: health 200, pareamento 200, sync 200, revogação 200 e sync
+  pós-revogação 401. Nenhum token foi impresso.
+- `sudo` não está disponível sem senha; firewall e TLS via Tailscale ficam
+  pendentes de ação do usuário.
+
+

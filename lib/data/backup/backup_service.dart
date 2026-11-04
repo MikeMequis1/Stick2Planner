@@ -108,6 +108,14 @@ final class BackupService {
         await _db.customStatement(
           "DELETE FROM app_settings WHERE key NOT LIKE 'planner.sync.%'",
         );
+        // A importação substitui o estado local: a fila e o cursor antigos
+        // deixam de representar os dados e são descartados. Configuração de
+        // servidor e deviceId permanecem.
+        await _db.delete(_db.syncOutbox).go();
+        await _db.delete(_db.syncRowStates).go();
+        await _db.customStatement(
+          "DELETE FROM sync_states WHERE key IN ('cursor', 'last_sync_at', 'last_error')",
+        );
 
         final notes = [
           for (final entry in _rows(document.data, 'notes'))

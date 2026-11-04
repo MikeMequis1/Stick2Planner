@@ -10,6 +10,7 @@ import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
 import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
+import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/domain/entities/note.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
 import 'package:stick2planner/domain/entities/post_it_history.dart';
@@ -252,6 +253,33 @@ void main() {
     final postItsAfter = await DriftPostItRepository(target)
         .loadAll(includeDeleted: true);
     expect(postItsAfter.map((postIt) => postIt.id), ['mantida']);
+  });
+
+  test('importação limpa outbox, revisões e cursor de sync', () async {
+    final source = openDb();
+    await seed(source);
+    final dir = await tempDir();
+    final json = await serviceFor(source, dir).exportToJson();
+
+    final target = openDb();
+    await DriftPostItRepository(target).save(
+      PostIt(
+        id: 'antiga',
+        title: 'Antiga',
+        type: PostItType.task,
+        status: PostItStatus.active,
+        createdAt: exportedAt,
+        updatedAt: exportedAt,
+      ),
+    );
+    final state = SyncStateStore(target);
+    await state.setCursor(9);
+
+    await serviceFor(target, dir).importJson(json);
+
+    expect(await target.select(target.syncOutbox).get(), isEmpty);
+    expect(await target.select(target.syncRowStates).get(), isEmpty);
+    expect(await state.cursor(), 0);
   });
 
   test('snapshot pré-importação é criado e limitado a cinco', () async {
