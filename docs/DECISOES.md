@@ -372,6 +372,21 @@ dependência de Flutter:
 - limite de corpo/payload/lote e comparação de token em tempo constante;
 - importação de backup descarta outbox/cursor locais e preserva configuração.
 
+### Conflitos e consistência (implementado)
+
+- Push compara `baseRev` com a revisão atual; divergência devolve a versão do
+  servidor, sem aplicar.
+- Vencedor é o maior `updatedAt`; empate ou conteúdo idêntico → servidor.
+- Servidor vence → versão aplicada e conteúdo local preservado como
+  `[Conflito] <título>` (novo UUID; nota copia linhas com novos IDs).
+- Local vence → `baseRev` alinhado e reenvio único; conflito residual vira cópia.
+- Exclusão: tombstone do servidor gera cópia do conteúdo local; tombstone local
+  não gera cópia.
+- Ack remove a outbox somente se o `changeId` permanecer o mesmo; edição durante
+  o push apenas atualiza `baseRev`.
+- Pull, ack, revisões e cursor são gravados em uma transação local; falha desfaz
+  tudo. Falha de rede mantém outbox e cursor intactos.
+
 ### Fundação local de sincronização (esquema v5)
 
 - `sync_outbox`: payload canônico completo, `base_rev`, `change_id`, tentativas e

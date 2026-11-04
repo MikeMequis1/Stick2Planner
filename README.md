@@ -92,7 +92,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 207 testes aprovados.
+- `flutter test`: 218 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

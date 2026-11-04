@@ -1097,4 +1097,28 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - `sudo` não está disponível sem senha; firewall e TLS via Tailscale ficam
   pendentes de ação do usuário.
 
+## Etapa 4 — motor de sincronização no app (2026-11-04)
+
+- `HttpSyncTransport`: `/v1/sync`, `/v1/health` e `/v1/pair`, com timeout,
+  classificação de erro (retentável para rede/5xx/429) e token Bearer.
+- `SyncEngine`: envia a outbox, aplica pull, resolve conflitos e mantém cursor
+  na mesma transação local da aplicação das mudanças.
+- Ack só remove a entrada da outbox se o `changeId` ainda for o mesmo; se houve
+  edição durante o push, apenas alinha `baseRev`.
+- Conflito: compara `updatedAt`; empate e conteúdo idêntico → servidor vence.
+  Servidor vence → aplica versão e cria cópia `[Conflito] …` do conteúdo local
+  (nota copia linhas com novos IDs). Local vence → atualiza `baseRev` e reenvia
+  uma única vez; segundo conflito vira cópia.
+- Tombstone do servidor com conteúdo local gera cópia antes de aplicar a
+  exclusão; tombstone local não gera cópia.
+- `SyncController` expõe `idle/running/success/failure`, último relatório e erro,
+  ignorando chamadas concorrentes.
+- Falha de transporte mantém outbox e cursor; falha ao aplicar o pull desfaz
+  ack e cursor na mesma transação.
+
+Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
+`sync_engine.dart`, `app/controllers/sync_controller.dart`,
+`test/data/sync_engine_test.dart`, `test/app/sync_controller_test.dart`.
+
+
 
