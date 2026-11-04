@@ -14,6 +14,8 @@ Checklist final do MVP local do Planner.
   tombstones.
 - Configurações: tema, idioma Português/English, quatro paletas com gradiente,
   animações, wakelock e dicas persistidos localmente.
+- Backup: JSON versionado com checksum canônico, validação de versão/esquema,
+  importação transacional com snapshot prévio e restauração de snapshots.
 
 ## Matriz de validação
 
@@ -21,7 +23,8 @@ Checklist final do MVP local do Planner.
 | --- | --- |
 | Domínio | datas, recorrência, validação, layout de eventos |
 | Banco | repositórios, transações, rollback, migrações |
-| UI | agenda, caixinha, notas, editor, detalhes, vínculos |
+| Backup | canonicalização, checksum, versões, round-trip, snapshots |
+| UI | agenda, caixinha, notas, editor, detalhes, vínculos, backup |
 | Layout | 1280×800, 800×1280, 500×800 e texto ampliado em 1,3× |
 | Aparelho | tablet Android 3200×2136, tema escuro |
 | Carga | 200 post-its na agenda |
@@ -89,5 +92,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 182 testes aprovados.
+- `flutter test`: 195 testes aprovados.
 - `flutter build apk --debug`: aprovado.

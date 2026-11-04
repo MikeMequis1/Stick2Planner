@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/theme/app_palette.dart';
+import '../../core/date_formatting.dart';
+import '../../core/date_only.dart';
+import '../../data/backup/backup_document.dart';
+import '../../data/backup/backup_service.dart';
 
 /// Preferências básicas e chaves de ativação/desativação de funções.
 class SettingsPage extends StatelessWidget {
@@ -143,6 +147,13 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24),
+              Text(
+                AppStrings.settingsBackup,
+                style: theme.textTheme.titleSmall,
+              ),
+              SizedBox(height: 8),
+              const _BackupSection(),
+              SizedBox(height: 24),
               Text(AppStrings.settingsAbout, style: theme.textTheme.titleSmall),
               SizedBox(height: 8),
               Card(
@@ -157,6 +168,305 @@ class SettingsPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BackupSection extends StatefulWidget {
+  const _BackupSection();
+
+  @override
+  State<_BackupSection> createState() => _BackupSectionState();
+}
+
+class _BackupSectionState extends State<_BackupSection> {
+  bool _busy = false;
+  List<BackupSnapshot> _snapshots = const [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadSnapshots();
+  }
+
+  Future<void> _loadSnapshots() async {
+    final service = AppScope.of(context).backup;
+    try {
+      final snapshots = await service.listSnapshots();
+      if (!mounted) return;
+      setState(() => _snapshots = snapshots);
+    } on Object {
+      // Listagem é informativa; falhas não devem quebrar a tela.
+    }
+  }
+
+  Future<void> _export() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final service = AppScope.of(context).backup;
+    final gateway = AppScope.of(context).backupFiles;
+    setState(() => _busy = true);
+    try {
+      final document = await service.buildExport();
+      final path = await gateway.saveBackup(
+        fileName: document.suggestedFileName,
+        contents: document.toJsonString(),
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            path == null
+                ? AppStrings.backupExportCanceled
+                : AppStrings.backupExportSuccess(path),
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(_messageFor(error))));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+      await _loadSnapshots();
+    }
+  }
+
+  Future<void> _import() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final scope = AppScope.of(context);
+    final gateway = scope.backupFiles;
+    final service = scope.backup;
+    try {
+      final picked = await gateway.pickBackup();
+      if (!mounted) return;
+      if (picked == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(AppStrings.backupImportCanceled)),
+        );
+        return;
+      }
+
+      final document = BackupDocument.parse(picked.contents);
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(AppStrings.backupImportConfirmTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppStrings.backupImportCounts(
+                  document.counts.postIts,
+                  document.counts.notes,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppStrings.backupImportDate(
+                  DateFormats.fullDate(
+                    DateOnly.fromDateTime(document.exportedAt.toLocal()),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(AppStrings.backupImportWarning),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(AppStrings.cancel),
+            ),
+            FilledButton(
+              key: const Key('backup-import-confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(AppStrings.confirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+
+      setState(() => _busy = true);
+      final result = await service.importJson(picked.contents);
+      if (!mounted) return;
+      await scope.planner.refresh();
+      await scope.notes.refresh();
+      await scope.settings.reload();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppStrings.backupImported(result.counts.postIts, result.counts.notes)} '
+            '${AppStrings.backupSnapshotCreated(result.snapshot.path)}',
+          ),
+        ),
+      );
+      await _loadSnapshots();
+    } on Object catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(_messageFor(error))));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _restore(BackupSnapshot snapshot) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final scope = AppScope.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.backupRestoreConfirmTitle),
+        content: Text(
+          AppStrings.backupRestoreConfirmBody(
+            DateFormats.fullDate(
+              DateOnly.fromDateTime(snapshot.createdAt.toLocal()),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final result = await scope.backup.restoreSnapshot(snapshot);
+      if (!mounted) return;
+      await scope.planner.refresh();
+      await scope.notes.refresh();
+      await scope.settings.reload();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.backupImported(
+              result.counts.postIts,
+              result.counts.notes,
+            ),
+          ),
+        ),
+      );
+      await _loadSnapshots();
+    } on Object catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(_messageFor(error))));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _messageFor(Object error) {
+    if (error is BackupException) {
+      return switch (error.code) {
+        BackupErrorCode.invalidJson ||
+        BackupErrorCode.invalidFormat ||
+        BackupErrorCode.invalidData => AppStrings.backupErrorInvalid,
+        BackupErrorCode.checksumMismatch => AppStrings.backupErrorChecksum,
+        BackupErrorCode.unsupportedFormatVersion =>
+          AppStrings.backupErrorVersion,
+        BackupErrorCode.unsupportedSchemaVersion =>
+          AppStrings.backupErrorSchema,
+        BackupErrorCode.ioError => AppStrings.backupErrorGeneric,
+      };
+    }
+    return AppStrings.backupErrorGeneric;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              AppStrings.settingsBackupHelp,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  key: const Key('settings-backup-export'),
+                  onPressed: _busy ? null : _export,
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: Text(AppStrings.backupExport),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('settings-backup-import'),
+                  onPressed: _busy ? null : _import,
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(AppStrings.backupImport),
+                ),
+              ],
+            ),
+            if (_busy) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    AppStrings.backupSnapshots,
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ),
+                IconButton(
+                  key: const Key('settings-backup-refresh'),
+                  tooltip: AppStrings.backupSnapshots,
+                  onPressed: _busy ? null : _loadSnapshots,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            if (_snapshots.isEmpty)
+              Text(
+                AppStrings.backupSnapshotsEmpty,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              for (final snapshot in _snapshots.take(3))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: const Icon(Icons.history),
+                  title: Text(
+                    DateFormats.fullDate(
+                      DateOnly.fromDateTime(snapshot.createdAt.toLocal()),
+                    ),
+                  ),
+                  subtitle: Text('${(snapshot.sizeBytes / 1024).ceil()} KB'),
+                  trailing: IconButton(
+                    key: Key(
+                      'settings-backup-restore-${snapshot.path.hashCode}',
+                    ),
+                    tooltip: AppStrings.backupRestoreSnapshot,
+                    onPressed: _busy ? null : () => _restore(snapshot),
+                    icon: const Icon(Icons.restore),
+                  ),
+                ),
+          ],
+        ),
+      ),
     );
   }
 }

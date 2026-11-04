@@ -325,15 +325,19 @@ servidor, CalDAV, importação, exportação ou sincronização no código atual
 
 ### Backup e restauração em JSON próprio
 
-- Formato JSON versionado do Planner para exportação/importação completas.
-- Deve preservar UUIDs, tipos de post-it, estados, datas, recorrências,
-  detalhes, ordenação, Markdown, listas/checklists, snapshots, vínculos com
-  notas, histórico, tombstones e metadados necessários à restauração.
-- Deve incluir `formatVersion`, data de exportação e versão do app.
-- A restauração deve ser fiel ao estado exportado; formatos externos não são
-  usados como backup principal.
-- Estratégias de mesclagem/substituição e resolução de conflitos ficam para o
-  desenho da etapa de implementação.
+- Formato JSON versionado (`formatVersion` 1) com `schemaVersion`, versão do app,
+  data de exportação, contagens e checksum SHA-256 sobre JSON canônico.
+- Canonicalização: chaves ordenadas por code units, apenas inteiros, UTF-8
+  literal, listas em ordem determinística (UUID, nota+posição, data+UUID).
+- Exporta post-its, notas, linhas, histórico, tombstones e preferências de UI;
+  credenciais e chaves `planner.sync.*` nunca entram no arquivo.
+- Importação substitui todos os dados, com confirmação explícita, em uma única
+  transação e após snapshot automático verificado (retenção de 5).
+- Compatibilidade: aceita `formatVersion` 1 com `schemaVersion` 4 ou 5; recusa
+  0/2+ e esquemas ≤ 3 ou > 5. Cada versão aceita tem upgrader testado.
+- Snapshots e restauração ficam no diretório privado do app; a tela oferece
+  restaurar um snapshot, que gera outro antes de aplicar.
+- Formatos externos (iCalendar/CalDAV) continuam fora do backup principal.
 
 ### Interoperabilidade: Radicale, CalDAV e iCalendar
 

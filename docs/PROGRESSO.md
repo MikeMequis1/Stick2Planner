@@ -1002,3 +1002,61 @@ futura ainda não iniciada.
 - Ambiente reduzido a dispositivo físico: AVD `planner_tablet`, system image
   android-35 x86_64 e pacote `emulator` do SDK removidos do disco; nenhuma
   configuração de emulador restou no projeto.
+
+## Backup e restauração (2026-11-04)
+
+### Formato
+
+- JSON versionado (`formatVersion` 1) gerado por `BackupDocument`, com
+  `schemaVersion`, `appVersion`, `exportedAt`, `deviceId` opcional, contagens e
+  checksum.
+- Checksum SHA-256 sobre JSON canônico (`core/canonical_json.dart`): chaves
+  ordenadas, apenas inteiros, UTF-8 literal, listas em ordem determinística.
+- Exporta post-its (inclusive tombstones), notas, linhas/checklists, histórico e
+  preferências de UI. Chaves `planner.sync.*` e credenciais ficam de fora.
+- Importação aceita `formatVersion` 1 e `schemaVersion` 4 ou 5; versões 3 ou
+  anteriores e 6 ou superiores são recusadas com mensagem própria.
+
+### Importação
+
+- Modo único: substituir todos os dados, com confirmação explícita.
+- Snapshot automático em `<app support>/backups/pre-import-*.s2p.json`,
+  verificado por reabertura e checksum antes de qualquer escrita; retenção de 5
+  arquivos.
+- Aplicação em uma transação (`notes → note_lines → post_its → history`), com
+  validação de IDs duplicados, FKs e tipos antes de escrever.
+- Configurações lista os snapshots locais (até 3) e permite restaurar; restaurar
+  cria novo snapshot antes.
+- Após importar: agenda, notas e preferências recarregadas.
+
+### Arquivos
+
+- `core/canonical_json.dart`, `core/app_info.dart`
+- `data/backup/backup_document.dart`, `backup_service.dart`,
+  `backup_file_gateway.dart`
+- `features/settings/settings_page.dart` (seção “Backup e restauração”)
+- `app/bootstrap.dart`, `app/app_scope.dart`, `app/app.dart`
+- `test/core/canonical_json_test.dart`, `test/data/backup_service_test.dart`,
+  `test/app/backup_test.dart`
+
+### Validação
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **195 testes aprovados** (13 novos).
+- `flutter build apk --debug`: aprovado.
+- `flutter build apk --release --split-per-abi`: aprovado
+  (armeabi-v7a 19,0 MB; arm64 21,1 MB; x86_64 22,5 MB).
+- Teste no tablet físico pendente: aparelho não estava conectado ao `adb` nesta
+  rodada; o seletor de arquivos precisa ser exercitado manualmente.
+
+## Servidor de sincronização — auditoria inicial (2026-11-04)
+
+Levantamento read-only via SSH, sem alterações na máquina:
+
+- Ubuntu 26.04.1 LTS, kernel 7.0, x86_64, 2 vCPU, 3,3 GiB RAM, 5,3 GB livres.
+- Docker 29.9.2 e Compose v5.6.1 instalados; 6 containers ativos (portas 3000,
+  8080, 8081, 8082, 9000).
+- Tailscale ativo em `100.83.146.74`; LAN em `192.168.219.130/24`.
+- Porta **8090** livre para o serviço do Planner; UFW ausente/inativo.
+- `sudo` exige senha; operações privilegiadas dependem do usuário.
+

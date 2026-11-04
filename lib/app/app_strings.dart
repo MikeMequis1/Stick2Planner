@@ -254,6 +254,70 @@ abstract final class AppStrings {
   static String get settingsLanguage => _t('Idioma', 'Language');
   static String get settingsLanguageHelp =>
       _t('Idioma da interface e das datas.', 'Interface and date language.');
+  static String get settingsBackup =>
+      _t('Backup e restauração', 'Backup and restore');
+  static String get settingsBackupHelp => _t(
+    'Exporte todos os dados em um arquivo JSON ou restaure um backup. A importação substitui os dados atuais.',
+    'Export all data to a JSON file or restore a backup. Importing replaces current data.',
+  );
+  static String get backupExport => _t('Exportar backup', 'Export backup');
+  static String get backupImport => _t('Importar backup', 'Import backup');
+  static String backupExportSuccess(String path) => _language == AppLanguage.en
+      ? 'Backup exported: $path'
+      : 'Backup exportado: $path';
+  static String get backupExportCanceled =>
+      _t('Exportação cancelada.', 'Export cancelled.');
+  static String get backupImportCanceled =>
+      _t('Importação cancelada.', 'Import cancelled.');
+  static String get backupImportConfirmTitle =>
+      _t('Substituir todos os dados?', 'Replace all data?');
+  static String backupImportCounts(int postIts, int notes) =>
+      _language == AppLanguage.en
+      ? '$postIts post-its and $notes notes will be restored.'
+      : '$postIts post-its e $notes notas serão restaurados.';
+  static String backupImportDate(String date) =>
+      _language == AppLanguage.en ? 'Backup from $date.' : 'Backup de $date.';
+  static String get backupImportWarning => _t(
+    'Os dados atuais serão substituídos. Um snapshot automático será criado antes da importação.',
+    'Current data will be replaced. An automatic snapshot is created before importing.',
+  );
+  static String backupImported(int postIts, int notes) =>
+      _language == AppLanguage.en
+      ? 'Backup restored: $postIts post-its and $notes notes.'
+      : 'Backup restaurado: $postIts post-its e $notes notas.';
+  static String backupSnapshotCreated(String path) =>
+      _language == AppLanguage.en ? 'Snapshot: $path' : 'Snapshot: $path';
+  static String get backupErrorInvalid =>
+      _t('Arquivo de backup inválido.', 'Invalid backup file.');
+  static String get backupErrorChecksum => _t(
+    'O conteúdo do arquivo não confere com o checksum.',
+    'File contents do not match the checksum.',
+  );
+  static String get backupErrorVersion => _t(
+    'Versão de backup incompatível com este aplicativo.',
+    'Backup version is not supported by this app.',
+  );
+  static String get backupErrorSchema => _t(
+    'O backup usa um esquema de dados incompatível.',
+    'The backup uses an unsupported data schema.',
+  );
+  static String get backupErrorGeneric => _t(
+    'Não foi possível concluir a operação de backup.',
+    'Could not complete the backup operation.',
+  );
+  static String get backupSnapshots =>
+      _t('Snapshots automáticos', 'Automatic snapshots');
+  static String get backupSnapshotsEmpty =>
+      _t('Nenhum snapshot ainda.', 'No snapshots yet.');
+  static String get backupRestoreSnapshot =>
+      _t('Restaurar snapshot', 'Restore snapshot');
+  static String get backupRestoreConfirmTitle =>
+      _t('Restaurar este snapshot?', 'Restore this snapshot?');
+  static String backupRestoreConfirmBody(String date) =>
+      _language == AppLanguage.en
+      ? 'Current data will be replaced by the snapshot from $date. A new snapshot is created first.'
+      : 'Os dados atuais serão substituídos pelo snapshot de $date. Um novo snapshot será criado antes.';
+  static String get confirm => _t('Confirmar', 'Confirm');
 
   static String get viewModeDay => _t('Dia', 'Day');
   static String get viewModeFourDays => _t('4 dias', '4 days');

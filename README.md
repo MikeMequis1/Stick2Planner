@@ -28,12 +28,15 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
   vivos. Post-its da nota abrem detalhes ou a Agenda.
 - **Configurações:** tema Sistema/Claro/Escuro, idioma Português/English,
   paletas Verde/Oceano/Pôr do sol/Lavanda, animações, wakelock e dicas.
+- **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
+  por substituição integral, com snapshot automático antes de importar.
 
 ## Stack
 
 - Flutter 3.47.9 / Dart 3.13.7
 - drift + SQLite (esquema v4, migrações v1 → v4)
-- `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`
+- `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`, `crypto`,
+  `file_picker`
 - Android SDK 36; alvo principal: tablet Android
 
 Arquitetura: `features -> app -> domain`, `data -> domain`. `domain` não
@@ -82,7 +85,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 182 testes aprovados.
+- `flutter test`: 195 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

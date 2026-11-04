@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../data/backup/backup_file_gateway.dart';
+import '../data/backup/backup_service.dart';
 import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
@@ -15,6 +17,8 @@ class AppScope extends InheritedWidget {
     required this.notes,
     required this.navigation,
     required this.settings,
+    required this.backup,
+    required this.backupFiles,
     required super.child,
   });
 
@@ -22,6 +26,8 @@ class AppScope extends InheritedWidget {
   final NotesController notes;
   final AppNavigationController navigation;
   final AppSettingsController settings;
+  final BackupService backup;
+  final BackupFileGateway backupFiles;
 
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
@@ -34,5 +40,7 @@ class AppScope extends InheritedWidget {
       planner != oldWidget.planner ||
       notes != oldWidget.notes ||
       navigation != oldWidget.navigation ||
-      settings != oldWidget.settings;
+      settings != oldWidget.settings ||
+      backup != oldWidget.backup ||
+      backupFiles != oldWidget.backupFiles;
 }

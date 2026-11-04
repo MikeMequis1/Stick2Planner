@@ -24,6 +24,8 @@ dependencies:
   uuid: ^4.6.0
   wakelock_plus: ^1.8.2
   flutter_markdown_plus: ^1.0.12
+  crypto: ^3.0.8
+  file_picker: ^13.3.2
 
 dev_dependencies:
   flutter_test:

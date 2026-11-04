@@ -41,22 +41,36 @@ final class AppSettingsController extends ChangeNotifier {
 
   Future<void> initialize() async {
     try {
-      final values = await _settingsRepository.loadAll();
-      _themeMode = _parseTheme(values[SettingsKeys.themeMode]);
-      _language = _parseLanguage(values[SettingsKeys.language]);
-      AppStrings.setLanguage(_language);
-      DateFormats.locale = _language.dateLocale;
-      _palette = _parsePalette(values[SettingsKeys.palette]);
-      _animationsEnabled = values[SettingsKeys.animationsEnabled] != 'false';
-      _keepScreenAwake = values[SettingsKeys.keepScreenAwake] != 'false';
-      _showCalendarHints = values[SettingsKeys.showCalendarHints] != 'false';
-      unawaited(_applyWakeLock());
+      await _loadValues();
     } on Object {
       // Preferências são best-effort; o app continua com os padrões.
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Relê as preferências, por exemplo após restaurar um backup.
+  Future<void> reload() async {
+    try {
+      await _loadValues();
+    } on Object {
+      // Mantém os valores atuais em caso de falha.
+    }
+    notifyListeners();
+  }
+
+  Future<void> _loadValues() async {
+    final values = await _settingsRepository.loadAll();
+    _themeMode = _parseTheme(values[SettingsKeys.themeMode]);
+    _language = _parseLanguage(values[SettingsKeys.language]);
+    AppStrings.setLanguage(_language);
+    DateFormats.locale = _language.dateLocale;
+    _palette = _parsePalette(values[SettingsKeys.palette]);
+    _animationsEnabled = values[SettingsKeys.animationsEnabled] != 'false';
+    _keepScreenAwake = values[SettingsKeys.keepScreenAwake] != 'false';
+    _showCalendarHints = values[SettingsKeys.showCalendarHints] != 'false';
+    unawaited(_applyWakeLock());
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
