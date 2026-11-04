@@ -20,36 +20,49 @@ class PlannerApp extends StatelessWidget {
       planner: dependencies.planner,
       notes: dependencies.notes,
       navigation: dependencies.navigation,
-      child: MaterialApp(
-        title: AppStrings.appName,
-        debugShowCheckedModeBanner: false,
-        locale: const Locale('pt', 'BR'),
-        supportedLocales: const [Locale('pt', 'BR')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
-        builder: (context, child) {
-          final dark = Theme.of(context).brightness == Brightness.dark;
-          final iconBrightness = dark ? Brightness.light : Brightness.dark;
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              systemNavigationBarColor: Colors.transparent,
-              systemNavigationBarDividerColor: Colors.transparent,
-              statusBarIconBrightness: iconBrightness,
-              systemNavigationBarIconBrightness: iconBrightness,
-              systemStatusBarContrastEnforced: false,
-              systemNavigationBarContrastEnforced: false,
-            ),
-            child: child ?? const SizedBox.shrink(),
+      settings: dependencies.settings,
+      child: ListenableBuilder(
+        listenable: dependencies.settings,
+        builder: (context, _) {
+          final settings = dependencies.settings;
+          return MaterialApp(
+            title: AppStrings.appName,
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('pt', 'BR'),
+            supportedLocales: const [Locale('pt', 'BR')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: settings.themeMode,
+            builder: (context, child) {
+              final dark = Theme.of(context).brightness == Brightness.dark;
+              final iconBrightness = dark ? Brightness.light : Brightness.dark;
+              final media = MediaQuery.of(context);
+              return MediaQuery(
+                data: media.copyWith(
+                  disableAnimations: !settings.animationsEnabled,
+                ),
+                child: AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: SystemUiOverlayStyle(
+                    statusBarColor: Colors.transparent,
+                    systemNavigationBarColor: Colors.transparent,
+                    systemNavigationBarDividerColor: Colors.transparent,
+                    statusBarIconBrightness: iconBrightness,
+                    systemNavigationBarIconBrightness: iconBrightness,
+                    systemStatusBarContrastEnforced: false,
+                    systemNavigationBarContrastEnforced: false,
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
+            home: const HomeShell(),
           );
         },
-        home: const HomeShell(),
       ),
     );
   }

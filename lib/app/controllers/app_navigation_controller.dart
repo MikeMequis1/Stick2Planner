@@ -25,7 +25,7 @@ final class AppNavigationController extends ChangeNotifier {
 
   void focusPostIt(
     String postItId, {
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 4),
   }) {
     _focusTimer?.cancel();
     _focusedPostItId = postItId;

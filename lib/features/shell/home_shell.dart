@@ -7,6 +7,7 @@ import '../inbox/inbox_page.dart';
 import '../notes/notes_page.dart';
 import '../planner/agenda_page.dart';
 import '../planner/widgets/post_it_editor_sheet.dart';
+import '../settings/settings_page.dart';
 
 /// Casca de navegação: trilho em tablets largos, barra inferior em telas
 /// estreitas. Preserva o estado de cada seção com [IndexedStack].
@@ -112,6 +113,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                   icon: const Icon(Icons.add),
                 ),
+              IconButton(
+                key: const Key('open-settings'),
+                tooltip: AppStrings.settings,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => const SettingsPage(),
+                  ),
+                ),
+                icon: const Icon(Icons.settings_outlined),
+              ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Tooltip(

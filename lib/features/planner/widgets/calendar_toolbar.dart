@@ -32,6 +32,9 @@ class CalendarToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220);
 
     final navigation = _ToolbarCapsule(
       child: Row(
@@ -47,7 +50,7 @@ class CalendarToolbar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
+                duration: motion,
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeIn,
                 transitionBuilder: (child, animation) {
@@ -108,7 +111,7 @@ class CalendarToolbar extends StatelessWidget {
             child: SizedBox(
               key: const Key('calendar-mode-label'),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
+                duration: motion,
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeIn,
                 transitionBuilder: (child, animation) => FadeTransition(

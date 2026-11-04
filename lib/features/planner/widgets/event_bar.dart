@@ -51,6 +51,9 @@ class _EventBarState extends State<EventBar> {
     final postIt = widget.postIt;
     final colors = postItColors(postIt, theme.colorScheme);
     final isResolved = postIt.status != PostItStatus.active;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 140);
     final radius = BorderRadius.horizontal(
       left: Radius.circular(widget.continuesBefore ? 2 : 8),
       right: Radius.circular(widget.continuesAfter ? 2 : 8),
@@ -62,10 +65,12 @@ class _EventBarState extends State<EventBar> {
       excludeSemantics: true,
       child: AnimatedScale(
         scale: widget.isFocused ? 1.04 : (_pressed ? 0.97 : 1),
-        duration: const Duration(milliseconds: 140),
+        duration: motion,
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,
+          elevation: widget.isFocused ? 6 : 0,
+          shadowColor: theme.colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: widget.isFocused

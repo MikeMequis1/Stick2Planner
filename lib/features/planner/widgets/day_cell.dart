@@ -51,6 +51,9 @@ class DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 180);
 
     return DragTarget<PostItDragData>(
       onWillAcceptWithDetails: (_) => true,
@@ -85,10 +88,10 @@ class DayCell extends StatelessWidget {
               padding: const EdgeInsets.all(1.5),
               child: AnimatedScale(
                 scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
-                duration: const Duration(milliseconds: 180),
+                duration: motion,
                 curve: Curves.easeOutCubic,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
+                  duration: motion,
                   curve: Curves.easeOut,
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(

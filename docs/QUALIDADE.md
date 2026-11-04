@@ -12,6 +12,7 @@ Checklist final do MVP local do Planner.
   com “Abrir na Agenda” para post-its datados.
 - Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 → v4 e
   tombstones.
+- Configurações: tema, animações, wakelock e dicas persistidos localmente.
 
 ## Matriz de validação
 
@@ -80,5 +81,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 175 testes aprovados.
+- `flutter test`: 176 testes aprovados.
 - `flutter build apk --debug`: aprovado.

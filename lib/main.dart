@@ -13,11 +13,5 @@ Future<void> main() async {
   final dependencies = AppDependencies.open();
   await dependencies.initialize();
 
-  try {
-    await dependencies.screenWake.enable();
-  } on Object {
-    // Wakelock é best-effort; a tela ainda funciona sem ele.
-  }
-
   runApp(PlannerApp(dependencies: dependencies));
 }

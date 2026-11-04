@@ -131,6 +131,25 @@ abstract final class AppStrings {
   static const nextStage = 'Próxima etapa';
   static const offlineNotice = 'Funciona offline: dados salvos neste tablet.';
 
+  static const settings = 'Configurações';
+  static const settingsAppearance = 'Aparência';
+  static const settingsTheme = 'Tema';
+  static const settingsThemeSystem = 'Sistema';
+  static const settingsThemeLight = 'Claro';
+  static const settingsThemeDark = 'Escuro';
+  static const settingsAnimations = 'Animações';
+  static const settingsAnimationsHelp =
+      'Ativa transições, folhear de páginas e efeitos de toque.';
+  static const settingsKeepAwake = 'Manter tela ligada';
+  static const settingsKeepAwakeHelp =
+      'Evita que a tela desligue enquanto o planner estiver aberto.';
+  static const settingsHints = 'Dicas da agenda';
+  static const settingsHintsHelp =
+      'Mostra a dica de gestos e a contagem de post-its sem data.';
+  static const settingsAbout = 'Sobre';
+  static const settingsLocalData =
+      'Dados salvos localmente neste tablet, sem sincronização nesta versão.';
+
   static const viewModeDay = 'Dia';
   static const viewModeFourDays = '4 dias';
   static const viewModeWeek = 'Semana';

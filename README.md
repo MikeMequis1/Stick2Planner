@@ -167,9 +167,12 @@ não importa Flutter nem drift.
 - **Bordas:** o app usa edge-to-edge, com barras de sistema transparentes e
   fundo cobrindo a área útil.
 - **Animações:** seleção de dia animada, cartões/barras reagem ao toque,
-  feedback de arraste com escala, badges com fade/scale e cross-fade ao trocar
-  período ou modo. Ao redimensionar, a barra acompanha a largura do dedo em
-  tempo real e a alça ativa recebe destaque.
+  feedback de arraste com escala, badges com fade/scale. Deslizar na horizontal
+  folheia o período com rotação 3D (520 ms); deslizar na vertical faz morphing
+  (fade + escala) ao alterar os dias. O realce de post-it usa borda, escala e
+  elevação por 4 s.
+- **Configurações:** tela com tema Sistema/Claro/Escuro, animações, manter tela
+  ligada e dicas da agenda, persistidas localmente.
 - **Soltura sem flicker:** mover ou redimensionar atualiza a barra
   imediatamente; a persistência acontece em seguida e o estado anterior é
   restaurado se a escrita falhar.

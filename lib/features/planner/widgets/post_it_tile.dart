@@ -44,6 +44,9 @@ class _PostItTileState extends State<PostItTile> {
     final compact = widget.compact;
     final colors = postItColors(postIt, theme.colorScheme);
     final isResolved = postIt.status != PostItStatus.active;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 140);
 
     return Semantics(
       button: widget.onTap != null,
@@ -51,10 +54,12 @@ class _PostItTileState extends State<PostItTile> {
       excludeSemantics: true,
       child: AnimatedScale(
         scale: _pressed ? 0.93 : (widget.isFocused ? 1.05 : 1),
-        duration: const Duration(milliseconds: 140),
+        duration: motion,
         curve: Curves.easeOutCubic,
         child: Material(
           color: colors.background,
+          elevation: widget.isFocused ? 6 : 0,
+          shadowColor: theme.colorScheme.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
             side: widget.isFocused

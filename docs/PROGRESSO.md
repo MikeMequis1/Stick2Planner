@@ -933,14 +933,18 @@ foi iniciada.
 - Cada item tem dois botões: “Ver detalhes” abre o popup no local; “Abrir na
   Agenda” seleciona a data e realça o post-it temporariamente. O botão de Agenda
   fica desabilitado quando não há data.
+- O realce dura 4 s, combina borda primária, escala 1,05 e elevação.
 - Tocar no conteúdo Markdown ou em uma linha de lista abre o editor; toque longo
   segue selecionando linhas para snapshot.
 - Caixinha: menu `...` ganhou “Abrir na Agenda” somente para post-its com data;
   ações de concluir/reabrir/cancelar continuam iguais.
 - UUID ausente exibe aviso e não cria post-it.
-- Agenda: deslizar na horizontal folheia o período com animação de página;
-  deslizar na vertical aumenta/reduz os dias exibidos.
+- Agenda: deslizar na horizontal folheia o período com animação de página mais
+  lenta (520 ms, rotação 3D); deslizar na vertical faz morphing (fade + escala
+  0,92 → 1, 360 ms) ao aumentar/reduzir os dias.
 - Barra lateral: trilho com largura mínima de 88 dp e altura total da casca.
+- Configurações: tema Sistema/Claro/Escuro, animações, manter tela ligada e
+  dicas da agenda, persistidos em `app_settings`.
 
 ### Modelo e compatibilidade
 
@@ -964,16 +968,16 @@ foi iniciada.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **175 testes aprovados**.
+- `flutter test`: **176 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - Novos testes: navegação por vínculo vivo, navegação por snapshot, UUID
   ausente, opção “Abrir na Agenda” com/sem data, preservação do menu, gesto
-  horizontal de período e gesto vertical de dias.
+  horizontal de período, gesto vertical de dias e configurações.
 - Migração v3 → v4 coberta.
 - Validação no tablet: dois botões por post-it na nota, foco temporário na
-  Agenda e gestos de folhear/período. Evidências:
-  `docs/validacao/rodada-nota-acoes-postit.png` e
-  `rodada-foco-postit.png`.
+  Agenda, tela de configurações e gestos de folhear/período. Evidências:
+  `docs/validacao/rodada-nota-acoes-postit.png`,
+  `rodada-foco-postit.png` e `configuracoes.png`.
 
 ### Próximo passo
 

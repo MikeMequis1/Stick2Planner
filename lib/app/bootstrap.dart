@@ -4,6 +4,7 @@ import '../data/repositories/drift_note_repository.dart';
 import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
 import 'controllers/app_navigation_controller.dart';
+import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
 import 'services/screen_wake_service.dart';
@@ -18,9 +19,16 @@ final class AppDependencies {
     required this.planner,
     required this.notes,
     AppNavigationController? navigation,
+    AppSettingsController? settings,
     ScreenWakeService? screenWake,
   }) : navigation = navigation ?? AppNavigationController(),
-       screenWake = screenWake ?? const WakelockPlusScreenWakeService();
+       screenWake = screenWake ?? const WakelockPlusScreenWakeService(),
+       settings =
+           settings ??
+           AppSettingsController(
+             settingsRepository: DriftSettingsRepository(database),
+             screenWake: screenWake ?? const WakelockPlusScreenWakeService(),
+           );
 
   factory AppDependencies.fromDatabase(
     AppDatabase database, {
@@ -37,10 +45,7 @@ final class AppDependencies {
         settingsRepository: settingsRepository,
         clock: clock,
       ),
-      notes: NotesController(
-        noteRepository: noteRepository,
-        clock: clock,
-      ),
+      notes: NotesController(noteRepository: noteRepository, clock: clock),
     );
   }
 
@@ -51,16 +56,22 @@ final class AppDependencies {
   final PlannerController planner;
   final NotesController notes;
   final AppNavigationController navigation;
+  final AppSettingsController settings;
   final ScreenWakeService screenWake;
 
   Future<void> initialize() async {
-    await Future.wait([planner.initialize(), notes.initialize()]);
+    await Future.wait([
+      planner.initialize(),
+      notes.initialize(),
+      settings.initialize(),
+    ]);
   }
 
   Future<void> dispose() async {
     planner.dispose();
     notes.dispose();
     navigation.dispose();
+    settings.dispose();
     await database.close();
   }
 }

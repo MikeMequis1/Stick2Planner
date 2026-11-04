@@ -225,12 +225,14 @@ etapas. Cada item: contexto, decisão, consequência.
   espaçamentos principais em múltiplos de 8 px e ajustes finos em múltiplos de
   4 px. A grade mantém gutter óptico de 1,5 px entre células para preservar a
   densidade do mês.
-- **Movimento:** transições curtas (100–200 ms). Seleção e alvo de arraste usam
-  escala/cor/sombra; cartões e barras reagem ao toque; feedback de arraste usa
-  `easeOutBack`; período/modo e grade fazem cross-fade. Durante o
-  redimensionamento a barra acompanha a largura do dedo em tempo real, com
-  destaque na alça ativa e cross-fade do texto de data. Ainda não há preferência
-  de reduzir movimento.
+- **Movimento:** seleção e alvo de arraste usam escala/cor/sombra; cartões e
+  barras reagem ao toque; feedback de arraste usa `easeOutBack`; período
+  horizontal folheia com rotação 3D (520 ms) e a mudança vertical de dias usa
+  morphing fade + escala (360 ms). Redimensionamento acompanha o dedo em tempo
+  real. O post-it destacado usa borda, escala 1,05 e elevação por 4 s.
+- **Configurações:** tela com tema Sistema/Claro/Escuro, animações, manter tela
+  ligada e dicas da agenda. Preferências ficam em `app_settings`; desligar
+  animações zera as transições principais e o folhear/morphing.
 - No mês compacto, o padding interno da célula é reduzido para preservar ao
   menos uma tarefa visível junto do indicador de overflow.
 - A data selecionada é a âncora. Anterior/próximo move a seleção em um

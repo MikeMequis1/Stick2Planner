@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
+import '../../app/controllers/app_settings_controller.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
@@ -24,19 +25,25 @@ class AgendaPage extends StatefulWidget {
 
 class _AgendaPageState extends State<AgendaPage> {
   int _pageTurnDirection = 1;
+  _GridMotion _gridMotion = _GridMotion.page;
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final planner = app.planner;
+    final settings = app.settings;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([planner, app.navigation]),
-      builder: (context, _) => _buildContent(context, planner),
+      listenable: Listenable.merge([planner, app.navigation, settings]),
+      builder: (context, _) => _buildContent(context, planner, settings),
     );
   }
 
-  Widget _buildContent(BuildContext context, PlannerController planner) {
+  Widget _buildContent(
+    BuildContext context,
+    PlannerController planner,
+    AppSettingsController settings,
+  ) {
     final theme = Theme.of(context);
     final orientation = MediaQuery.orientationOf(context);
 
@@ -66,10 +73,16 @@ class _AgendaPageState extends State<AgendaPage> {
                 _turnPage(-1, () => planner.previousPeriod(mode)),
             onNextPeriod: () => _turnPage(1, () => planner.nextPeriod(mode)),
             onToday: () => _turnPage(1, planner.goToToday),
-            onDecreaseMode: () =>
-                _turnPage(-1, () => planner.cycleMode(-1, orientation)),
-            onIncreaseMode: () =>
-                _turnPage(1, () => planner.cycleMode(1, orientation)),
+            onDecreaseMode: () => _turnPage(
+              -1,
+              () => planner.cycleMode(-1, orientation),
+              morph: true,
+            ),
+            onIncreaseMode: () => _turnPage(
+              1,
+              () => planner.cycleMode(1, orientation),
+              morph: true,
+            ),
           ),
           if (planner.error != null) ...[
             const SizedBox(height: 8),
@@ -107,17 +120,35 @@ class _AgendaPageState extends State<AgendaPage> {
                 _turnPage(
                   increase ? 1 : -1,
                   () => planner.cycleMode(increase ? 1 : -1, orientation),
+                  morph: true,
                 );
               },
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
+                duration: settings.animationsEnabled
+                    ? Duration(
+                        milliseconds: _gridMotion == _GridMotion.page
+                            ? 520
+                            : 360,
+                      )
+                    : Duration.zero,
+                switchInCurve: Curves.easeInOutCubic,
+                switchOutCurve: Curves.easeInOutCubic,
                 layoutBuilder: (current, previous) => Stack(
                   fit: StackFit.expand,
                   children: [...previous, ?current],
                 ),
-                transitionBuilder: _pageTurnTransition,
+                transitionBuilder: (child, animation) =>
+                    _gridMotion == _GridMotion.page
+                    ? _pageTurnTransition(
+                        child,
+                        animation,
+                        settings.animationsEnabled,
+                      )
+                    : _morphTransition(
+                        child,
+                        animation,
+                        settings.animationsEnabled,
+                      ),
                 child: CalendarGrid(
                   key: ValueKey(
                     'calendar-grid-${mode.name}-'
@@ -179,56 +210,94 @@ class _AgendaPageState extends State<AgendaPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.touch_app_outlined,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  AppStrings.calendarHint,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+          if (settings.showCalendarHints)
+            Row(
+              children: [
+                Icon(
+                  Icons.touch_app_outlined,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppStrings.calendarHint,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                ),
-                child: Text(
-                  '${AppStrings.undated}: ${planner.undatedPostIts.length}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                _undatedChip(theme, planner),
+              ],
+            )
+          else
+            Align(
+              alignment: Alignment.centerRight,
+              child: _undatedChip(theme, planner),
+            ),
         ],
       ),
     );
   }
 
-  void _turnPage(int direction, VoidCallback action) {
-    setState(() => _pageTurnDirection = direction);
+  Widget _undatedChip(ThemeData theme, PlannerController planner) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        '${AppStrings.undated}: ${planner.undatedPostIts.length}',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  void _turnPage(int direction, VoidCallback action, {bool morph = false}) {
+    setState(() {
+      _pageTurnDirection = direction;
+      _gridMotion = morph ? _GridMotion.morph : _GridMotion.page;
+    });
     action();
   }
 
-  Widget _pageTurnTransition(Widget child, Animation<double> animation) {
+  Widget _morphTransition(
+    Widget child,
+    Animation<double> animation,
+    bool animationsEnabled,
+  ) {
+    if (!animationsEnabled) return child;
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+        alignment: Alignment.center,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _pageTurnTransition(
+    Widget child,
+    Animation<double> animation,
+    bool animationsEnabled,
+  ) {
+    if (!animationsEnabled) return child;
     return AnimatedBuilder(
       animation: animation,
       child: child,
       builder: (context, child) {
         final value = Curves.easeInOutCubic.transform(animation.value);
-        final angle = (1 - value) * 0.55 * _pageTurnDirection;
+        final angle = (1 - value) * 0.8 * _pageTurnDirection;
         final transform = Matrix4.identity()
           ..setEntry(3, 2, 0.0012)
           ..rotateY(angle);
@@ -283,3 +352,5 @@ class _AgendaPageState extends State<AgendaPage> {
     openPostItDetailsById(context, postItId: postIt.id, goToAgenda: false);
   }
 }
+
+enum _GridMotion { page, morph }
