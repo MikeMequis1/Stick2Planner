@@ -969,7 +969,7 @@ foi iniciada.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **180 testes aprovados**.
+- `flutter test`: **182 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - Novos testes: navegação por vínculo vivo, navegação por snapshot, UUID
   ausente, opção “Abrir na Agenda” com/sem data, preservação do menu, gesto
@@ -1020,11 +1020,14 @@ futura ainda não iniciada.
   para a nova data.
 - A prévia por toque longo passou a acompanhar o dedo: ao deslizar sobre outros
   dias visíveis, mostra a data e os post-its da célula sob o dedo.
+- Em 2 semanas e mês, a linha inteira de cada semana virou alvo de drop: soltar
+  sobre a faixa de eventos de outra semana move o post-it para o dia sob o dedo.
+  Antes só as células de dia aceitavam, então a faixa com barras era um vazio.
 
 ### Validação
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **180 testes aprovados**.
+- `flutter test`: **182 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - `flutter build apk --release --split-per-abi`: aprovado
   (armeabi-v7a 18,8 MB; arm64 21,0 MB; x86_64 22,4 MB).

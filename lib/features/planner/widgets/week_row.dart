@@ -92,156 +92,208 @@ class _WeekRowState extends State<WeekRow> {
             ? null
             : _previewLabel(_resize!, columnWidth);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (barAreaHeight > 0)
-              SizedBox(
-                height: barAreaHeight,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    for (final segment in layout.segments)
-                      _buildSegment(
-                        segment: segment,
-                        theme: theme,
-                        columnWidth: columnWidth,
-                        barHeight: barHeight,
-                        barGap: barGap,
-                      ),
-                    if (previewLabel != null)
-                      Positioned(
-                        right: 4,
-                        top: 0,
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 160),
-                          curve: Curves.easeOutBack,
-                          builder: (context, value, child) => Opacity(
-                            opacity: value.clamp(0, 1),
-                            child: Transform.scale(
-                              scale: 0.85 + 0.15 * value,
-                              child: child,
-                            ),
-                          ),
-                          child: Material(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(6),
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 120),
-                                switchInCurve: Curves.easeOut,
-                                switchOutCurve: Curves.easeIn,
-                                child: Text(
-                                  previewLabel,
-                                  key: ValueKey(previewLabel),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
+        return Builder(
+          builder: (rowContext) {
+            int? dayIndexAt(Offset globalPosition) {
+              final box = rowContext.findRenderObject();
+              if (box is! RenderBox || !box.hasSize) return null;
+              final local = box.globalToLocal(globalPosition);
+              final raw = (local.dx / columnWidth).floor();
+              return raw.clamp(0, widget.week.days.length - 1).toInt();
+            }
+
+            return DragTarget<PostItDragData>(
+              onWillAcceptWithDetails: (_) => true,
+              onAcceptWithDetails: (details) {
+                final index = dayIndexAt(
+                  details.data.pointerAt(details.offset),
+                );
+                if (index == null) return;
+                widget.onMovePostIt(
+                  details.data.postIt,
+                  widget.week.days[index].date,
+                );
+              },
+              builder: (context, candidateData, rejectedData) {
+                final highlight = candidateData.isNotEmpty;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOut,
+                  color: highlight
+                      ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                      : Colors.transparent,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (barAreaHeight > 0)
+                        SizedBox(
+                          height: barAreaHeight,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              for (final segment in layout.segments)
+                                _buildSegment(
+                                  segment: segment,
+                                  theme: theme,
+                                  columnWidth: columnWidth,
+                                  barHeight: barHeight,
+                                  barGap: barGap,
                                 ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (layout.hiddenSegments.isNotEmpty &&
-                        previewLabel == null)
-                      Positioned(
-                        right: 4,
-                        top: 0,
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 160),
-                          curve: Curves.easeOutBack,
-                          builder: (context, value, child) => Opacity(
-                            opacity: value.clamp(0, 1),
-                            child: Transform.scale(
-                              scale: 0.85 + 0.15 * value,
-                              child: child,
-                            ),
-                          ),
-                          child: Material(
-                            color: theme.colorScheme.surface.withValues(
-                              alpha: 0.82,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                            child: InkWell(
-                              key: Key(
-                                'hidden-events-${widget.week.start.toIso8601String()}',
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                              onTap: () {
-                                final hidden = <String, PostIt>{
-                                  for (final segment in layout.hiddenSegments)
-                                    segment.postIt.id: segment.postIt,
-                                }.values.toList(growable: false);
-                                widget.onShowHiddenEvents(hidden);
-                              },
-                              child: SizedBox(
-                                height: 20,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      AppStrings.hiddenEvents(
-                                        layout.hiddenCount,
+                              if (previewLabel != null)
+                                Positioned(
+                                  right: 4,
+                                  top: 0,
+                                  child: TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: 0, end: 1),
+                                    duration: const Duration(milliseconds: 160),
+                                    curve: Curves.easeOutBack,
+                                    builder: (context, value, child) => Opacity(
+                                      opacity: value.clamp(0, 1),
+                                      child: Transform.scale(
+                                        scale: 0.85 + 0.15 * value,
+                                        child: child,
                                       ),
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: theme.colorScheme.primary,
-                                            fontWeight: FontWeight.w600,
+                                    ),
+                                    child: Material(
+                                      color: theme.colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(6),
+                                      elevation: 2,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        child: AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 120,
                                           ),
+                                          switchInCurve: Curves.easeOut,
+                                          switchOutCurve: Curves.easeIn,
+                                          child: Text(
+                                            previewLabel,
+                                            key: ValueKey(previewLabel),
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
+                              if (layout.hiddenSegments.isNotEmpty &&
+                                  previewLabel == null)
+                                Positioned(
+                                  right: 4,
+                                  top: 0,
+                                  child: TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: 0, end: 1),
+                                    duration: const Duration(milliseconds: 160),
+                                    curve: Curves.easeOutBack,
+                                    builder: (context, value, child) => Opacity(
+                                      opacity: value.clamp(0, 1),
+                                      child: Transform.scale(
+                                        scale: 0.85 + 0.15 * value,
+                                        child: child,
+                                      ),
+                                    ),
+                                    child: Material(
+                                      color: theme.colorScheme.surface
+                                          .withValues(alpha: 0.82),
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: InkWell(
+                                        key: Key(
+                                          'hidden-events-${widget.week.start.toIso8601String()}',
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        onTap: () {
+                                          final hidden = <String, PostIt>{
+                                            for (final segment
+                                                in layout.hiddenSegments)
+                                              segment.postIt.id: segment.postIt,
+                                          }.values.toList(growable: false);
+                                          widget.onShowHiddenEvents(hidden);
+                                        },
+                                        child: SizedBox(
+                                          height: 20,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                AppStrings.hiddenEvents(
+                                                  layout.hiddenCount,
+                                                ),
+                                                style: theme
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: theme
+                                                          .colorScheme
+                                                          .primary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
+                      if (barAreaHeight > 0) const SizedBox(height: 4),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (final day in widget.week.days)
+                              Expanded(
+                                child: DayCell(
+                                  key: ValueKey(
+                                    'day-${day.date.toIso8601String()}',
+                                  ),
+                                  day: day,
+                                  items: singleDayItemsOn(
+                                    widget.postIts,
+                                    day.date,
+                                  ),
+                                  isSelected: day.date.isSameDay(
+                                    widget.selectedDate,
+                                  ),
+                                  isToday: day.date.isSameDay(widget.today),
+                                  today: widget.today,
+                                  compact: widget.compact,
+                                  onTap: () => widget.onDaySelected(day.date),
+                                  onPostItTap: widget.onPostItTap,
+                                  onShowAll: () => widget.onShowDay(day.date),
+                                  onMoveToDay: (postIt) =>
+                                      widget.onMovePostIt(postIt, day.date),
+                                  onReorderTo: (postIt, index) => widget
+                                      .onReorderTo(postIt, day.date, index),
+                                  onQuickCreateTask: widget.onQuickCreateTask,
+                                  onQuickCreateEvent: widget.onQuickCreateEvent,
+                                  itemsFor: (date) =>
+                                      singleDayItemsOn(widget.postIts, date),
+                                  focusedPostItId: widget.focusedPostItId,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
-                ),
-              ),
-            if (barAreaHeight > 0) const SizedBox(height: 4),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final day in widget.week.days)
-                    Expanded(
-                      child: DayCell(
-                        key: ValueKey('day-${day.date.toIso8601String()}'),
-                        day: day,
-                        items: singleDayItemsOn(widget.postIts, day.date),
-                        isSelected: day.date.isSameDay(widget.selectedDate),
-                        isToday: day.date.isSameDay(widget.today),
-                        today: widget.today,
-                        compact: widget.compact,
-                        onTap: () => widget.onDaySelected(day.date),
-                        onPostItTap: widget.onPostItTap,
-                        onShowAll: () => widget.onShowDay(day.date),
-                        onMoveToDay: (postIt) =>
-                            widget.onMovePostIt(postIt, day.date),
-                        onReorderTo: (postIt, index) =>
-                            widget.onReorderTo(postIt, day.date, index),
-                        onQuickCreateTask: widget.onQuickCreateTask,
-                        onQuickCreateEvent: widget.onQuickCreateEvent,
-                        itemsFor: (date) =>
-                            singleDayItemsOn(widget.postIts, date),
-                        focusedPostItId: widget.focusedPostItId,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -311,7 +363,7 @@ class _WeekRowState extends State<WeekRow> {
               onDragEnd: (_) => widget.onEventDragActive?.call(false),
               onDraggableCanceled: (_, _) =>
                   widget.onEventDragActive?.call(false),
-              dragAnchorStrategy: childDragAnchorStrategy,
+              dragAnchorStrategy: recordingDragAnchorStrategy,
               feedback: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.86, end: 1),
                 duration: const Duration(milliseconds: 200),

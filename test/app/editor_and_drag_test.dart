@@ -182,7 +182,10 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(dependencies.planner.postIts.single.startDate, DateOnly(2026, 11, 6));
+    expect(
+      dependencies.planner.postIts.single.startDate,
+      DateOnly(2026, 11, 6),
+    );
     expect(
       find.descendant(
         of: target,
@@ -293,6 +296,100 @@ void main() {
     expect(event.endDate, DateOnly(2026, 11, 14));
   });
 
+  testWidgets('solta evento na faixa de outra semana em duas semanas', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+        buildPostIt(
+          id: 'e2',
+          title: 'Outro evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 13),
+          endDate: DateOnly(2026, 11, 14),
+        ),
+      ],
+    );
+    await dependencies.planner.setMode(
+      AgendaViewMode.twoWeeks,
+      Orientation.landscape,
+    );
+    await tester.pumpAndSettle();
+
+    final source = find.byKey(const ValueKey('event-bar-e1-2026-11-02'));
+    final cell = find.byKey(const Key('day-2026-11-12'));
+    final topLeft = tester.getTopLeft(cell);
+    final cellWidth = tester.getSize(cell).width;
+    final drop = Offset(topLeft.dx + cellWidth / 2, topLeft.dy - 10);
+
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await tester.pump(const Duration(milliseconds: 650));
+    await gesture.moveTo(drop);
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final moved = dependencies.planner.postIts.firstWhere(
+      (postIt) => postIt.id == 'e1',
+    );
+    expect(moved.startDate, DateOnly(2026, 11, 12));
+    expect(moved.endDate, DateOnly(2026, 11, 14));
+  });
+
+  testWidgets('solta evento na faixa de outra semana no mês', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+        buildPostIt(
+          id: 'e2',
+          title: 'Outro evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 24),
+          endDate: DateOnly(2026, 11, 25),
+        ),
+      ],
+    );
+    await dependencies.planner.setMode(
+      AgendaViewMode.month,
+      Orientation.landscape,
+    );
+    await tester.pumpAndSettle();
+
+    final source = find.byKey(const ValueKey('event-bar-e1-2026-11-02'));
+    final cell = find.byKey(const Key('day-2026-11-25'));
+    final topLeft = tester.getTopLeft(cell);
+    final cellWidth = tester.getSize(cell).width;
+    final drop = Offset(topLeft.dx + cellWidth / 2, topLeft.dy - 8);
+
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await tester.pump(const Duration(milliseconds: 650));
+    await gesture.moveTo(drop);
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final moved = dependencies.planner.postIts.firstWhere(
+      (postIt) => postIt.id == 'e1',
+    );
+    expect(moved.startDate, DateOnly(2026, 11, 25));
+    expect(moved.endDate, DateOnly(2026, 11, 27));
+  });
+
   testWidgets('solta evento na borda para avançar uma semana', (tester) async {
     final dependencies = await pumpPlanner(
       tester,
@@ -324,9 +421,7 @@ void main() {
     expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 11));
   });
 
-  testWidgets('reordena pela alternativa acessível no detalhe', (
-    tester,
-  ) async {
+  testWidgets('reordena pela alternativa acessível no detalhe', (tester) async {
     final dependencies = await pumpPlanner(
       tester,
       postIts: [
@@ -370,9 +465,7 @@ void main() {
       ],
     );
 
-    final bar = find.byKey(
-      const ValueKey('event-bar-e1-2026-11-02'),
-    );
+    final bar = find.byKey(const ValueKey('event-bar-e1-2026-11-02'));
     final initialWidth = tester.getSize(bar).width;
     final handle = find.byKey(const Key('event-resize-end-e1'));
 
@@ -441,11 +534,7 @@ void main() {
     await pumpPlanner(
       tester,
       postIts: [
-        buildPostIt(
-          id: 't1',
-          title: 'Mover',
-          startDate: DateOnly(2026, 11, 4),
-        ),
+        buildPostIt(id: 't1', title: 'Mover', startDate: DateOnly(2026, 11, 4)),
       ],
     );
 
@@ -461,11 +550,7 @@ void main() {
     final dependencies = await pumpPlanner(
       tester,
       postIts: [
-        buildPostIt(
-          id: 't1',
-          title: 'Mover',
-          startDate: DateOnly(2026, 11, 4),
-        ),
+        buildPostIt(id: 't1', title: 'Mover', startDate: DateOnly(2026, 11, 4)),
       ],
     );
 
@@ -479,7 +564,10 @@ void main() {
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
-    expect(dependencies.planner.postIts.single.startDate, DateOnly(2026, 11, 6));
+    expect(
+      dependencies.planner.postIts.single.startDate,
+      DateOnly(2026, 11, 6),
+    );
   });
 
   testWidgets('editor não quebra com teclado virtual', (tester) async {

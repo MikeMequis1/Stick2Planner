@@ -222,8 +222,14 @@ etapas. Cada item: contexto, decisão, consequência.
   dias visíveis atualiza a data e os post-its da prévia. O gesto fica preso à
   célula de origem, então as células registram sua geometria em um
   `DayPreviewRegistry` por grade; o retângulo sob o dedo define a data exibida.
-- **Eventos entre semanas:** arraste normal alcança qualquer semana visível; nas
-  bordas do grid aparecem zonas para mover ±7 dias e atualizar a data selecionada.
+- **Eventos entre semanas:** arraste normal alcança qualquer semana visível,
+  inclusive soltando na faixa de eventos (lanes) de outra semana — a linha da
+  semana é um `DragTarget` que converte a posição horizontal em coluna/dia. Nas
+  bordas do grid aparecem zonas para mover ±7 dias e atualizar a data
+  selecionada.
+- **Posição do dedo no drop:** `DragTargetDetails.offset` traz o canto do
+  feedback ancorado, não o toque. `PostItDragData.anchorOffset` registra a âncora
+  no início do arraste para recuperar o ponto real e escolher a coluna certa.
 - **Transições:** a chave do `AnimatedSwitcher` fica no filho direto
   (`RepaintBoundary`), garantindo folhear horizontal e morphing vertical.
 - **Barras de evento:** o conteúdo é recuado das alças para o ícone não ficar sob

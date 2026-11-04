@@ -671,7 +671,7 @@ class _DraggableItem extends StatelessWidget {
         return LongPressDraggable<PostItDragData>(
           data: PostItDragData(postIt),
           delay: const Duration(milliseconds: 200),
-          dragAnchorStrategy: childDragAnchorStrategy,
+          dragAnchorStrategy: recordingDragAnchorStrategy,
           feedback: _DragFeedback(postIt: postIt, compact: compact),
           childWhenDragging: TweenAnimationBuilder<double>(
             tween: Tween(begin: 1, end: 0.35),

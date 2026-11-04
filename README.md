@@ -17,8 +17,9 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
 
 - **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos contínuos; dois toques
   criam tarefa, três criam evento e segurar abre uma prévia que acompanha o dedo
-  sobre os dias visíveis. Eventos podem ser arrastados entre semanas visíveis;
-  nas bordas, soltar move ±7 dias.
+  sobre os dias visíveis. Eventos podem ser arrastados entre semanas visíveis,
+  inclusive para a faixa de eventos de outra semana; nas bordas, soltar move
+  ±7 dias.
 - **Navegação:** deslizar na horizontal folheia períodos; deslizar na vertical
   altera a quantidade de dias com transição de morphing.
 - **Caixinha:** filtros, busca, ordenação e “Abrir na Agenda” para post-its com
@@ -80,7 +81,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 180 testes aprovados.
+- `flutter test`: 182 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 
