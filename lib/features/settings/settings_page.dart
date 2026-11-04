@@ -24,7 +24,12 @@ class SettingsPage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(AppStrings.settings)),
           body: ListView(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
             children: [
               Text(
                 AppStrings.settingsAppearance,
