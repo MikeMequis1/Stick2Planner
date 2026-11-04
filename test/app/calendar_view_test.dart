@@ -6,6 +6,7 @@ import 'package:stick2planner/app/planner_view_mode.dart';
 import 'package:stick2planner/core/date_formatting.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/features/planner/widgets/calendar_grid.dart';
 import 'package:stick2planner/features/planner/widgets/day_cell.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -33,10 +34,7 @@ void main() {
     final dependencies = testDependencies(now: DateTime(2026, 11, 4, 12));
     await dependencies.initialize();
     if (landscapeMode != null) {
-      await dependencies.planner.setMode(
-        landscapeMode,
-        Orientation.landscape,
-      );
+      await dependencies.planner.setMode(landscapeMode, Orientation.landscape);
     }
     if (portraitMode != null) {
       await dependencies.planner.setMode(portraitMode, Orientation.portrait);
@@ -170,9 +168,7 @@ void main() {
       ],
     );
 
-    final indicator = find.byKey(
-      const Key('hidden-events-2026-11-02'),
-    );
+    final indicator = find.byKey(const Key('hidden-events-2026-11-02'));
     expect(indicator, findsOneWidget);
 
     await tester.tap(indicator);
@@ -186,7 +182,8 @@ void main() {
 
   testWidgets('mês compacto combina barra de evento e overflow', (
     tester,
-  ) async {    await pumpPlanner(
+  ) async {
+    await pumpPlanner(
       tester,
       size: const Size(1280, 800),
       landscapeMode: AgendaViewMode.month,
@@ -280,9 +277,7 @@ void main() {
     expect(find.byType(DayCell), findsNWidgets(42));
     expect(find.textContaining('mais'), findsWidgets);
 
-    await tester.tap(
-      find.byKey(const Key('day-overflow-2026-11-04')),
-    );
+    await tester.tap(find.byKey(const Key('day-overflow-2026-11-04')));
     await tester.pumpAndSettle();
 
     expect(find.text('Quarta-feira, 4 de novembro de 2026'), findsOneWidget);
@@ -291,10 +286,7 @@ void main() {
   });
 
   testWidgets('tocar em um dia atualiza a data selecionada', (tester) async {
-    final dependencies = await pumpPlanner(
-      tester,
-      size: const Size(1280, 800),
-    );
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
 
     await tester.tap(find.byKey(const Key('day-2026-11-05')));
     await tester.pumpAndSettle();
@@ -365,11 +357,52 @@ void main() {
     expect(find.byKey(const Key('day-preview')), findsNothing);
   });
 
-  testWidgets('deslizar horizontalmente folheia o período', (tester) async {
-    final dependencies = await pumpPlanner(
+  testWidgets('prévia acompanha o dedo sobre outros dias visíveis', (
+    tester,
+  ) async {
+    await pumpPlanner(
       tester,
       size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 't1',
+          title: 'Revisar prévia',
+          startDate: DateOnly(2026, 11, 5),
+        ),
+        buildPostIt(
+          id: 't2',
+          title: 'Dia seguinte',
+          startDate: DateOnly(2026, 11, 6),
+        ),
+      ],
     );
+
+    final origin = find.byKey(const Key('day-2026-11-05'));
+    final target = find.byKey(const Key('day-2026-11-06'));
+    final gesture = await tester.startGesture(tester.getCenter(origin));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(
+      find.text(DateFormats.fullDate(DateOnly(2026, 11, 5))),
+      findsOneWidget,
+    );
+
+    await gesture.moveTo(tester.getCenter(target));
+    await tester.pump();
+
+    expect(find.byKey(const Key('day-preview')), findsOneWidget);
+    expect(
+      find.text(DateFormats.fullDate(DateOnly(2026, 11, 6))),
+      findsOneWidget,
+    );
+    expect(find.text('Dia seguinte'), findsWidgets);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-preview')), findsNothing);
+  });
+
+  testWidgets('deslizar horizontalmente folheia o período', (tester) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
 
     expect(find.text('2 – 8 nov 2026'), findsOneWidget);
 
@@ -394,10 +427,7 @@ void main() {
   testWidgets('deslizar verticalmente altera a quantidade de dias', (
     tester,
   ) async {
-    final dependencies = await pumpPlanner(
-      tester,
-      size: const Size(1280, 800),
-    );
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
 
     expect(find.byType(DayCell), findsNWidgets(7));
 
@@ -420,6 +450,28 @@ void main() {
 
     expect(dependencies.planner.landscapeMode, AgendaViewMode.week);
     expect(find.byType(DayCell), findsNWidgets(7));
+  });
+
+  testWidgets('swipe mantém a animação de transição da grade', (tester) async {
+    await pumpPlanner(tester, size: const Size(1280, 800));
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(-500, 0),
+      1200,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+    await tester.pumpAndSettle();
+
+    await tester.fling(
+      find.byKey(const Key('calendar-swipe-area')),
+      const Offset(0, -450),
+      1200,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('retrato inicia em dia e cresce até semana', (tester) async {

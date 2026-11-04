@@ -34,28 +34,28 @@ class CalendarToolbar extends StatelessWidget {
     final scheme = theme.colorScheme;
     final motion = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
-        : const Duration(milliseconds: 220);
+        : Duration(milliseconds: 220);
 
     final navigation = _ToolbarCapsule(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _ToolbarIconButton(
-            key: const Key('calendar-previous'),
+            key: Key('calendar-previous'),
             tooltip: AppStrings.previousPeriod,
             onPressed: onPreviousPeriod,
             icon: Icons.chevron_left,
           ),
           Flexible(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8),
               child: AnimatedSwitcher(
                 duration: motion,
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeIn,
                 transitionBuilder: (child, animation) {
                   final offset = Tween<Offset>(
-                    begin: const Offset(0.08, 0),
+                    begin: Offset(0.08, 0),
                     end: Offset.zero,
                   ).animate(animation);
                   return FadeTransition(
@@ -76,7 +76,7 @@ class CalendarToolbar extends StatelessWidget {
             ),
           ),
           _ToolbarIconButton(
-            key: const Key('calendar-next'),
+            key: Key('calendar-next'),
             tooltip: AppStrings.nextPeriod,
             onPressed: onNextPeriod,
             icon: Icons.chevron_right,
@@ -90,26 +90,26 @@ class CalendarToolbar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextButton(
-            key: const Key('calendar-today'),
+            key: Key('calendar-today'),
             onPressed: onToday,
             style: TextButton.styleFrom(
-              minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: const StadiumBorder(),
+              minimumSize: Size(0, 38),
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              shape: StadiumBorder(),
             ),
-            child: const Text(AppStrings.today),
+            child: Text(AppStrings.today),
           ),
           _ToolbarDivider(color: scheme.outlineVariant),
           _ToolbarIconButton(
-            key: const Key('calendar-mode-decrease'),
+            key: Key('calendar-mode-decrease'),
             tooltip: AppStrings.decreaseDays,
             onPressed: canDecreaseMode ? onDecreaseMode : null,
             icon: Icons.remove,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.symmetric(horizontal: 8),
             child: SizedBox(
-              key: const Key('calendar-mode-label'),
+              key: Key('calendar-mode-label'),
               child: AnimatedSwitcher(
                 duration: motion,
                 switchInCurve: Curves.easeOut,
@@ -132,7 +132,7 @@ class CalendarToolbar extends StatelessWidget {
             ),
           ),
           _ToolbarIconButton(
-            key: const Key('calendar-mode-increase'),
+            key: Key('calendar-mode-increase'),
             tooltip: AppStrings.increaseDays,
             onPressed: canIncreaseMode ? onIncreaseMode : null,
             icon: Icons.add,
@@ -147,8 +147,8 @@ class CalendarToolbar extends StatelessWidget {
           return Row(
             children: [
               Flexible(child: navigation),
-              const SizedBox(width: 16),
-              const Spacer(),
+              SizedBox(width: 16),
+              Spacer(),
               controls,
             ],
           );
@@ -157,7 +157,7 @@ class CalendarToolbar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Align(alignment: Alignment.centerLeft, child: navigation),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
               child: FittedBox(fit: BoxFit.scaleDown, child: controls),
@@ -178,7 +178,7 @@ class _ToolbarCapsule extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(999),
@@ -209,9 +209,9 @@ class _ToolbarIconButton extends StatelessWidget {
       icon: Icon(icon, size: 20),
       visualDensity: VisualDensity.compact,
       style: IconButton.styleFrom(
-        minimumSize: const Size(36, 36),
+        minimumSize: Size(36, 36),
         padding: EdgeInsets.zero,
-        shape: const CircleBorder(),
+        shape: CircleBorder(),
       ),
     );
   }
@@ -227,7 +227,7 @@ class _ToolbarDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 22,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: EdgeInsets.symmetric(horizontal: 4),
       color: color,
     );
   }

@@ -44,7 +44,7 @@ Future<void> showPostItDetailsSheet(
         final selected = await showDialog<Note>(
           context: sheetContext,
           builder: (dialogContext) => AlertDialog(
-            title: const Text(AppStrings.selectNote),
+            title: Text(AppStrings.selectNote),
             content: SizedBox(
               width: 420.0.clamp(
                 0,
@@ -75,7 +75,7 @@ Future<void> showPostItDetailsSheet(
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text(AppStrings.cancel),
+                child: Text(AppStrings.cancel),
               ),
             ],
           ),
@@ -185,17 +185,17 @@ Future<void> showPostItDetailsSheet(
       Future<void> delete() async {        final confirmed = await showDialog<bool>(
           context: sheetContext,
           builder: (dialogContext) => AlertDialog(
-            title: const Text(AppStrings.deleting),
-            content: const Text(AppStrings.deleteExplanation),
+            title: Text(AppStrings.deleting),
+            content: Text(AppStrings.deleteExplanation),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text(AppStrings.cancel),
+                child: Text(AppStrings.cancel),
               ),
               FilledButton(
-                key: const Key('confirm-delete'),
+                key: Key('confirm-delete'),
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text(AppStrings.confirmDelete),
+                child: Text(AppStrings.confirmDelete),
               ),
             ],
           ),
@@ -207,7 +207,7 @@ Future<void> showPostItDetailsSheet(
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text(AppStrings.deletedMessage),
+                content: Text(AppStrings.deletedMessage),
                 action: SnackBarAction(
                   label: AppStrings.undo,
                   onPressed: () async {
@@ -237,7 +237,7 @@ Future<void> showPostItDetailsSheet(
             maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78,
           ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -249,7 +249,7 @@ Future<void> showPostItDetailsSheet(
                       postItIcon(postIt),
                       color: theme.colorScheme.primary,
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         postIt.title,
@@ -258,7 +258,7 @@ Future<void> showPostItDetailsSheet(
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -273,18 +273,18 @@ Future<void> showPostItDetailsSheet(
                     Chip(label: Text(postItStatusLabel(postIt.status))),
                     if (postIt.noteId != null)
                       Chip(
-                        avatar: const Icon(Icons.link, size: 18),
-                        label: const Text(AppStrings.linkedNoteChip),
+                        avatar: Icon(Icons.link, size: 18),
+                        label: Text(AppStrings.linkedNoteChip),
                       ),
                     if (postIt.noteExcerpt != null)
                       Chip(
-                        avatar: const Icon(Icons.content_copy, size: 18),
-                        label: const Text(AppStrings.noteExcerptChip),
+                        avatar: Icon(Icons.content_copy, size: 18),
+                        label: Text(AppStrings.noteExcerptChip),
                       ),
                     if (postIt.isRecurring &&
                         postIt.status == PostItStatus.active)
                       Chip(
-                        avatar: const Icon(Icons.repeat, size: 18),
+                        avatar: Icon(Icons.repeat, size: 18),
                         label: Text(
                           planner.isPostponed(postIt) &&
                                   postIt.startDate != null
@@ -295,32 +295,32 @@ Future<void> showPostItDetailsSheet(
                       ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _InfoRow(
                   icon: Icons.calendar_today_outlined,
                   text: postItDateLabel(postIt),
                 ),
                 if (postIt.details != null &&
                     postIt.details!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     AppStrings.detailsSection,
                     style: theme.textTheme.labelLarge,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(postIt.details!, style: theme.textTheme.bodyMedium),
                 ],
                 if (postIt.noteExcerpt != null &&
                     postIt.noteExcerpt!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     AppStrings.noteExcerptTitle,
                     style: theme.textTheme.labelLarge,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
@@ -330,7 +330,7 @@ Future<void> showPostItDetailsSheet(
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     AppStrings.noteSnapshotHint,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -339,7 +339,7 @@ Future<void> showPostItDetailsSheet(
                   ),
                 ],
                 if (postIt.noteId != null) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _InfoRow(
                     icon: Icons.note_alt_outlined,
                     text: linkedNote != null
@@ -347,7 +347,7 @@ Future<void> showPostItDetailsSheet(
                               '${linkedNote.title}'
                         : '${AppStrings.linkedNoteTitle}: ${postIt.noteId}',
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     AppStrings.noteLiveLink,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -357,123 +357,123 @@ Future<void> showPostItDetailsSheet(
                 ],
                 if (postIt.isRecurring &&
                     planner.isPostponed(postIt)) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _InfoRow(
                     icon: Icons.schedule,
                     text: AppStrings.recurringPostponedHelp,
                   ),
                 ],
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Text(
                   AppStrings.actions,
                   style: theme.textTheme.labelLarge,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
                     if (postIt.status == PostItStatus.active)
                       FilledButton.tonalIcon(
-                        key: const Key('details-complete'),
+                        key: Key('details-complete'),
                         onPressed: () =>
                             setStatus(PostItStatus.done),
-                        icon: const Icon(Icons.check),
-                        label: const Text(AppStrings.statusDoneAction),
+                        icon: Icon(Icons.check),
+                        label: Text(AppStrings.statusDoneAction),
                       )
                     else
                       FilledButton.tonalIcon(
-                        key: const Key('details-reopen'),
+                        key: Key('details-reopen'),
                         onPressed: () =>
                             setStatus(PostItStatus.active),
-                        icon: const Icon(Icons.undo),
-                        label: const Text(AppStrings.statusReopenAction),
+                        icon: Icon(Icons.undo),
+                        label: Text(AppStrings.statusReopenAction),
                       ),
                     if (postIt.status != PostItStatus.cancelled)
                       OutlinedButton.icon(
-                        key: const Key('details-cancel'),
+                        key: Key('details-cancel'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: theme.colorScheme.error,
                         ),
                         onPressed: () =>
                             setStatus(PostItStatus.cancelled),
-                        icon: const Icon(Icons.close),
-                        label: const Text(AppStrings.statusCancelAction),
+                        icon: Icon(Icons.close),
+                        label: Text(AppStrings.statusCancelAction),
                       ),
                     FilledButton.tonalIcon(
-                      key: const Key('details-edit'),
+                      key: Key('details-edit'),
                       onPressed: edit,
-                      icon: const Icon(Icons.edit_outlined),
-                      label: const Text(AppStrings.edit),
+                      icon: Icon(Icons.edit_outlined),
+                      label: Text(AppStrings.edit),
                     ),
                     OutlinedButton.icon(
-                      key: const Key('details-move'),
+                      key: Key('details-move'),
                       onPressed: move,
-                      icon: const Icon(Icons.drive_file_move_outline),
-                      label: const Text(AppStrings.moveToDate),
+                      icon: Icon(Icons.drive_file_move_outline),
+                      label: Text(AppStrings.moveToDate),
                     ),
                     if (postIt.noteId == null &&
                         notesController.notes.isNotEmpty)
                       OutlinedButton.icon(
-                        key: const Key('details-link-note'),
+                        key: Key('details-link-note'),
                         onPressed: linkNote,
-                        icon: const Icon(Icons.link),
-                        label: const Text(AppStrings.linkNote),
+                        icon: Icon(Icons.link),
+                        label: Text(AppStrings.linkNote),
                       ),
                     if (postIt.noteId != null) ...[
                       OutlinedButton.icon(
-                        key: const Key('details-open-note'),
+                        key: Key('details-open-note'),
                         onPressed: linkedNote == null ? null : openNote,
-                        icon: const Icon(Icons.note_alt_outlined),
-                        label: const Text(AppStrings.openNote),
+                        icon: Icon(Icons.note_alt_outlined),
+                        label: Text(AppStrings.openNote),
                       ),
                       OutlinedButton.icon(
-                        key: const Key('details-unlink-note'),
+                        key: Key('details-unlink-note'),
                         onPressed: unlinkNote,
-                        icon: const Icon(Icons.link_off),
-                        label: const Text(AppStrings.unlinkNote),
+                        icon: Icon(Icons.link_off),
+                        label: Text(AppStrings.unlinkNote),
                       ),
                     ],
                     if (postIt.isEvent)
                       OutlinedButton.icon(
-                        key: const Key('details-resize'),
+                        key: Key('details-resize'),
                         onPressed: resize,
-                        icon: const Icon(Icons.straighten),
-                        label: const Text(AppStrings.changeDuration),
+                        icon: Icon(Icons.straighten),
+                        label: Text(AppStrings.changeDuration),
                       ),
                     if (planner.canMovePostItUp(postIt))
                       IconButton.filledTonal(
-                        key: const Key('details-move-up'),
+                        key: Key('details-move-up'),
                         tooltip: AppStrings.moveUp,
                         onPressed: () =>
                             reorder(() => planner.movePostItUp(postIt)),
-                        icon: const Icon(Icons.arrow_upward),
+                        icon: Icon(Icons.arrow_upward),
                       ),
                     if (planner.canMovePostItDown(postIt))
                       IconButton.filledTonal(
-                        key: const Key('details-move-down'),
+                        key: Key('details-move-down'),
                         tooltip: AppStrings.moveDown,
                         onPressed: () =>
                             reorder(() => planner.movePostItDown(postIt)),
-                        icon: const Icon(Icons.arrow_downward),
+                        icon: Icon(Icons.arrow_downward),
                       ),
                     OutlinedButton.icon(
-                      key: const Key('details-delete'),
+                      key: Key('details-delete'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: theme.colorScheme.error,
                       ),
                       onPressed: delete,
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text(AppStrings.delete),
+                      icon: Icon(Icons.delete_outline),
+                      label: Text(AppStrings.delete),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.of(sheetContext).pop(),
-                    child: const Text(AppStrings.close),
+                    child: Text(AppStrings.close),
                   ),
                 ),
               ],
@@ -497,7 +497,7 @@ Future<DateOnly?> _pickDate(
     initialDate: initial.toLocalDateTime(),
     firstDate: first.toLocalDateTime(),
     lastDate: DateTime(2100),
-    locale: const Locale('pt', 'BR'),
+    locale: Locale('pt', 'BR'),
     helpText: helpText,
   );
   return picked == null ? null : DateOnly.fromDateTime(picked);
@@ -524,7 +524,7 @@ class _InfoRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         Expanded(
           child: Text(text, style: theme.textTheme.bodyMedium),
         ),

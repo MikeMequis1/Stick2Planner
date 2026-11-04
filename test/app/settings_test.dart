@@ -3,6 +3,7 @@ import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
 import 'package:stick2planner/app/bootstrap.dart';
 import 'package:stick2planner/app/theme/app_palette.dart';
+import 'package:stick2planner/core/date_formatting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -49,6 +50,13 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-palette-ocean')));
     await tester.pumpAndSettle();
     expect(dependencies.settings.palette, AppPalette.ocean);
+
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+    expect(dependencies.settings.language, AppLanguage.en);
+    expect(AppStrings.inbox, 'Inbox');
+    expect(find.text('Settings'), findsOneWidget);
+    expect(DateFormats.locale, 'en');
 
     await tester.tap(find.byKey(const Key('settings-animations')));
     await tester.pumpAndSettle();

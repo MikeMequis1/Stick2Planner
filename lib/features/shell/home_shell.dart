@@ -42,9 +42,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     AppScope.of(context).planner.handleAppResumed().catchError((Object _) {});
   }
 
-  static const _pages = <Widget>[AgendaPage(), InboxPage(), NotesPage()];
+  static final _pages = <Widget>[AgendaPage(), InboxPage(), NotesPage()];
 
-  static const _railDestinations = <NavigationRailDestination>[
+  static List<NavigationRailDestination> get _railDestinations => <NavigationRailDestination>[
     NavigationRailDestination(
       icon: Icon(Icons.calendar_month_outlined),
       selectedIcon: Icon(Icons.calendar_month),
@@ -62,7 +62,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ),
   ];
 
-  static const _barDestinations = <NavigationDestination>[
+  static List<NavigationDestination> get _barDestinations => <NavigationDestination>[
     NavigationDestination(
       icon: Icon(Icons.calendar_month_outlined),
       selectedIcon: Icon(Icons.calendar_month),
@@ -100,30 +100,30 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         return Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
-            title: const Text(AppStrings.appName),
+            title: Text(AppStrings.appName),
             actions: [
               if (isCompact)
                 IconButton(
-                  key: const Key('add-post-it'),
+                  key: Key('add-post-it'),
                   tooltip: AppStrings.newPostIt,
                   onPressed: () => showPostItEditorSheet(
                     context,
                     controller: planner,
                     initialDate: planner.selectedDate,
                   ),
-                  icon: const Icon(Icons.add),
+                  icon: Icon(Icons.add),
                 ),
               IconButton(
-                key: const Key('open-settings'),
+                key: Key('open-settings'),
                 tooltip: AppStrings.settings,
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (context) => const SettingsPage(),
+                    builder: (context) => SettingsPage(),
                   ),
                 ),
-                icon: const Icon(Icons.settings_outlined),
+                icon: Icon(Icons.settings_outlined),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Tooltip(
                   message: AppStrings.offlineNotice,
@@ -144,7 +144,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                         onDestinationSelected: _select,
                         destinations: _railDestinations,
                       ),
-                      const VerticalDivider(width: 1),
+                      VerticalDivider(width: 1),
                       Expanded(
                         child: IndexedStack(index: index, children: _pages),
                       ),
@@ -161,14 +161,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 ),
           floatingActionButton: index == AppSection.agenda.index && !isCompact
               ? FloatingActionButton.extended(
-                  key: const Key('add-post-it'),
+                  key: Key('add-post-it'),
                   onPressed: () => showPostItEditorSheet(
                     context,
                     controller: planner,
                     initialDate: planner.selectedDate,
                   ),
-                  icon: const Icon(Icons.add),
-                  label: const Text(AppStrings.newPostIt),
+                  icon: Icon(Icons.add),
+                  label: Text(AppStrings.newPostIt),
                 )
               : null,
         );

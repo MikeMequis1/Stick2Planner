@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
 import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/app/planner_view_mode.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -256,6 +257,71 @@ void main() {
     expect(event.startDate, DateOnly(2026, 11, 7));
     expect(event.endDate, DateOnly(2026, 11, 9));
     expect(event.durationInDays, 3);
+  });
+
+  testWidgets('arrasta evento entre semanas visíveis', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+    await dependencies.planner.setMode(
+      AgendaViewMode.twoWeeks,
+      Orientation.landscape,
+    );
+    await tester.pumpAndSettle();
+
+    final source = find.byKey(const ValueKey('event-bar-e1-2026-11-02'));
+    final target = find.byKey(const Key('day-2026-11-12'));
+
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await tester.pump(const Duration(milliseconds: 650));
+    await gesture.moveTo(tester.getCenter(target));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final event = dependencies.planner.postIts.single;
+    expect(event.startDate, DateOnly(2026, 11, 12));
+    expect(event.endDate, DateOnly(2026, 11, 14));
+  });
+
+  testWidgets('solta evento na borda para avançar uma semana', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+
+    final source = find.byKey(const ValueKey('event-bar-e1-2026-11-02'));
+    final gesture = await tester.startGesture(tester.getCenter(source));
+    await tester.pump(const Duration(milliseconds: 650));
+
+    final nextWeek = find.byKey(const Key('event-week-next'));
+    expect(nextWeek, findsOneWidget);
+    await gesture.moveTo(tester.getCenter(nextWeek));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final event = dependencies.planner.postIts.single;
+    expect(event.startDate, DateOnly(2026, 11, 11));
+    expect(event.endDate, DateOnly(2026, 11, 13));
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 11));
   });
 
   testWidgets('reordena pela alternativa acessível no detalhe', (

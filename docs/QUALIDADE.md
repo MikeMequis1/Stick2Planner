@@ -12,8 +12,8 @@ Checklist final do MVP local do Planner.
   com “Abrir na Agenda” para post-its datados.
 - Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 → v4 e
   tombstones.
-- Configurações: tema, quatro paletas com gradiente, animações, wakelock e
-  dicas persistidos localmente.
+- Configurações: tema, idioma Português/English, quatro paletas com gradiente,
+  animações, wakelock e dicas persistidos localmente.
 
 ## Matriz de validação
 
@@ -71,6 +71,13 @@ Checklist final do MVP local do Planner.
 - Importação, exportação, CalDAV e sincronização não foram implementados;
   decisões registradas em `docs/DECISOES.md`.
 
+## Tamanho e desempenho
+
+- APK debug: ~188 MB (runtime/símbolos de depuração).
+- APK release split: ~19–22 MB; arm64 ~21 MB.
+- Banco local: ~80 KB para 17 post-its, 3 notas e 58 registros de histórico.
+- Release é a referência para avaliar fluidez; animações podem ser desligadas.
+
 ## Comandos finais
 
 ```bash
@@ -82,5 +89,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 176 testes aprovados.
+- `flutter test`: 180 testes aprovados.
 - `flutter build apk --debug`: aprovado.

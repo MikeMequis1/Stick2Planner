@@ -86,12 +86,12 @@ class _InboxPageState extends State<InboxPage> {
       await planner.setPostItStatus(postIt, status);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.statusUpdatedMessage)),
+        SnackBar(content: Text(AppStrings.statusUpdatedMessage)),
       );
     } on Object {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text(AppStrings.errorSave)));
+          .showSnackBar(SnackBar(content: Text(AppStrings.errorSave)));
     }
   }
 
@@ -111,7 +111,7 @@ class _InboxPageState extends State<InboxPage> {
       listenable: planner,
       builder: (context, _) {
         if (planner.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         }
 
         final items = _visiblePostIts(planner);
@@ -123,11 +123,11 @@ class _InboxPageState extends State<InboxPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
-                key: const Key('inbox-search'),
+                key: Key('inbox-search'),
                 controller: _searchController,
                 onChanged: (value) => setState(() => _query = value),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search),
                   suffixIcon: _query.isEmpty
                       ? null
                       : IconButton(
@@ -136,14 +136,14 @@ class _InboxPageState extends State<InboxPage> {
                             _searchController.clear();
                             setState(() => _query = '');
                           },
-                          icon: const Icon(Icons.clear),
+                          icon: Icon(Icons.clear),
                         ),
                   labelText: AppStrings.searchHint,
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
@@ -155,18 +155,18 @@ class _InboxPageState extends State<InboxPage> {
                   _filterChip(_InboxFilter.undated, AppStrings.undated),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Row(
                 children: [
                   Text(
                     '${items.length} ${AppStrings.itemsCount}',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
-                  const Spacer(),
+                  Spacer(),
                   DropdownButton<_InboxSort>(
                     value: _sort,
-                    underline: const SizedBox.shrink(),
-                    items: const [
+                    underline: SizedBox.shrink(),
+                    items: [
                       DropdownMenuItem(
                         value: _InboxSort.date,
                         child: Text(AppStrings.sortDate),
@@ -186,7 +186,7 @@ class _InboxPageState extends State<InboxPage> {
                   ),
                 ],
               ),
-              const Divider(height: 1),
+              Divider(height: 1),
               Expanded(
                 child: items.isEmpty
                     ? EmptyState(
@@ -197,10 +197,10 @@ class _InboxPageState extends State<InboxPage> {
                         message: AppStrings.inboxPlaceholderBody,
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(vertical: 12),
                         itemCount: items.length,
                         separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final postIt = items[index];
                           return _InboxRow(
@@ -287,22 +287,22 @@ class _InboxRow extends StatelessWidget {
               },
               itemBuilder: (context) => [
                 if (postIt.startDate != null)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _InboxMenuAction.openInAgenda,
                     child: Text(AppStrings.openInAgenda),
                   ),
                 if (postIt.status == PostItStatus.active)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _InboxMenuAction.done,
                     child: Text(AppStrings.statusDoneAction),
                   )
                 else
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _InboxMenuAction.reopen,
                     child: Text(AppStrings.statusReopenAction),
                   ),
                 if (postIt.status != PostItStatus.cancelled)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _InboxMenuAction.cancel,
                     child: Text(AppStrings.statusCancelAction),
                   ),
@@ -311,7 +311,7 @@ class _InboxRow extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 8, top: 2),
+          padding: EdgeInsets.only(left: 8, top: 2),
           child: Wrap(
             spacing: 8,
             runSpacing: 2,

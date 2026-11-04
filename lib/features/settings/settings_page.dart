@@ -17,19 +17,19 @@ class SettingsPage extends StatelessWidget {
       listenable: settings,
       builder: (context, _) {
         return Scaffold(
-          appBar: AppBar(title: const Text(AppStrings.settings)),
+          appBar: AppBar(title: Text(AppStrings.settings)),
           body: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             children: [
               Text(
                 AppStrings.settingsAppearance,
                 style: theme.textTheme.titleSmall,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -37,11 +37,11 @@ class SettingsPage extends StatelessWidget {
                         AppStrings.settingsTheme,
                         style: theme.textTheme.labelLarge,
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       SegmentedButton<ThemeMode>(
-                        key: const Key('settings-theme'),
+                        key: Key('settings-theme'),
                         showSelectedIcon: false,
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: ThemeMode.system,
                             label: Text(AppStrings.settingsThemeSystem),
@@ -59,19 +59,39 @@ class SettingsPage extends StatelessWidget {
                         onSelectionChanged: (selection) =>
                             settings.setThemeMode(selection.first),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
+                      Text(
+                        AppStrings.settingsLanguage,
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      SizedBox(height: 8),
+                      SegmentedButton<AppLanguage>(
+                        key: Key('settings-language'),
+                        showSelectedIcon: false,
+                        segments: [
+                          for (final language in AppLanguage.values)
+                            ButtonSegment(
+                              value: language,
+                              label: Text(language.label),
+                            ),
+                        ],
+                        selected: {settings.language},
+                        onSelectionChanged: (selection) =>
+                            settings.setLanguage(selection.first),
+                      ),
+                      SizedBox(height: 16),
                       Text(
                         AppStrings.settingsPalette,
                         style: theme.textTheme.labelLarge,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         AppStrings.settingsPaletteHelp,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -84,12 +104,12 @@ class SettingsPage extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       SwitchListTile(
-                        key: const Key('settings-animations'),
+                        key: Key('settings-animations'),
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(AppStrings.settingsAnimations),
-                        subtitle: const Text(AppStrings.settingsAnimationsHelp),
+                        title: Text(AppStrings.settingsAnimations),
+                        subtitle: Text(AppStrings.settingsAnimationsHelp),
                         value: settings.animationsEnabled,
                         onChanged: settings.setAnimationsEnabled,
                       ),
@@ -97,40 +117,40 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(AppStrings.agenda, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Card(
                 margin: EdgeInsets.zero,
                 child: Column(
                   children: [
                     SwitchListTile(
-                      key: const Key('settings-keep-awake'),
-                      title: const Text(AppStrings.settingsKeepAwake),
-                      subtitle: const Text(AppStrings.settingsKeepAwakeHelp),
+                      key: Key('settings-keep-awake'),
+                      title: Text(AppStrings.settingsKeepAwake),
+                      subtitle: Text(AppStrings.settingsKeepAwakeHelp),
                       value: settings.keepScreenAwake,
                       onChanged: settings.setKeepScreenAwake,
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1),
                     SwitchListTile(
-                      key: const Key('settings-hints'),
-                      title: const Text(AppStrings.settingsHints),
-                      subtitle: const Text(AppStrings.settingsHintsHelp),
+                      key: Key('settings-hints'),
+                      title: Text(AppStrings.settingsHints),
+                      subtitle: Text(AppStrings.settingsHintsHelp),
                       value: settings.showCalendarHints,
                       onChanged: settings.setShowCalendarHints,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(AppStrings.settingsAbout, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Card(
                 margin: EdgeInsets.zero,
                 child: ListTile(
-                  leading: const Icon(Icons.cloud_off_outlined),
-                  title: const Text(AppStrings.offlineNotice),
-                  subtitle: const Text(AppStrings.settingsLocalData),
+                  leading: Icon(Icons.cloud_off_outlined),
+                  title: Text(AppStrings.offlineNotice),
+                  subtitle: Text(AppStrings.settingsLocalData),
                 ),
               ),
             ],
@@ -168,11 +188,11 @@ class _PaletteOption extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: Duration(milliseconds: 160),
           curve: Curves.easeOut,
           width: 132,
           height: 76,
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: palette.linearGradient(brightness),
             borderRadius: BorderRadius.circular(12),

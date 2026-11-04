@@ -21,14 +21,14 @@ class NotesPage extends StatelessWidget {
       listenable: notes,
       builder: (context, _) {
         if (notes.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         }
 
         final items = [...notes.notes]
           ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -38,23 +38,23 @@ class NotesPage extends StatelessWidget {
                     AppStrings.noteCount(items.length),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const Spacer(),
+                  Spacer(),
                   FilledButton.icon(
-                    key: const Key('add-note'),
+                    key: Key('add-note'),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (context) => const NoteEditorPage(),
+                        builder: (context) => NoteEditorPage(),
                       ),
                     ),
-                    icon: const Icon(Icons.add),
-                    label: const Text(AppStrings.newNote),
+                    icon: Icon(Icons.add),
+                    label: Text(AppStrings.newNote),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Expanded(
                 child: items.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.edit_note_outlined,
                         title: AppStrings.emptyNotes,
                         message: AppStrings.notesEmptyMessage,
@@ -62,7 +62,7 @@ class NotesPage extends StatelessWidget {
                     : ListView.separated(
                         itemCount: items.length,
                         separatorBuilder: (context, index) =>
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final note = items[index];
                           return Card(
@@ -82,7 +82,7 @@ class NotesPage extends StatelessWidget {
                                     : '${note.lines.length} ${AppStrings.noteLines} · '
                                           '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
                               ),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (context) => NoteDetailPage(

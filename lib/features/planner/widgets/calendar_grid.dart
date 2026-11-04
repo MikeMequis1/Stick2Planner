@@ -6,10 +6,11 @@ import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
+import 'day_preview_registry.dart';
 import 'week_row.dart';
 
 /// Grade completa do período visível.
-class CalendarGrid extends StatelessWidget {
+class CalendarGrid extends StatefulWidget {
   const CalendarGrid({
     super.key,
     required this.period,
@@ -26,11 +27,13 @@ class CalendarGrid extends StatelessWidget {
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
     this.focusedPostItId,
+    this.onEventDragActive,
   });
 
   final CalendarPeriod period;
   final List<PostIt> postIts;
   final String? focusedPostItId;
+  final ValueChanged<bool>? onEventDragActive;
   final DateOnly today;
   final DateOnly selectedDate;
   final ValueChanged<DateOnly> onDaySelected;
@@ -47,67 +50,102 @@ class CalendarGrid extends StatelessWidget {
   static const _minimumHeight = 160.0;
 
   @override
+  State<CalendarGrid> createState() => _CalendarGridState();
+}
+
+class _CalendarGridState extends State<CalendarGrid> {
+  final DayPreviewRegistry _previewRegistry = DayPreviewRegistry();
+
+  @override
   Widget build(BuildContext context) {
+    final period = widget.period;
+    final postIts = widget.postIts;
+    final today = widget.today;
+    final selectedDate = widget.selectedDate;
+    final focusedPostItId = widget.focusedPostItId;
+    final onEventDragActive = widget.onEventDragActive;
+    final onDaySelected = widget.onDaySelected;
+    final onPostItTap = widget.onPostItTap;
+    final onShowDay = widget.onShowDay;
+    final onMovePostIt = widget.onMovePostIt;
+    final onReorderTo = widget.onReorderTo;
+    final onResizeEvent = widget.onResizeEvent;
+    final onShowHiddenEvents = widget.onShowHiddenEvents;
+    final onQuickCreateTask = widget.onQuickCreateTask;
+    final onQuickCreateEvent = widget.onQuickCreateEvent;
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final needsScroll = constraints.maxHeight < _minimumHeight;
-        final height = needsScroll ? _minimumHeight : constraints.maxHeight;
+        final needsScroll = constraints.maxHeight < CalendarGrid._minimumHeight;
+        final height = needsScroll
+            ? CalendarGrid._minimumHeight
+            : constraints.maxHeight;
 
         final content = SizedBox(
           height: height,
-          child: Column(
-            children: [
-              _WeekdayHeader(
-                days: period.weeks.first.days,
-                compact: period.isMonth,
-              ),
-              const SizedBox(height: 6),
-              Expanded(
-                child: Column(
-                  children: [
-                    for (var index = 0; index < period.weeks.length; index++)
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == period.weeks.length - 1 ? 0 : 6,
-                          ),
-                          child: WeekRow(
-                            week: period.weeks[index],
-                            periodStart: period.start,
-                            postIts: postIts,
-                            today: today,
-                            selectedDate: selectedDate,
-                            compact: period.isMonth,
-                            onDaySelected: onDaySelected,
-                            onPostItTap: onPostItTap,
-                            onShowDay: onShowDay,
-                            onMovePostIt: onMovePostIt,
-                            onReorderTo: onReorderTo,
-                            onResizeEvent: onResizeEvent,
-                            onShowHiddenEvents: onShowHiddenEvents,
-                            onQuickCreateTask: onQuickCreateTask,
-                            onQuickCreateEvent: onQuickCreateEvent,
-                            focusedPostItId: focusedPostItId,
+          child: DayPreviewScope(
+            registry: _previewRegistry,
+            child: Column(
+              children: [
+                _WeekdayHeader(
+                  days: period.weeks.first.days,
+                  compact: period.isMonth,
+                ),
+                const SizedBox(height: 6),
+                Expanded(
+                  child: Column(
+                    children: [
+                      for (var index = 0; index < period.weeks.length; index++)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == period.weeks.length - 1 ? 0 : 6,
+                            ),
+                            child: WeekRow(
+                              week: period.weeks[index],
+                              periodStart: period.start,
+                              postIts: postIts,
+                              today: today,
+                              selectedDate: selectedDate,
+                              compact: period.isMonth,
+                              onDaySelected: onDaySelected,
+                              onPostItTap: onPostItTap,
+                              onShowDay: onShowDay,
+                              onMovePostIt: onMovePostIt,
+                              onReorderTo: onReorderTo,
+                              onResizeEvent: onResizeEvent,
+                              onShowHiddenEvents: onShowHiddenEvents,
+                              onQuickCreateTask: onQuickCreateTask,
+                              onQuickCreateEvent: onQuickCreateEvent,
+                              focusedPostItId: focusedPostItId,
+                              onEventDragActive: onEventDragActive,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
 
         if (!needsScroll) return content;
         return SingleChildScrollView(
           child: SizedBox(
-            height: math.max(_minimumHeight, constraints.maxHeight),
+            height: math.max(
+              CalendarGrid._minimumHeight,
+              constraints.maxHeight,
+            ),
             child: content,
           ),
         );
       },
     );
   }
+
+  String? get focusedPostItId => widget.focusedPostItId;
+  ValueChanged<bool>? get onEventDragActive => widget.onEventDragActive;
 }
 
 class _WeekdayHeader extends StatelessWidget {

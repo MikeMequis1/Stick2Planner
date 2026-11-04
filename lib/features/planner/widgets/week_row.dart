@@ -35,12 +35,14 @@ class WeekRow extends StatefulWidget {
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
     this.focusedPostItId,
+    this.onEventDragActive,
   });
 
   final CalendarWeek week;
   final DateOnly periodStart;
   final List<PostIt> postIts;
   final String? focusedPostItId;
+  final ValueChanged<bool>? onEventDragActive;
   final DateOnly today;
   final DateOnly selectedDate;
   final bool compact;
@@ -231,6 +233,8 @@ class _WeekRowState extends State<WeekRow> {
                             widget.onReorderTo(postIt, day.date, index),
                         onQuickCreateTask: widget.onQuickCreateTask,
                         onQuickCreateEvent: widget.onQuickCreateEvent,
+                        itemsFor: (date) =>
+                            singleDayItemsOn(widget.postIts, date),
                         focusedPostItId: widget.focusedPostItId,
                       ),
                     ),
@@ -303,6 +307,10 @@ class _WeekRowState extends State<WeekRow> {
             child: LongPressDraggable<PostItDragData>(
               data: PostItDragData(postIt),
               delay: const Duration(milliseconds: 200),
+              onDragStarted: () => widget.onEventDragActive?.call(true),
+              onDragEnd: (_) => widget.onEventDragActive?.call(false),
+              onDraggableCanceled: (_, _) =>
+                  widget.onEventDragActive?.call(false),
               dragAnchorStrategy: childDragAnchorStrategy,
               feedback: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.86, end: 1),

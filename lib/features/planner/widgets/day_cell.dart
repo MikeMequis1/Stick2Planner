@@ -8,6 +8,7 @@ import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
+import 'day_preview_registry.dart';
 import 'post_it_drag_data.dart';
 import 'post_it_presentation.dart';
 import 'post_it_tile.dart';
@@ -29,11 +30,13 @@ class DayCell extends StatelessWidget {
     required this.onReorderTo,
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
+    required this.itemsFor,
     this.focusedPostItId,
   });
 
   final CalendarDay day;
   final List<PostIt> items;
+  final List<PostIt> Function(DateOnly date) itemsFor;
   final String? focusedPostItId;
   final bool isSelected;
   final bool isToday;
@@ -80,6 +83,7 @@ class DayCell extends StatelessWidget {
           child: _DayTapRegion(
             date: day.date,
             items: items,
+            itemsFor: itemsFor,
             today: today,
             onTap: onTap,
             onQuickCreateTask: onQuickCreateTask,
@@ -165,6 +169,7 @@ class _DayTapRegion extends StatefulWidget {
   const _DayTapRegion({
     required this.date,
     required this.items,
+    required this.itemsFor,
     required this.today,
     required this.onTap,
     required this.onQuickCreateTask,
@@ -174,6 +179,7 @@ class _DayTapRegion extends StatefulWidget {
 
   final DateOnly date;
   final List<PostIt> items;
+  final DayItemsResolver itemsFor;
   final DateOnly today;
   final VoidCallback onTap;
   final ValueChanged<DateOnly> onQuickCreateTask;
@@ -189,15 +195,60 @@ class _DayTapRegionState extends State<_DayTapRegion> {
   static const _previewWidth = 280.0;
   static const _previewHeight = 224.0;
 
+  final GlobalKey _rootKey = GlobalKey();
   Timer? _tapTimer;
   int _tapCount = 0;
   OverlayEntry? _previewEntry;
+  DayPreviewRegistry? _registry;
+  DayPreviewRegistration? _registration;
+  DateOnly? _previewDate;
+  List<PostIt> _previewItems = const [];
+  double _previewLeft = 8;
+  double _previewTop = 8;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final registry = DayPreviewScope.maybeOf(context);
+    if (identical(registry, _registry)) {
+      _registration?.date = widget.date;
+      return;
+    }
+    _unregister();
+    _registry = registry;
+    if (registry == null) return;
+    final registration = DayPreviewRegistration(
+      date: widget.date,
+      key: _rootKey,
+      itemsFor: widget.itemsFor,
+    );
+    _registration = registration;
+    registry.register(registration);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DayTapRegion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final registration = _registration;
+    if (registration == null) return;
+    registration
+      ..date = widget.date
+      ..itemsFor = widget.itemsFor;
+  }
 
   @override
   void dispose() {
     _tapTimer?.cancel();
     _removePreview();
+    _unregister();
     super.dispose();
+  }
+
+  void _unregister() {
+    final registration = _registration;
+    if (registration == null) return;
+    _registry?.unregister(registration);
+    _registration = null;
   }
 
   void _resetTapCount() {
@@ -230,36 +281,40 @@ class _DayTapRegionState extends State<_DayTapRegion> {
   void _handleLongPressStart(LongPressStartDetails details) {
     _resetTapCount();
     HapticFeedback.selectionClick();
-    _showPreview();
+    _showPreview(widget.date, widget.items);
+  }
+
+  void _handleLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
+    final registration = _registry?.resolve(details.globalPosition);
+    if (registration == null || registration.date == _previewDate) return;
+    final box = registration.key.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+
+    _previewDate = registration.date;
+    _previewItems = registration.itemsFor(registration.date);
+    _placePreview(box.localToGlobal(Offset.zero), box.size);
+    HapticFeedback.selectionClick();
+    _previewEntry?.markNeedsBuild();
   }
 
   void _handleLongPressEnd(LongPressEndDetails details) => _removePreview();
 
   void _handleLongPressCancel() => _removePreview();
 
-  void _showPreview() {
+  void _showPreview(DateOnly date, List<PostIt> items) {
     _removePreview();
     final overlay = Overlay.maybeOf(context);
-    final renderObject = context.findRenderObject();
-    if (overlay == null || renderObject is! RenderBox) return;
-    if (!renderObject.hasSize) return;
+    final box = _rootKey.currentContext?.findRenderObject();
+    if (overlay == null || box is! RenderBox || !box.hasSize) return;
 
-    final origin = renderObject.localToGlobal(Offset.zero);
-    final size = renderObject.size;
-    final screen = MediaQuery.sizeOf(context);
-    final maxLeft = screen.width - _previewWidth - 8;
-    final left = (origin.dx + size.width / 2 - _previewWidth / 2)
-        .clamp(8.0, maxLeft < 8 ? 8.0 : maxLeft)
-        .toDouble();
-    final maxTop = screen.height - _previewHeight - 8;
-    var top = origin.dy + size.height + 8;
-    if (top > maxTop) top = origin.dy - _previewHeight - 8;
-    top = top.clamp(8.0, maxTop < 8 ? 8.0 : maxTop).toDouble();
+    _previewDate = date;
+    _previewItems = items;
+    _placePreview(box.localToGlobal(Offset.zero), box.size);
 
     _previewEntry = OverlayEntry(
       builder: (context) => Positioned(
-        left: left,
-        top: top,
+        left: _previewLeft,
+        top: _previewTop,
         width: _previewWidth,
         child: IgnorePointer(
           child: TweenAnimationBuilder<double>(
@@ -270,7 +325,10 @@ class _DayTapRegionState extends State<_DayTapRegion> {
               opacity: value.clamp(0, 1),
               child: Transform.scale(scale: 0.92 + 0.08 * value, child: child),
             ),
-            child: _DayPreviewCard(date: widget.date, items: widget.items),
+            child: _DayPreviewCard(
+              date: _previewDate ?? date,
+              items: _previewItems,
+            ),
           ),
         ),
       ),
@@ -278,17 +336,33 @@ class _DayTapRegionState extends State<_DayTapRegion> {
     overlay.insert(_previewEntry!);
   }
 
+  void _placePreview(Offset origin, Size size) {
+    final screen = MediaQuery.sizeOf(context);
+    final maxLeft = screen.width - _previewWidth - 8;
+    _previewLeft = (origin.dx + size.width / 2 - _previewWidth / 2)
+        .clamp(8.0, maxLeft < 8 ? 8.0 : maxLeft)
+        .toDouble();
+    final maxTop = screen.height - _previewHeight - 8;
+    var top = origin.dy + size.height + 8;
+    if (top > maxTop) top = origin.dy - _previewHeight - 8;
+    _previewTop = top.clamp(8.0, maxTop < 8 ? 8.0 : maxTop).toDouble();
+  }
+
   void _removePreview() {
     _previewEntry?.remove();
     _previewEntry = null;
+    _previewDate = null;
+    _previewItems = const [];
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: _rootKey,
       behavior: HitTestBehavior.opaque,
       onTapUp: _handleTapUp,
       onLongPressStart: _handleLongPressStart,
+      onLongPressMoveUpdate: _handleLongPressMoveUpdate,
       onLongPressEnd: _handleLongPressEnd,
       onLongPressCancel: _handleLongPressCancel,
       child: widget.child,

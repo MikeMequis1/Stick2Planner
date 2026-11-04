@@ -4,6 +4,7 @@ abstract final class SettingsKeys {
   static const portraitMode = 'planner.viewMode.portrait';
   static const landscapeMode = 'planner.viewMode.landscape';
   static const themeMode = 'planner.themeMode';
+  static const language = 'planner.language';
   static const palette = 'planner.palette';
   static const animationsEnabled = 'planner.animationsEnabled';
   static const keepScreenAwake = 'planner.keepScreenAwake';

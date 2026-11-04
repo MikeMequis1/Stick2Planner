@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app_strings.dart';
+
 /// Paletas de cor do aplicativo. O gradiente é aplicado ao fundo da casca.
 enum AppPalette {
   emerald,
@@ -8,10 +10,10 @@ enum AppPalette {
   lavender;
 
   String get label => switch (this) {
-    AppPalette.emerald => 'Verde',
-    AppPalette.ocean => 'Oceano',
-    AppPalette.sunset => 'Pôr do sol',
-    AppPalette.lavender => 'Lavanda',
+    AppPalette.emerald => AppStrings.paletteEmerald,
+    AppPalette.ocean => AppStrings.paletteOcean,
+    AppPalette.sunset => AppStrings.paletteSunset,
+    AppPalette.lavender => AppStrings.paletteLavender,
   };
 
   Color get seed => switch (this) {

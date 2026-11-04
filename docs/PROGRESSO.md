@@ -969,7 +969,7 @@ foi iniciada.
 ### Testes e resultados
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **176 testes aprovados**.
+- `flutter test`: **180 testes aprovados**.
 - `flutter build apk --debug`: aprovado.
 - Novos testes: navegação por vínculo vivo, navegação por snapshot, UUID
   ausente, opção “Abrir na Agenda” com/sem data, preservação do menu, gesto
@@ -984,3 +984,49 @@ foi iniciada.
 
 Aguardando avaliação. A interoperabilidade/sincronização pertence a uma etapa
 futura ainda não iniciada.
+
+## i18n, performance e entrega (2026-11-03)
+
+### Identidade
+
+- App renomeado para **Stick2Planner**; pacote Dart `stick2planner`.
+- `applicationId` Android preservado em `com.mikemequis1.planner`, para não
+  criar um novo app nem perder dados.
+- README reescrito de forma mais curta e direta.
+
+### Idioma
+
+- Preferência Português (BR) / English em Configurações, persistida em
+  `app_settings`.
+- Textos da interface passaram a ser resolvidos em runtime por `AppStrings`;
+  datas usam `DateFormats.locale` e padrões específicos de cada idioma.
+- MaterialApp troca `locale`, `supportedLocales` e tema sem reiniciar o app.
+
+### Paletas e desempenho
+
+- Quatro paletas com gradiente: Verde, Oceano, Pôr do sol e Lavanda.
+- O fundo da casca usa o gradiente da paleta; Scaffold transparente revela o
+  fundo sem duplicar superfícies.
+- Build **debug** medido: ~188 MB. Release split por ABI: ~19–22 MB
+  (`arm64` ~21 MB). O tamanho observado no tablet era o APK debug.
+- Banco local medido: ~80 KB para 17 post-its, 3 notas e 58 registros de
+  histórico; não há crescimento anormal por registro.
+- Grade animada foi envolvida em `RepaintBoundary`; animações principais
+  respeitam a opção “Animações” e podem ser desativadas.
+- Corrigida a chave do `AnimatedSwitcher`: a chave agora fica no `RepaintBoundary`
+  (filho direto), restaurando o folhear horizontal e o morphing vertical.
+- Eventos podem ser arrastados entre semanas visíveis; nas bordas do grid,
+  zonas “semana anterior/próxima” movem o evento em ±7 dias e levam a seleção
+  para a nova data.
+- A prévia por toque longo passou a acompanhar o dedo: ao deslizar sobre outros
+  dias visíveis, mostra a data e os post-its da célula sob o dedo.
+
+### Validação
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **180 testes aprovados**.
+- `flutter build apk --debug`: aprovado.
+- `flutter build apk --release --split-per-abi`: aprovado
+  (armeabi-v7a 18,8 MB; arm64 21,0 MB; x86_64 22,4 MB).
+- Tablet Android: instalação release, tema/idioma/paletas e navegação
+  verificados.

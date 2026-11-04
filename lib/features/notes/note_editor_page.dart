@@ -207,7 +207,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final scheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
@@ -219,58 +219,58 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _MarkdownToolButton(
-            key: const Key('note-md-h1'),
+            key: Key('note-md-h1'),
             label: 'H1',
             tooltip: AppStrings.markdownToolsHeading1,
             onPressed: () => _prefixMarkdownLines('# '),
           ),
           _MarkdownToolButton(
-            key: const Key('note-md-h2'),
+            key: Key('note-md-h2'),
             label: 'H2',
             tooltip: AppStrings.markdownToolsHeading2,
             onPressed: () => _prefixMarkdownLines('## '),
           ),
           _MarkdownToolButton(
-            key: const Key('note-md-h3'),
+            key: Key('note-md-h3'),
             label: 'H3',
             tooltip: AppStrings.markdownToolsHeading3,
             onPressed: () => _prefixMarkdownLines('### '),
           ),
           _MarkdownToolDivider(color: scheme.outlineVariant),
           _MarkdownToolIcon(
-            key: const Key('note-md-bold'),
+            key: Key('note-md-bold'),
             icon: Icons.format_bold,
             tooltip: AppStrings.markdownToolsBold,
             onPressed: () => _wrapMarkdown('**', '**', 'negrito'),
           ),
           _MarkdownToolIcon(
-            key: const Key('note-md-italic'),
+            key: Key('note-md-italic'),
             icon: Icons.format_italic,
             tooltip: AppStrings.markdownToolsItalic,
             onPressed: () => _wrapMarkdown('*', '*', 'itálico'),
           ),
           _MarkdownToolDivider(color: scheme.outlineVariant),
           _MarkdownToolIcon(
-            key: const Key('note-md-bullet'),
+            key: Key('note-md-bullet'),
             icon: Icons.format_list_bulleted,
             tooltip: AppStrings.markdownToolsBulletList,
             onPressed: () => _prefixMarkdownLines('- '),
           ),
           _MarkdownToolIcon(
-            key: const Key('note-md-numbered'),
+            key: Key('note-md-numbered'),
             icon: Icons.format_list_numbered,
             tooltip: AppStrings.markdownToolsNumberedList,
             onPressed: () => _prefixMarkdownLines('', numbered: true),
           ),
           _MarkdownToolDivider(color: scheme.outlineVariant),
           _MarkdownToolIcon(
-            key: const Key('note-md-quote'),
+            key: Key('note-md-quote'),
             icon: Icons.format_quote,
             tooltip: AppStrings.markdownToolsQuote,
             onPressed: () => _prefixMarkdownLines('> '),
           ),
           _MarkdownToolIcon(
-            key: const Key('note-md-link'),
+            key: Key('note-md-link'),
             icon: Icons.link,
             tooltip: AppStrings.markdownToolsLink,
             onPressed: () => _wrapMarkdown(
@@ -280,20 +280,20 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             ),
           ),
           _MarkdownToolIcon(
-            key: const Key('note-md-inline-code'),
+            key: Key('note-md-inline-code'),
             icon: Icons.code,
             tooltip: AppStrings.markdownToolsInlineCode,
             onPressed: () => _wrapMarkdown('`', '`', 'código'),
           ),
           _MarkdownToolIcon(
-            key: const Key('note-md-code-block'),
+            key: Key('note-md-code-block'),
             icon: Icons.terminal,
             tooltip: AppStrings.markdownToolsCodeBlock,
             onPressed: _insertCodeBlock,
           ),
           _MarkdownToolDivider(color: scheme.outlineVariant),
           _MarkdownToolIcon(
-            key: const Key('note-md-preview'),
+            key: Key('note-md-preview'),
             icon: _showPreview
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
@@ -310,7 +310,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   Widget _buildMarkdownField(ThemeData theme) {
     return TextField(
-      key: const Key('note-markdown'),
+      key: Key('note-markdown'),
       controller: _markdownController,
       focusNode: _markdownFocus,
       minLines: 12,
@@ -318,9 +318,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       keyboardType: TextInputType.multiline,
       textCapitalization: TextCapitalization.sentences,
       textAlignVertical: TextAlignVertical.top,
-      scrollPadding: const EdgeInsets.only(bottom: 160),
+      scrollPadding: EdgeInsets.only(bottom: 160),
       style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         hintText: AppStrings.markdownFieldHint,
         border: OutlineInputBorder(),
         alignLabelWithHint: true,
@@ -340,7 +340,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     if (!_showPreview) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [field, const SizedBox(height: 8), hint],
+        children: [field, SizedBox(height: 8), hint],
       );
     }
 
@@ -354,9 +354,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               field,
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               preview,
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               hint,
             ],
           );
@@ -369,11 +369,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: field),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(child: preview),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             hint,
           ],
         );
@@ -387,7 +387,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: sideBySide ? 320 : 0),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
@@ -404,14 +404,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 size: 16,
                 color: scheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 AppStrings.markdownPreviewTitle,
                 style: theme.textTheme.labelLarge,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: _markdownController,
             builder: (context, value, _) {
@@ -476,14 +476,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     } on NoteValidationException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.noteTitleRequired)),
+          SnackBar(content: Text(AppStrings.noteTitleRequired)),
         );
       }
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text(AppStrings.noteSaveError)));
+        ).showSnackBar(SnackBar(content: Text(AppStrings.noteSaveError)));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -501,29 +501,29 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         ),
         actions: [
           TextButton(
-            key: const Key('note-save'),
+            key: Key('note-save'),
             onPressed: _saving ? null : _save,
-            child: const Text(AppStrings.save),
+            child: Text(AppStrings.save),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         children: [
           TextField(
-            key: const Key('note-title'),
+            key: Key('note-title'),
             controller: _titleController,
             maxLength: 120,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: AppStrings.noteTitle,
               border: OutlineInputBorder(),
               counterText: '',
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           SegmentedButton<NoteType>(
             showSelectedIcon: false,
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: NoteType.text,
                 label: Text(AppStrings.noteTypeText),
@@ -536,15 +536,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             selected: {_type},
             onSelectionChanged: (selection) => _changeType(selection.first),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           if (_isText) ...[
             _buildMarkdownToolbar(theme),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildMarkdownEditor(theme),
           ] else ...[
             for (var index = 0; index < _lines.length; index++)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -563,7 +563,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                         textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           hintText: AppStrings.lineHint,
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
@@ -571,19 +571,19 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                     IconButton(
                       tooltip: AppStrings.moveUp,
                       onPressed: index == 0 ? null : () => _moveLine(index, -1),
-                      icon: const Icon(Icons.arrow_upward, size: 18),
+                      icon: Icon(Icons.arrow_upward, size: 18),
                     ),
                     IconButton(
                       tooltip: AppStrings.moveDown,
                       onPressed: index == _lines.length - 1
                           ? null
                           : () => _moveLine(index, 1),
-                      icon: const Icon(Icons.arrow_downward, size: 18),
+                      icon: Icon(Icons.arrow_downward, size: 18),
                     ),
                     IconButton(
                       tooltip: AppStrings.delete,
                       onPressed: () => _removeLine(index),
-                      icon: const Icon(Icons.delete_outline, size: 18),
+                      icon: Icon(Icons.delete_outline, size: 18),
                     ),
                   ],
                 ),
@@ -591,13 +591,13 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                key: const Key('note-add-line'),
+                key: Key('note-add-line'),
                 onPressed: _addLine,
-                icon: const Icon(Icons.add),
-                label: const Text(AppStrings.addLine),
+                icon: Icon(Icons.add),
+                label: Text(AppStrings.addLine),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               AppStrings.selectLinesHint,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -630,13 +630,13 @@ class _MarkdownToolButton extends StatelessWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          minimumSize: const Size(40, 36),
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          minimumSize: Size(40, 36),
+          padding: EdgeInsets.symmetric(horizontal: 6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -665,7 +665,7 @@ class _MarkdownToolIcon extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon, size: 19),
       style: IconButton.styleFrom(
-        minimumSize: const Size(38, 36),
+        minimumSize: Size(38, 36),
         padding: EdgeInsets.zero,
         foregroundColor: selected ? scheme.primary : null,
         backgroundColor: selected ? scheme.primaryContainer : null,
@@ -685,7 +685,7 @@ class _MarkdownToolDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 22,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: EdgeInsets.symmetric(horizontal: 4),
       color: color,
     );
   }

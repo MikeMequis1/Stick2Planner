@@ -218,6 +218,14 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Gestos de data:** um toque seleciona; dois toques abrem a criação de tarefa;
   três abrem a criação de evento; toque longo abre uma prévia flutuante que
   fecha ao soltar. O encadeamento de múltiplos toques usa janela de 300 ms.
+- **Prévia acompanha o dedo:** durante o toque longo, mover o dedo sobre outros
+  dias visíveis atualiza a data e os post-its da prévia. O gesto fica preso à
+  célula de origem, então as células registram sua geometria em um
+  `DayPreviewRegistry` por grade; o retângulo sob o dedo define a data exibida.
+- **Eventos entre semanas:** arraste normal alcança qualquer semana visível; nas
+  bordas do grid aparecem zonas para mover ±7 dias e atualizar a data selecionada.
+- **Transições:** a chave do `AnimatedSwitcher` fica no filho direto
+  (`RepaintBoundary`), garantindo folhear horizontal e morphing vertical.
 - **Barras de evento:** o conteúdo é recuado das alças para o ícone não ficar sob
   o início; as alças têm grip visível e 24×24 dp de toque. O arraste começa após
   200 ms, evitando a sensação de travamento sem arrastar por acidente.
@@ -271,6 +279,20 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Proveniência do snapshot:** `sourceNoteId` é metadado de origem para
   navegação; não é vínculo vivo, não altera o snapshot e não impede a nota de
   ser editada/excluída. Snapshots anteriores à migração v4 não têm proveniência.
+
+## Idioma, desempenho e tamanho
+
+- **Idioma:** Português (BR) e English, persistido em `app_settings`.
+  `AppStrings` resolve textos em runtime; `DateFormats.locale` escolhe os
+  padrões de data. Sem serviço externo e sem reiniciar o app.
+- **Paletas:** quatro gradientes (Verde, Oceano, Pôr do sol, Lavanda) combinados
+  com claro/escuro; a cor-semente continua vindo do Material 3.
+- **Desempenho:** build release split é a referência. O debug carrega runtime e
+  símbolos (~188 MB); release arm64 ~21 MB. Grade principal em
+  `RepaintBoundary`; animações podem ser desligadas em Configurações.
+- **Dados:** SQLite compacto (~80 KB para 17 post-its, 3 notas e 58 registros de
+  histórico). Histórico é mantido por auditoria, não por duplicação de eventos.
+- README enxuto; detalhes históricos ficam em `docs/PROGRESSO.md`.
 
 ## Interoperabilidade, backup e sincronização (etapa futura)
 

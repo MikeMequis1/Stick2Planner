@@ -13,6 +13,7 @@ import 'widgets/calendar_toolbar.dart';
 import 'widgets/day_details_sheet.dart';
 import 'widgets/hidden_events_sheet.dart';
 import 'widgets/post_it_editor_sheet.dart';
+import 'widgets/post_it_drag_data.dart';
 import 'widgets/post_it_navigation.dart';
 
 /// Agenda visual por período, com post-its e eventos multi-dia contínuos.
@@ -26,6 +27,7 @@ class AgendaPage extends StatefulWidget {
 class _AgendaPageState extends State<AgendaPage> {
   int _pageTurnDirection = 1;
   _GridMotion _gridMotion = _GridMotion.page;
+  bool _eventDragActive = false;
 
   @override
   Widget build(BuildContext context) {
@@ -99,114 +101,166 @@ class _AgendaPageState extends State<AgendaPage> {
           ],
           const SizedBox(height: 8),
           Expanded(
-            child: GestureDetector(
-              key: const Key('calendar-swipe-area'),
-              behavior: HitTestBehavior.translucent,
-              onHorizontalDragEnd: (details) {
-                final dx = details.velocity.pixelsPerSecond.dx;
-                if (dx.abs() < 220) return;
-                if (dx < 0) {
-                  _turnPage(1, () => planner.nextPeriod(mode));
-                } else {
-                  _turnPage(-1, () => planner.previousPeriod(mode));
-                }
-              },
-              onVerticalDragEnd: (details) {
-                final dy = details.velocity.pixelsPerSecond.dy;
-                if (dy.abs() < 220) return;
-                final increase = dy < 0;
-                if (increase && !planner.canIncreaseMode(orientation)) return;
-                if (!increase && !planner.canDecreaseMode(orientation)) return;
-                _turnPage(
-                  increase ? 1 : -1,
-                  () => planner.cycleMode(increase ? 1 : -1, orientation),
-                  morph: true,
-                );
-              },
-              child: AnimatedSwitcher(
-                duration: settings.animationsEnabled
-                    ? Duration(
-                        milliseconds: _gridMotion == _GridMotion.page
-                            ? 520
-                            : 360,
-                      )
-                    : Duration.zero,
-                switchInCurve: Curves.easeInOutCubic,
-                switchOutCurve: Curves.easeInOutCubic,
-                layoutBuilder: (current, previous) => Stack(
-                  fit: StackFit.expand,
-                  children: [...previous, ?current],
-                ),
-                transitionBuilder: (child, animation) =>
-                    _gridMotion == _GridMotion.page
-                    ? _pageTurnTransition(
-                        child,
-                        animation,
-                        settings.animationsEnabled,
-                      )
-                    : _morphTransition(
-                        child,
-                        animation,
-                        settings.animationsEnabled,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    key: const Key('calendar-swipe-area'),
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd: (details) {
+                      final dx = details.velocity.pixelsPerSecond.dx;
+                      if (dx.abs() < 220) return;
+                      if (dx < 0) {
+                        _turnPage(1, () => planner.nextPeriod(mode));
+                      } else {
+                        _turnPage(-1, () => planner.previousPeriod(mode));
+                      }
+                    },
+                    onVerticalDragEnd: (details) {
+                      final dy = details.velocity.pixelsPerSecond.dy;
+                      if (dy.abs() < 220) return;
+                      final increase = dy < 0;
+                      if (increase && !planner.canIncreaseMode(orientation)) {
+                        return;
+                      }
+                      if (!increase && !planner.canDecreaseMode(orientation)) {
+                        return;
+                      }
+                      _turnPage(
+                        increase ? 1 : -1,
+                        () => planner.cycleMode(increase ? 1 : -1, orientation),
+                        morph: true,
+                      );
+                    },
+                    child: AnimatedSwitcher(
+                      duration: settings.animationsEnabled
+                          ? Duration(
+                              milliseconds: _gridMotion == _GridMotion.page
+                                  ? 520
+                                  : 360,
+                            )
+                          : Duration.zero,
+                      switchInCurve: Curves.easeInOutCubic,
+                      switchOutCurve: Curves.easeInOutCubic,
+                      layoutBuilder: (current, previous) => Stack(
+                        fit: StackFit.expand,
+                        children: [...previous, ?current],
                       ),
-                child: CalendarGrid(
-                  key: ValueKey(
-                    'calendar-grid-${mode.name}-'
-                    '${period.start.toIso8601String()}-'
-                    '${period.end.toIso8601String()}',
-                  ),
-                  period: period,
-                  focusedPostItId: AppScope.of(context)
-                      .navigation
-                      .focusedPostItId,
-                  postIts: planner.postIts,
-                  today: planner.today,
-                  selectedDate: planner.selectedDate,
-                  onDaySelected: planner.selectDate,
-                  onPostItTap: (postIt) =>
-                      _openDetails(context, planner, postIt),
-                  onShowDay: (date) => showDayDetailsSheet(
-                    context,
-                    date: date,
-                    postIts: planner.postItsOn(date),
-                    onPostItSelected: (postIt) =>
-                        _openDetails(context, planner, postIt),
-                  ),
-                  onMovePostIt: (postIt, date) => _runGuarded(
-                    context,
-                    () => planner.movePostIt(postIt, date),
-                    AppStrings.errorMove,
-                  ),
-                  onReorderTo: (postIt, date, index) => _runGuarded(
-                    context,
-                    () => planner.movePostIt(postIt, date, targetIndex: index),
-                    AppStrings.errorMove,
-                  ),
-                  onResizeEvent: (postIt, start, end) => _runGuarded(
-                    context,
-                    () => planner.resizeEvent(
-                      postIt,
-                      startDate: start,
-                      endDate: end,
+                      transitionBuilder: (child, animation) =>
+                          _gridMotion == _GridMotion.page
+                          ? _pageTurnTransition(
+                              child,
+                              animation,
+                              settings.animationsEnabled,
+                            )
+                          : _morphTransition(
+                              child,
+                              animation,
+                              settings.animationsEnabled,
+                            ),
+                      child: RepaintBoundary(
+                        key: ValueKey(
+                          'calendar-grid-${mode.name}-'
+                          '${period.start.toIso8601String()}-'
+                          '${period.end.toIso8601String()}',
+                        ),
+                        child: CalendarGrid(
+                          period: period,
+                          focusedPostItId: AppScope.of(context)
+                              .navigation
+                              .focusedPostItId,
+                          postIts: planner.postIts,
+                          today: planner.today,
+                          selectedDate: planner.selectedDate,
+                          onDaySelected: planner.selectDate,
+                          onPostItTap: (postIt) =>
+                              _openDetails(context, planner, postIt),
+                          onShowDay: (date) => showDayDetailsSheet(
+                            context,
+                            date: date,
+                            postIts: planner.postItsOn(date),
+                            onPostItSelected: (postIt) =>
+                                _openDetails(context, planner, postIt),
+                          ),
+                          onMovePostIt: (postIt, date) => _runGuarded(
+                            context,
+                            () => planner.movePostIt(postIt, date),
+                            AppStrings.errorMove,
+                          ),
+                          onReorderTo: (postIt, date, index) => _runGuarded(
+                            context,
+                            () => planner.movePostIt(
+                              postIt,
+                              date,
+                              targetIndex: index,
+                            ),
+                            AppStrings.errorMove,
+                          ),
+                          onResizeEvent: (postIt, start, end) => _runGuarded(
+                            context,
+                            () => planner.resizeEvent(
+                              postIt,
+                              startDate: start,
+                              endDate: end,
+                            ),
+                            AppStrings.errorResize,
+                          ),
+                          onShowHiddenEvents: (events) => showHiddenEventsSheet(
+                            context,
+                            events: events,
+                            onPostItSelected: (postIt) =>
+                                _openDetails(context, planner, postIt),
+                          ),
+                          onQuickCreateTask: (date) => _openQuickCreate(
+                            context,
+                            planner,
+                            date,
+                            PostItType.task,
+                          ),
+                          onQuickCreateEvent: (date) => _openQuickCreate(
+                            context,
+                            planner,
+                            date,
+                            PostItType.event,
+                          ),
+                          onEventDragActive: (active) {
+                            if (!mounted || _eventDragActive == active) return;
+                            setState(() => _eventDragActive = active);
+                          },
+                        ),
+                      ),
                     ),
-                    AppStrings.errorResize,
-                  ),
-                  onShowHiddenEvents: (events) => showHiddenEventsSheet(
-                    context,
-                    events: events,
-                    onPostItSelected: (postIt) =>
-                        _openDetails(context, planner, postIt),
-                  ),
-                  onQuickCreateTask: (date) =>
-                      _openQuickCreate(context, planner, date, PostItType.task),
-                  onQuickCreateEvent: (date) => _openQuickCreate(
-                    context,
-                    planner,
-                    date,
-                    PostItType.event,
                   ),
                 ),
-              ),
+                if (_eventDragActive) ...[
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 56,
+                    child: _EventWeekDropZone(
+                      key: const Key('event-week-prev'),
+                      icon: Icons.chevron_left,
+                      label: AppStrings.previousPeriod,
+                      onAccept: (postIt) =>
+                          _moveEventByWeek(context, planner, postIt, -7),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 56,
+                    child: _EventWeekDropZone(
+                      key: const Key('event-week-next'),
+                      icon: Icons.chevron_right,
+                      label: AppStrings.nextPeriod,
+                      onAccept: (postIt) =>
+                          _moveEventByWeek(context, planner, postIt, 7),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -239,6 +293,25 @@ class _AgendaPageState extends State<AgendaPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _moveEventByWeek(
+    BuildContext context,
+    PlannerController planner,
+    PostIt postIt,
+    int days,
+  ) async {
+    final start = postIt.startDate;
+    if (start == null) return;
+    final target = start.addDays(days);
+    try {
+      await planner.movePostIt(postIt, target);
+      await planner.selectDate(target);
+    } on Object {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AppStrings.errorMove)));
+    }
   }
 
   Widget _undatedChip(ThemeData theme, PlannerController planner) {
@@ -354,3 +427,56 @@ class _AgendaPageState extends State<AgendaPage> {
 }
 
 enum _GridMotion { page, morph }
+
+class _EventWeekDropZone extends StatelessWidget {
+  const _EventWeekDropZone({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onAccept,
+  });
+
+  final IconData icon;
+  final String label;
+  final ValueChanged<PostIt> onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DragTarget<PostItDragData>(
+      onWillAcceptWithDetails: (details) => details.data.postIt.isEvent,
+      onAcceptWithDetails: (details) => onAccept(details.data.postIt),
+      builder: (context, candidateData, rejectedData) {
+        final active = candidateData.isNotEmpty;
+        return Tooltip(
+          message: label,
+          child: Material(
+            color: theme.colorScheme.primaryContainer.withValues(
+              alpha: active ? 0.72 : 0.34,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 28,
+                  ),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

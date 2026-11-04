@@ -28,8 +28,8 @@ class PlannerApp extends StatelessWidget {
           return MaterialApp(
             title: AppStrings.appName,
             debugShowCheckedModeBanner: false,
-            locale: const Locale('pt', 'BR'),
-            supportedLocales: const [Locale('pt', 'BR')],
+            locale: settings.language.locale,
+            supportedLocales: const [Locale('pt', 'BR'), Locale('en')],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
@@ -67,7 +67,7 @@ class PlannerApp extends StatelessWidget {
                 ),
               );
             },
-            home: const HomeShell(),
+            home: HomeShell(),
           );
         },
       ),

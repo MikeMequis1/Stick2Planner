@@ -29,7 +29,7 @@ Future<void> showDayDetailsSheet(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -37,7 +37,7 @@ Future<void> showDayDetailsSheet(
                       DateFormats.fullDate(date),
                       style: theme.textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       '${postIts.length} ${AppStrings.postItsOnDay.toLowerCase()}',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -47,19 +47,19 @@ Future<void> showDayDetailsSheet(
                   ],
                 ),
               ),
-              const Divider(height: 1),
+              Divider(height: 1),
               Expanded(
                 child: postIts.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.event_available_outlined,
                         title: AppStrings.emptyDay,
                         message: AppStrings.calendarHint,
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         itemCount: postIts.length,
                         separatorBuilder: (context, index) =>
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final postIt = postIts[index];
                           return SizedBox(

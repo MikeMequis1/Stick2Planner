@@ -119,7 +119,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       initialDate: initial.toLocalDateTime(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      locale: const Locale('pt', 'BR'),
+      locale: Locale('pt', 'BR'),
       helpText: AppStrings.fieldStartDate,
     );
     if (picked == null) return;
@@ -143,7 +143,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       initialDate: initial.toLocalDateTime(),
       firstDate: start.toLocalDateTime(),
       lastDate: DateTime(2100),
-      locale: const Locale('pt', 'BR'),
+      locale: Locale('pt', 'BR'),
       helpText: AppStrings.fieldEndDate,
     );
     if (picked == null) return;
@@ -197,7 +197,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       });
     } on Object {
       if (!mounted) return;
-      setState(() => _errors = const [AppStrings.errorSave]);
+      setState(() => _errors = [AppStrings.errorSave]);
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -213,14 +213,14 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         MediaQuery.sizeOf(context).height - bottomInset;
 
     return AnimatedPadding(
-      duration: const Duration(milliseconds: 150),
+      duration: Duration(milliseconds: 150),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: availableHeight * 0.95,
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -231,19 +231,19 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     : AppStrings.editPostIt,
                 style: theme.textTheme.titleLarge,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (_isRecurring)
                 InputDecorator(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: AppStrings.fieldType,
                     border: OutlineInputBorder(),
                   ),
-                  child: const Text(AppStrings.recurringType),
+                  child: Text(AppStrings.recurringType),
                 )
               else
                 SegmentedButton<PostItType>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: PostItType.task,
                       label: Text(AppStrings.taskType),
@@ -261,43 +261,43 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   onSelectionChanged: (selection) =>
                       _changeType(selection.first),
                 ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
-                key: const Key('editor-title'),
+                key: Key('editor-title'),
                 controller: _titleController,
                 maxLength: 120,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: AppStrings.fieldTitle,
                   border: OutlineInputBorder(),
                   counterText: '',
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TextField(
-                key: const Key('editor-details'),
+                key: Key('editor-details'),
                 controller: _detailsController,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: AppStrings.fieldDetails,
                   border: OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
               ),
               if (!_isRecurringType) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   _isEvent
                       ? AppStrings.fieldStartDate
                       : AppStrings.fieldDate,
                   style: theme.textTheme.labelMedium,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 if (!_isEvent)
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(AppStrings.fieldNoDate),
+                    title: Text(AppStrings.fieldNoDate),
                     value: _startDate == null,
                     onChanged: (withoutDate) {
                       setState(() {
@@ -309,23 +309,23 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   ),
                 if (_isEvent || _startDate != null)
                   _DateField(
-                    key: const Key('editor-start-date'),
+                    key: Key('editor-start-date'),
                     label: AppStrings.fieldStartDate,
                     date: _startDate,
                     onTap: _pickStartDate,
                   ),
                 if (_isEvent) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _DateField(
-                    key: const Key('editor-end-date'),
+                    key: Key('editor-end-date'),
                     label: AppStrings.fieldEndDate,
                     date: _endDate ?? _startDate,
                     onTap: _pickEndDate,
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(AppStrings.fieldHighlight),
-                    subtitle: const Text(
+                    title: Text(AppStrings.fieldHighlight),
+                    subtitle: Text(
                       '${AppStrings.highlightSymbol} ${AppStrings.highlightType}',
                     ),
                     value: _isHighlight,
@@ -334,11 +334,11 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   ),
                 ],
               ] else ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Card(
                   margin: EdgeInsets.zero,
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -346,7 +346,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                           Icons.repeat,
                           color: theme.colorScheme.primary,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             AppStrings.recurringHelp,
@@ -361,9 +361,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 ),
               ],
               if (_errors.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -382,24 +382,24 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               FilledButton.icon(
-                key: const Key('editor-save'),
+                key: Key('editor-save'),
                 onPressed: _saving ? null : _save,
                 icon: _saving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.save_outlined),
-                label: const Text(AppStrings.save),
+                    : Icon(Icons.save_outlined),
+                label: Text(AppStrings.save),
               ),
               TextButton(
                 onPressed: _saving
                     ? null
                     : () => Navigator.of(context).pop(),
-                child: const Text(AppStrings.cancel),
+                child: Text(AppStrings.cancel),
               ),
             ],
           ),
@@ -428,13 +428,13 @@ class _DateField extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: ListTile(
-        leading: const Icon(Icons.calendar_today_outlined),
+        leading: Icon(Icons.calendar_today_outlined),
         title: Text(label),
         subtitle: Text(
           date == null ? AppStrings.undated : DateFormats.shortDate(date!),
           style: theme.textTheme.bodyMedium,
         ),
-        trailing: const Icon(Icons.edit_outlined),
+        trailing: Icon(Icons.edit_outlined),
         onTap: onTap,
       ),
     );

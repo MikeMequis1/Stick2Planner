@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 // ignore_for_file: prefer_initializing_formals
 
 import '../../domain/repositories/settings_repository.dart';
+import '../app_strings.dart';
 import '../services/screen_wake_service.dart';
 import '../settings_keys.dart';
 import '../theme/app_palette.dart';
+import '../../core/date_formatting.dart';
 
 /// Preferências globais do aplicativo.
 final class AppSettingsController extends ChangeNotifier {
@@ -22,6 +24,7 @@ final class AppSettingsController extends ChangeNotifier {
   final ScreenWakeService _screenWake;
 
   ThemeMode _themeMode = ThemeMode.system;
+  AppLanguage _language = AppLanguage.ptBr;
   AppPalette _palette = AppPalette.emerald;
   bool _animationsEnabled = true;
   bool _keepScreenAwake = true;
@@ -29,6 +32,7 @@ final class AppSettingsController extends ChangeNotifier {
   bool _isLoading = true;
 
   ThemeMode get themeMode => _themeMode;
+  AppLanguage get language => _language;
   AppPalette get palette => _palette;
   bool get animationsEnabled => _animationsEnabled;
   bool get keepScreenAwake => _keepScreenAwake;
@@ -39,6 +43,9 @@ final class AppSettingsController extends ChangeNotifier {
     try {
       final values = await _settingsRepository.loadAll();
       _themeMode = _parseTheme(values[SettingsKeys.themeMode]);
+      _language = _parseLanguage(values[SettingsKeys.language]);
+      AppStrings.setLanguage(_language);
+      DateFormats.locale = _language.dateLocale;
       _palette = _parsePalette(values[SettingsKeys.palette]);
       _animationsEnabled = values[SettingsKeys.animationsEnabled] != 'false';
       _keepScreenAwake = values[SettingsKeys.keepScreenAwake] != 'false';
@@ -57,6 +64,15 @@ final class AppSettingsController extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
     await _settingsRepository.write(SettingsKeys.themeMode, mode.name);
+  }
+
+  Future<void> setLanguage(AppLanguage language) async {
+    if (_language == language) return;
+    _language = language;
+    AppStrings.setLanguage(language);
+    DateFormats.locale = language.dateLocale;
+    notifyListeners();
+    await _settingsRepository.write(SettingsKeys.language, language.name);
   }
 
   Future<void> setPalette(AppPalette palette) async {
@@ -122,5 +138,9 @@ final class AppSettingsController extends ChangeNotifier {
       if (palette.name == value) return palette;
     }
     return AppPalette.emerald;
+  }
+
+  static AppLanguage _parseLanguage(String? value) {
+    return value == AppLanguage.en.name ? AppLanguage.en : AppLanguage.ptBr;
   }
 }
