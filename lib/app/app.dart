@@ -35,8 +35,8 @@ class PlannerApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
+            theme: AppTheme.light(settings.palette),
+            darkTheme: AppTheme.dark(settings.palette),
             themeMode: settings.themeMode,
             builder: (context, child) {
               final dark = Theme.of(context).brightness == Brightness.dark;
@@ -56,7 +56,14 @@ class PlannerApp extends StatelessWidget {
                     systemStatusBarContrastEnforced: false,
                     systemNavigationBarContrastEnforced: false,
                   ),
-                  child: child ?? const SizedBox.shrink(),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: settings.palette.linearGradient(
+                        dark ? Brightness.dark : Brightness.light,
+                      ),
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               );
             },

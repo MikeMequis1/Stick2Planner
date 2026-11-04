@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_schedule/app/app.dart';
-import 'package:flutter_schedule/app/app_strings.dart';
-import 'package:flutter_schedule/app/bootstrap.dart';
-import 'package:flutter_schedule/core/date_only.dart';
-import 'package:flutter_schedule/domain/entities/post_it.dart';
+import 'package:stick2planner/app/app.dart';
+import 'package:stick2planner/app/app_strings.dart';
+import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/domain/entities/post_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../services/screen_wake_service.dart';
 import '../settings_keys.dart';
+import '../theme/app_palette.dart';
 
 /// Preferências globais do aplicativo.
 final class AppSettingsController extends ChangeNotifier {
@@ -21,12 +22,14 @@ final class AppSettingsController extends ChangeNotifier {
   final ScreenWakeService _screenWake;
 
   ThemeMode _themeMode = ThemeMode.system;
+  AppPalette _palette = AppPalette.emerald;
   bool _animationsEnabled = true;
   bool _keepScreenAwake = true;
   bool _showCalendarHints = true;
   bool _isLoading = true;
 
   ThemeMode get themeMode => _themeMode;
+  AppPalette get palette => _palette;
   bool get animationsEnabled => _animationsEnabled;
   bool get keepScreenAwake => _keepScreenAwake;
   bool get showCalendarHints => _showCalendarHints;
@@ -36,6 +39,7 @@ final class AppSettingsController extends ChangeNotifier {
     try {
       final values = await _settingsRepository.loadAll();
       _themeMode = _parseTheme(values[SettingsKeys.themeMode]);
+      _palette = _parsePalette(values[SettingsKeys.palette]);
       _animationsEnabled = values[SettingsKeys.animationsEnabled] != 'false';
       _keepScreenAwake = values[SettingsKeys.keepScreenAwake] != 'false';
       _showCalendarHints = values[SettingsKeys.showCalendarHints] != 'false';
@@ -53,6 +57,13 @@ final class AppSettingsController extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
     await _settingsRepository.write(SettingsKeys.themeMode, mode.name);
+  }
+
+  Future<void> setPalette(AppPalette palette) async {
+    if (_palette == palette) return;
+    _palette = palette;
+    notifyListeners();
+    await _settingsRepository.write(SettingsKeys.palette, palette.name);
   }
 
   Future<void> setAnimationsEnabled(bool enabled) async {
@@ -104,5 +115,12 @@ final class AppSettingsController extends ChangeNotifier {
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
+  }
+
+  static AppPalette _parsePalette(String? value) {
+    for (final palette in AppPalette.values) {
+      if (palette.name == value) return palette;
+    }
+    return AppPalette.emerald;
   }
 }

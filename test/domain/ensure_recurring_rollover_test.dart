@@ -1,7 +1,7 @@
-import 'package:flutter_schedule/core/date_only.dart';
-import 'package:flutter_schedule/domain/entities/post_it.dart';
-import 'package:flutter_schedule/domain/entities/post_it_history.dart';
-import 'package:flutter_schedule/domain/usecases/ensure_recurring_rollover.dart';
+import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/post_it_history.dart';
+import 'package:stick2planner/domain/usecases/ensure_recurring_rollover.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/entities.dart';

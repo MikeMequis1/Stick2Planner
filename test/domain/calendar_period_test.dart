@@ -1,6 +1,6 @@
-import 'package:flutter_schedule/core/date_only.dart';
-import 'package:flutter_schedule/domain/calendar/agenda_view_mode.dart';
-import 'package:flutter_schedule/domain/calendar/calendar_period.dart';
+import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/domain/calendar/agenda_view_mode.dart';
+import 'package:stick2planner/domain/calendar/calendar_period.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

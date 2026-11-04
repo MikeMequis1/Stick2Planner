@@ -1,6 +1,6 @@
-import 'package:flutter_schedule/core/date_only.dart';
-import 'package:flutter_schedule/domain/entities/post_it.dart';
-import 'package:flutter_schedule/domain/usecases/validate_post_it.dart';
+import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/usecases/validate_post_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/entities.dart';

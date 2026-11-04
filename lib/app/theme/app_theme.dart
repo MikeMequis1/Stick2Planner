@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Tema Material 3 do planner.
+import 'app_palette.dart';
+
+/// Tema Material 3 do Stick2Planner.
 ///
-/// Cores derivam do seed e nunca são o único indicador de estado: os cartões
-/// sempre combinam ícone/símbolo e rótulo.
+/// Cores derivam da paleta escolhida e nunca são o único indicador de estado:
+/// cartões sempre combinam ícone/símbolo e rótulo. O fundo usa um gradiente
+/// sutil definido por [AppPalette].
 abstract final class AppTheme {
-  static const Color seedColor = Color(0xFF2F6F5E);
+  static ThemeData light([AppPalette palette = AppPalette.emerald]) =>
+      _base(Brightness.light, palette);
 
-  static ThemeData light() => _base(Brightness.light);
+  static ThemeData dark([AppPalette palette = AppPalette.emerald]) =>
+      _base(Brightness.dark, palette);
 
-  static ThemeData dark() => _base(Brightness.dark);
-
-  static ThemeData _base(Brightness brightness) {
+  static ThemeData _base(Brightness brightness, AppPalette palette) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
+      seedColor: palette.seed,
       brightness: brightness,
     );
 
@@ -22,7 +25,8 @@ abstract final class AppTheme {
       useMaterial3: true,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: Colors.transparent,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_schedule/app/app.dart';
-import 'package:flutter_schedule/app/app_strings.dart';
-import 'package:flutter_schedule/app/bootstrap.dart';
+import 'package:stick2planner/app/app.dart';
+import 'package:stick2planner/app/app_strings.dart';
+import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/app/theme/app_palette.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -44,6 +45,10 @@ void main() {
     await tester.tap(find.text(AppStrings.settingsThemeDark));
     await tester.pumpAndSettle();
     expect(dependencies.settings.themeMode, ThemeMode.dark);
+
+    await tester.tap(find.byKey(const Key('settings-palette-ocean')));
+    await tester.pumpAndSettle();
+    expect(dependencies.settings.palette, AppPalette.ocean);
 
     await tester.tap(find.byKey(const Key('settings-animations')));
     await tester.pumpAndSettle();

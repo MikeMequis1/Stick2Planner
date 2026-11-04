@@ -943,8 +943,9 @@ foi iniciada.
   lenta (520 ms, rotação 3D); deslizar na vertical faz morphing (fade + escala
   0,92 → 1, 360 ms) ao aumentar/reduzir os dias.
 - Barra lateral: trilho com largura mínima de 88 dp e altura total da casca.
-- Configurações: tema Sistema/Claro/Escuro, animações, manter tela ligada e
-  dicas da agenda, persistidos em `app_settings`.
+- Configurações: tema Sistema/Claro/Escuro, quatro paletas com gradiente
+  (Verde, Oceano, Pôr do sol e Lavanda), animações, manter tela ligada e dicas
+  da agenda, persistidos em `app_settings`.
 
 ### Modelo e compatibilidade
 

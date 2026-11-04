@@ -1,7 +1,7 @@
 import 'package:drift/native.dart';
-import 'package:flutter_schedule/app/bootstrap.dart';
-import 'package:flutter_schedule/core/clock.dart';
-import 'package:flutter_schedule/data/db/app_database.dart';
+import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/core/clock.dart';
+import 'package:stick2planner/data/db/app_database.dart';
 
 /// Relógio fixo para testes determinísticos.
 final class FixedClock implements Clock {

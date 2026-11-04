@@ -1,6 +1,6 @@
 import 'package:drift/native.dart';
-import 'package:flutter_schedule/data/db/app_database.dart';
-import 'package:flutter_schedule/data/repositories/drift_settings_repository.dart';
+import 'package:stick2planner/data/db/app_database.dart';
+import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

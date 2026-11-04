@@ -1,6 +1,6 @@
-# Planner
+# Stick2Planner
 
-Planner visual offline-first para tablets Android. A agenda é organizada em
+Stick2Planner é um planner visual offline-first para tablets Android. A agenda é organizada em
 folhas por data, com post-its de tarefas, eventos, eventos marcantes e TO-DOs
 recorrentes. Todo o conteúdo fica em um banco SQLite local; nenhuma
 funcionalidade essencial depende de internet.
@@ -171,8 +171,9 @@ não importa Flutter nem drift.
   folheia o período com rotação 3D (520 ms); deslizar na vertical faz morphing
   (fade + escala) ao alterar os dias. O realce de post-it usa borda, escala e
   elevação por 4 s.
-- **Configurações:** tela com tema Sistema/Claro/Escuro, animações, manter tela
-  ligada e dicas da agenda, persistidas localmente.
+- **Configurações:** tela com tema Sistema/Claro/Escuro, quatro paletas com
+  gradiente (Verde, Oceano, Pôr do sol e Lavanda), animações, manter tela ligada
+  e dicas da agenda, persistidas localmente.
 - **Soltura sem flicker:** mover ou redimensionar atualiza a barra
   imediatamente; a persistência acontece em seguida e o estado anterior é
   restaurado se a escrita falhar.
@@ -257,6 +258,7 @@ Nada disso foi implementado nesta etapa. Detalhes e limites em
 
 ## Identificador do aplicativo
 
-`applicationId` definitivo: **`com.mikemequis1.planner`**. Nome de exibição:
-**Planner**. Alterar o ID depois de instalar implica novo app e perda dos dados
-locais existentes.
+`applicationId` mantido: **`com.mikemequis1.planner`**. Nome de exibição:
+**Stick2Planner**. O ID foi preservado para não criar um novo app nem perder os
+dados locais existentes. Alterar o ID depois de instalar implica novo app e perda
+dos dados locais.

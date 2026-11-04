@@ -1,6 +1,6 @@
 /// Textos da interface em pt_BR, centralizados para permitir i18n futura.
 abstract final class AppStrings {
-  static const appName = 'Planner';
+  static const appName = 'Stick2Planner';
 
   static const agenda = 'Agenda';
   static const inbox = 'Caixinha';
@@ -137,6 +137,9 @@ abstract final class AppStrings {
   static const settingsThemeSystem = 'Sistema';
   static const settingsThemeLight = 'Claro';
   static const settingsThemeDark = 'Escuro';
+  static const settingsPalette = 'Paleta de cores';
+  static const settingsPaletteHelp =
+      'Gradiente de fundo e cor de destaque do aplicativo.';
   static const settingsAnimations = 'Animações';
   static const settingsAnimationsHelp =
       'Ativa transições, folhear de páginas e efeitos de toque.';

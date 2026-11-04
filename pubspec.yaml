@@ -1,5 +1,5 @@
-name: flutter_schedule
-description: "Planner visual offline-first para tablets Android."
+name: stick2planner
+description: "Stick2Planner - planner visual offline-first para tablets Android."
 publish_to: 'none'
 
 version: 0.1.0+1

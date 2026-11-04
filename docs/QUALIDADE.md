@@ -12,7 +12,8 @@ Checklist final do MVP local do Planner.
   com “Abrir na Agenda” para post-its datados.
 - Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 → v4 e
   tombstones.
-- Configurações: tema, animações, wakelock e dicas persistidos localmente.
+- Configurações: tema, quatro paletas com gradiente, animações, wakelock e
+  dicas persistidos localmente.
 
 ## Matriz de validação
 

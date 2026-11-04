@@ -230,7 +230,8 @@ etapas. Cada item: contexto, decisão, consequência.
   horizontal folheia com rotação 3D (520 ms) e a mudança vertical de dias usa
   morphing fade + escala (360 ms). Redimensionamento acompanha o dedo em tempo
   real. O post-it destacado usa borda, escala 1,05 e elevação por 4 s.
-- **Configurações:** tela com tema Sistema/Claro/Escuro, animações, manter tela
+- **Configurações:** tela com tema Sistema/Claro/Escuro, quatro paletas com
+  gradiente (Verde, Oceano, Pôr do sol e Lavanda), animações, manter tela
   ligada e dicas da agenda. Preferências ficam em `app_settings`; desligar
   animações zera as transições principais e o folhear/morphing.
 - No mês compacto, o padding interno da célula é reduzido para preservar ao

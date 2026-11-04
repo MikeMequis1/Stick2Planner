@@ -1,6 +1,6 @@
-import 'package:flutter_schedule/domain/entities/post_it.dart';
-import 'package:flutter_schedule/domain/entities/post_it_history.dart';
-import 'package:flutter_schedule/domain/repositories/post_it_repository.dart';
+import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/post_it_history.dart';
+import 'package:stick2planner/domain/repositories/post_it_repository.dart';
 
 /// Decorator que injeta falhas de escrita para testar consistência/rollback.
 final class FailingPostItRepository implements PostItRepository {

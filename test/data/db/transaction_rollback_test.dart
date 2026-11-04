@@ -1,7 +1,7 @@
 import 'package:drift/native.dart';
-import 'package:flutter_schedule/data/db/app_database.dart';
-import 'package:flutter_schedule/data/repositories/drift_post_it_repository.dart';
-import 'package:flutter_schedule/domain/entities/post_it_history.dart';
+import 'package:stick2planner/data/db/app_database.dart';
+import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/domain/entities/post_it_history.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/entities.dart';

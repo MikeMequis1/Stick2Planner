@@ -1,10 +1,10 @@
-import 'package:flutter_schedule/app/bootstrap.dart';
-import 'package:flutter_schedule/core/date_only.dart';
-import 'package:flutter_schedule/data/repositories/drift_note_repository.dart';
-import 'package:flutter_schedule/data/repositories/drift_post_it_repository.dart';
-import 'package:flutter_schedule/domain/entities/post_it.dart';
-import 'package:flutter_schedule/domain/entities/post_it_history.dart';
-import 'package:flutter_schedule/domain/usecases/validate_post_it.dart';
+import 'package:stick2planner/app/bootstrap.dart';
+import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/data/repositories/drift_note_repository.dart';
+import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/post_it_history.dart';
+import 'package:stick2planner/domain/usecases/validate_post_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/entities.dart';
