@@ -1127,6 +1127,22 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
   mas exigirá atualização quando o Flutter migrar para Built-in Kotlin.
 - Release maior por causa do ML Kit do leitor de QR (~24,7/28,5/30,8 MB).
 
+## Exposição via Tailscale (2026-11-04)
+
+- Host `marselo-linux` no Tailnet `crayfish-saturation.ts.net`.
+- tsdproxy 1.4.7 saudável expondo homepage, portainer, filebrowser, it-tools,
+  ports e tsdproxy por HTTPS (todos 200 testados).
+- Planner exposto como `planner`: labels `tsdproxy.enable/name/container_port` e
+  `tsdproxy.ephemeral=false`.
+- `https://planner.crayfish-saturation.ts.net/v1/health` responde 200; sync sem
+  token responde 401.
+- `PUBLIC_URL` do servidor aponta para a URL HTTPS.
+- Primeira autorização do nó `planner` foi manual; o estado fica no volume
+  `tsdproxy_data`.
+- Tablet ainda não tem Tailscale: continua sincronizando pelo túnel USB
+  (`127.0.0.1:8090`). Para uso sem fio, instalar Tailscale no tablet ou mover o
+  tablet para a LAN do servidor.
+
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)
 

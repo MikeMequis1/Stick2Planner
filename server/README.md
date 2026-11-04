@@ -80,6 +80,29 @@ dart analyze
 dart test
 ```
 
+## Tailscale / tsdproxy
+
+O serviço pode ser exposto por HTTPS no Tailnet usando o `tsdproxy` já presente
+no host:
+
+```yaml
+labels:
+  tsdproxy.enable: "true"
+  tsdproxy.name: "planner"
+  tsdproxy.container_port: "8090"
+  tsdproxy.ephemeral: "false"
+```
+
+- URL resultante: `https://planner.<tailnet>.ts.net`.
+- O nó novo exige **uma autorização manual** no Tailscale (dashboard do
+  tsdproxy ou link de login). Autorizações seguintes reaproveitam o estado em
+  `tsdproxy_data`.
+- `tsdproxy.ephemeral: "false"` mantém o nó registrado ao recriar o container.
+- `PUBLIC_URL` no `.env` deve usar a URL HTTPS para que o pareamento gere QR com
+  o endereço correto.
+- O tráfego é WireGuard do Tailscale; não é necessário publicar 8090 na
+  internet.
+
 ## Segurança
 
 - Tokens são guardados como SHA-256; comparação em tempo constante.
