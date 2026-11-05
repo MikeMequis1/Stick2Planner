@@ -127,7 +127,7 @@ Future<Response> _login(
   if (token.isEmpty || hashToken(token) != hashToken(adminToken)) {
     return Response(
       401,
-      body: _loginHtml(error: 'Token administrativo inválido.'),
+      body: _loginHtml(invalid: true),
       headers: _htmlHeaders,
     );
   }
@@ -148,9 +148,9 @@ Response _dashboard(PlannerDb db) => Response(
   headers: _htmlHeaders,
 );
 
-Response _loginPage({String? error}) => Response(
+Response _loginPage({bool invalid = false}) => Response(
   200,
-  body: _loginHtml(error: error),
+  body: _loginHtml(invalid: invalid),
   headers: _htmlHeaders,
 );
 
@@ -242,7 +242,108 @@ String qrSvg(String data, {int moduleSize = 6, int quiet = 4}) {
   return buffer.toString();
 }
 
-String _loginHtml({String? error}) =>
+const _i18nScript = r'''
+<script>
+const S2P_DICT = {
+  pt: {
+    pageTitle: 'Stick2Planner · Pareamento',
+    loginTitle: 'Stick2Planner · Pareamento',
+    loginHelp: 'Informe o token administrativo (ADMIN_TOKEN) para ver o QR e os dispositivos pareados.',
+    loginButton: 'Entrar',
+    loginInvalid: 'Token administrativo inválido.',
+    pairing: 'Pareamento',
+    pairingHelp: 'Escaneie o QR no app ou copie o código abaixo. O código é renovado enquanto esta página estiver aberta.',
+    generating: 'gerando…',
+    newCode: 'Novo código',
+    pairingCode: 'Código de pareamento',
+    copyCode: 'Copiar código',
+    logout: 'Sair',
+    devices: 'Dispositivos pareados',
+    device: 'Dispositivo',
+    lastAccess: 'Último acesso',
+    state: 'Estado',
+    loading: 'carregando…',
+    noDevices: 'nenhum dispositivo',
+    revokeNote: 'Revogar remove o acesso do token imediatamente; o dispositivo pode ser pareado de novo.',
+    active: 'ativo',
+    revoked: 'revogado',
+    rename: 'Renomear',
+    revoke: 'Revogar',
+    renamePrompt: 'Novo nome do dispositivo',
+    expiresIn: 'expira em {n}s',
+    expired: 'expirado',
+    switchTo: 'English'
+  },
+  en: {
+    pageTitle: 'Stick2Planner · Pairing',
+    loginTitle: 'Stick2Planner · Pairing',
+    loginHelp: 'Enter the admin token (ADMIN_TOKEN) to see the QR code and paired devices.',
+    loginButton: 'Sign in',
+    loginInvalid: 'Invalid admin token.',
+    pairing: 'Pairing',
+    pairingHelp: 'Scan the QR in the app or copy the code below. The code refreshes while this page stays open.',
+    generating: 'generating…',
+    newCode: 'New code',
+    pairingCode: 'Pairing code',
+    copyCode: 'Copy code',
+    logout: 'Sign out',
+    devices: 'Paired devices',
+    device: 'Device',
+    lastAccess: 'Last access',
+    state: 'Status',
+    loading: 'loading…',
+    noDevices: 'no devices',
+    revokeNote: 'Revoking removes token access immediately; the device can be paired again.',
+    active: 'active',
+    revoked: 'revoked',
+    rename: 'Rename',
+    revoke: 'Revoke',
+    renamePrompt: 'New device name',
+    expiresIn: 'expires in {n}s',
+    expired: 'expired',
+    switchTo: 'Português'
+  }
+};
+const saved = localStorage.getItem('s2p-lang');
+const browserLang = (navigator.language || 'pt').toLowerCase();
+let LANG = saved === 'pt' || saved === 'en'
+  ? saved
+  : (browserLang.startsWith('pt') ? 'pt' : 'en');
+function t(key, vars) {
+  let text = (S2P_DICT[LANG] && S2P_DICT[LANG][key]) || S2P_DICT.pt[key] || key;
+  if (vars) Object.keys(vars).forEach((k) => {
+    text = text.split('{' + k + '}').join(vars[k]);
+  });
+  return text;
+}
+function applyLang() {
+  document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en';
+  const titleKey = document.body.dataset.i18nTitle;
+  if (titleKey) document.title = t(titleKey);
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll('[data-lang-toggle]').forEach((el) => {
+    el.textContent = t('switchTo');
+  });
+}
+function toggleLang() {
+  LANG = LANG === 'pt' ? 'en' : 'pt';
+  try { localStorage.setItem('s2p-lang', LANG); } catch (_) {}
+  applyLang();
+  if (window.onLangChange) window.onLangChange();
+}
+document.querySelectorAll('[data-lang-toggle]').forEach((el) => {
+  el.onclick = toggleLang;
+});
+applyLang();
+</script>
+''';
+
+String _loginHtml({bool invalid = false}) =>
     '''
 <!doctype html>
 <html lang="pt-BR"><head>
@@ -254,24 +355,31 @@ String _loginHtml({String? error}) =>
   body { margin:0; min-height:100vh; display:grid; place-items:center;
     background: radial-gradient(1200px 600px at 20% 0%, #12352a, #0b1411 60%);
     color:#e7f2ed; font:16px/1.5 system-ui, sans-serif; }
-  form { width:min(420px, 92vw); background:#121c18cc; border:1px solid #2a3a33;
+  form { width:min(440px, 92vw); background:#121c18cc; border:1px solid #2a3a33;
     border-radius:16px; padding:28px; box-shadow:0 18px 60px #0008; }
+  .head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   h1 { font-size:20px; margin:0 0 8px; }
   p { margin:0 0 18px; color:#a9bdb4; font-size:14px; }
   input { width:100%; box-sizing:border-box; padding:12px 14px; border-radius:10px;
     border:1px solid #355047; background:#0d1613; color:#e7f2ed; font-size:15px; }
   button { margin-top:14px; width:100%; padding:12px 14px; border:0; border-radius:10px;
     background:#59d3a2; color:#062018; font-weight:700; font-size:15px; cursor:pointer; }
+  button.lang { width:auto; margin:0; padding:8px 10px; background:transparent;
+    color:#8ff0c4; border:1px solid #355047; font-weight:600; font-size:13px; }
   .err { color:#ff9d9d; margin:0 0 14px; font-size:14px; }
-</style></head><body>
+</style></head><body data-i18n-title="pageTitle">
 <form method="post" action="/login">
-  <h1>Stick2Planner · Pareamento</h1>
-  <p>Informe o token administrativo (<code>ADMIN_TOKEN</code>) para ver o QR e os
+  <div class="head">
+    <h1 data-i18n="loginTitle">Stick2Planner · Pareamento</h1>
+    <button type="button" class="lang" data-lang-toggle>English</button>
+  </div>
+  <p data-i18n="loginHelp">Informe o token administrativo (ADMIN_TOKEN) para ver o QR e os
      dispositivos pareados.</p>
-  ${error == null ? '' : '<p class="err">${const HtmlEscape().convert(error)}</p>'}
+  ${invalid ? '<p class="err" data-i18n="loginInvalid">Token administrativo inválido.</p>' : ''}
   <input type="password" name="token" placeholder="ADMIN_TOKEN" autofocus required>
-  <button type="submit">Entrar</button>
+  <button type="submit" data-i18n="loginButton">Entrar</button>
 </form>
+$_i18nScript
 </body></html>
 ''';
 
@@ -309,38 +417,52 @@ String _dashboardHtml({required String serverId}) =>
   button.primary { background:#59d3a2; color:#062018; border-color:#59d3a2;
     font-weight:700; }
   button.danger { border-color:#6d3232; color:#ffadad; background:#221314; }
+  button.lang { padding:7px 10px; background:transparent; color:#8ff0c4;
+    font-weight:600; font-size:13px; }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th, td { text-align:left; padding:9px 6px; border-bottom:1px solid #22332c; }
   th { color:#93a89e; font-weight:600; font-size:12px; text-transform:uppercase;
     letter-spacing:.04em; }
   .muted { color:#7f948b; font-size:12px; }
   .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-</style></head><body>
+</style></head><body data-i18n-title="pageTitle">
 <main>
   <section class="card">
-    <div class="row"><h1>Pareamento</h1><span class="pill" id="server">$serverId</span></div>
-    <p class="sub">Escaneie o QR no app ou copie o código abaixo. O código é
+    <div class="row">
+      <h1 data-i18n="pairing">Pareamento</h1>
+      <div class="row" style="gap:8px">
+        <span class="pill" id="server">$serverId</span>
+        <button type="button" class="lang" data-lang-toggle>English</button>
+      </div>
+    </div>
+    <p class="sub" data-i18n="pairingHelp">Escaneie o QR no app ou copie o código abaixo. O código é
        renovado enquanto esta página estiver aberta.</p>
     <div class="qr" id="qr"></div>
     <div class="row" style="margin-top:12px">
-      <span class="muted" id="countdown">gerando…</span>
-      <button id="refresh">Novo código</button>
+      <span class="muted" id="countdown" data-i18n="generating">gerando…</span>
+      <button id="refresh" data-i18n="newCode">Novo código</button>
     </div>
-    <textarea id="code" readonly aria-label="Código de pareamento"></textarea>
+    <textarea id="code" readonly aria-label="Código de pareamento"
+      data-i18n-aria="pairingCode"></textarea>
     <div class="actions">
-      <button class="primary" id="copy">Copiar código</button>
-      <form method="post" action="/logout"><button class="danger">Sair</button></form>
+      <button class="primary" id="copy" data-i18n="copyCode">Copiar código</button>
+      <form method="post" action="/logout"><button class="danger" data-i18n="logout">Sair</button></form>
     </div>
   </section>
   <section class="card">
-    <h2>Dispositivos pareados</h2>
-    <table><thead><tr><th>Dispositivo</th><th>Último acesso</th><th>Estado</th><th></th></tr></thead>
-      <tbody id="devices"><tr><td colspan="4" class="muted">carregando…</td></tr></tbody>
+    <h2 data-i18n="devices">Dispositivos pareados</h2>
+    <table><thead><tr>
+      <th data-i18n="device">Dispositivo</th>
+      <th data-i18n="lastAccess">Último acesso</th>
+      <th data-i18n="state">Estado</th><th></th>
+    </tr></thead>
+      <tbody id="devices"><tr><td colspan="4" class="muted" data-i18n="loading">carregando…</td></tr></tbody>
     </table>
-    <p class="muted" style="margin-top:12px">Revogar remove o acesso do token
+    <p class="muted" style="margin-top:12px" data-i18n="revokeNote">Revogar remove o acesso do token
        imediatamente; o dispositivo pode ser pareado de novo.</p>
   </section>
 </main>
+$_i18nScript
 <script>
 let expiresAt = 0, refreshTimer = null;
 const qr = document.getElementById('qr');
@@ -349,6 +471,10 @@ const countdown = document.getElementById('countdown');
 document.getElementById('refresh').onclick = loadPairing;
 document.getElementById('copy').onclick = async () => {
   try { await navigator.clipboard.writeText(code.value); } catch (_) { code.select(); }
+};
+window.onLangChange = () => {
+  tick();
+  loadDevices();
 };
 async function loadPairing() {
   const res = await fetch('/api/pairing', {cache:'no-store'});
@@ -363,7 +489,7 @@ async function loadPairing() {
 }
 function tick() {
   const left = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
-  countdown.textContent = left > 0 ? 'expira em ' + left + 's' : 'expirado';
+  countdown.textContent = left > 0 ? t('expiresIn', {n: left}) : t('expired');
   if (left === 0) loadPairing();
 }
 async function loadDevices() {
@@ -372,22 +498,22 @@ async function loadDevices() {
   const data = await res.json();
   const body = document.getElementById('devices');
   if (!data.devices.length) {
-    body.innerHTML = '<tr><td colspan="4" class="muted">nenhum dispositivo</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="muted">' + escapeHtml(t('noDevices')) + '</td></tr>';
     return;
   }
   body.innerHTML = data.devices.map((d) => {
     const seen = d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : '—';
-    const state = d.revokedAt ? 'revogado' : 'ativo';
+    const state = d.revokedAt ? t('revoked') : t('active');
     const action = d.revokedAt ? '' :
-      '<button data-rename="' + d.deviceId + '">Renomear</button> ' +
-      '<button class="danger" data-id="' + d.deviceId + '">Revogar</button>';
+      '<button data-rename="' + d.deviceId + '">' + escapeHtml(t('rename')) + '</button> ' +
+      '<button class="danger" data-id="' + d.deviceId + '">' + escapeHtml(t('revoke')) + '</button>';
     return '<tr><td>' + escapeHtml(d.label) + '<div class="muted">' +
       escapeHtml(d.deviceId) + '</div></td><td>' + seen + '</td><td>' + state +
       '</td><td>' + action + '</td></tr>';
   }).join('');
   body.querySelectorAll('button[data-rename]').forEach((button) => {
     button.onclick = async () => {
-      const label = prompt('Novo nome do dispositivo', '');
+      const label = prompt(t('renamePrompt'), '');
       if (!label || !label.trim()) return;
       await fetch('/api/devices/' + encodeURIComponent(button.dataset.rename) + '/label',
         {method:'POST', headers:{'content-type':'application/json'},

@@ -28,9 +28,10 @@ etapas. Cada item: contexto, decisão, consequência.
 ## Identidade do aplicativo
 
 - **Decisão:** `applicationId` / `namespace` `com.mikemequis1.planner`; nome de
-  exibição Planner.
-- **Consequência:** definido antes de existirem dados reais. Mudar depois cria
-  outro app e perde o banco local.
+  exibição Stick2Planner.
+- **Consequência:** definido antes de existirem dados reais. Mudar o
+  `applicationId` depois cria outro app e perde o banco local; o nome de
+  exibição pode mudar sem afetar os dados.
 
 ## Datas e IDs
 
@@ -151,8 +152,9 @@ etapas. Cada item: contexto, decisão, consequência.
 - Área de interação de **24×24 dp lógicos** no Flutter (não pixels físicos),
   com grip visual de 2×12 dp. O corpo do evento continua sendo o alvo de
   movimento; a alça só redimensiona.
-- Em telas estreitas (<600 dp), o FAB dá lugar a um ícone “+” na AppBar para
-  não cobrir conteúdo.
+- Em telas estreitas (<600 dp), o “+” fica na AppBar nas seções Agenda e
+  Caixinha e some em Notas; em telas largas a Agenda mantém o FAB estendido e a
+  Caixinha usa o “+” da AppBar.
 
 ## Eventos adicionais no mês
 
@@ -170,8 +172,8 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Desfazer exclusão:** implementado com o tombstone existente; snackbar
   “Desfazer” restaura e grava `restored` no histórico.
 - **Tela ligada:** `wakelock_plus` ativo por padrão durante o uso, isolado em
-  `ScreenWakeService`; a opção de desligar nas configurações fica para etapa
-  futura (não implementada agora).
+  `ScreenWakeService`; a opção “Manter tela ligada durante o uso” permite
+  desligar. Preferência persistida em `app_settings`.
 
 ## Notas
 
@@ -247,11 +249,15 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Configurações:** tela com tema Sistema/Claro/Escuro, quatro paletas com
   gradiente (Verde, Oceano, Pôr do sol e Lavanda), animações, manter tela
   ligada e dicas da agenda. Preferências ficam em `app_settings`; desligar
-  animações zera as transições principais e o folhear/morphing.
+  animações zera as transições principais e o folhear/morphing. O acesso à
+  sincronização fica em “Conexão e sincronização” e “Sobre o aplicativo” abre
+  uma tela com versão, descrição e links.
 - No mês compacto, o padding interno da célula é reduzido para preservar ao
   menos uma tarefa visível junto do indicador de overflow.
-- A data selecionada é a âncora. Anterior/próximo move a seleção em um
-  período (1, 4, 7, 14 dias; mês com dia preservado e clampado).
+- A data selecionada é a âncora. Anterior/próximo move a seleção em um período
+  (1, 4, 7, 14 dias; mês com dia preservado e clampado). No modo de 4 dias a
+  janela começa na data selecionada e permanece ancorada ao tocar em outro dia
+  visível; navegar desloca a janela inteira em 4 dias e preserva o offset.
 - Mês compacto: grade dinâmica de 35 ou 42 células conforme o mês, incluindo
   dias de borda atenuados; nunca recortado em 30 dias.
 - Trocar modo ou orientação não altera data, ordem ou qualquer dado; apenas
@@ -260,9 +266,13 @@ etapas. Cada item: contexto, decisão, consequência.
 
 ## Localização
 
-- Interface exclusivamente pt_BR no MVP, com `flutter_localizations` e
-  `intl` configurados. Textos em um único ponto para permitir i18n futura sem
-  reescrever telas.
+- **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`
+  resolve textos em runtime e `DateFormats.locale` escolhe os padrões de data,
+  sem serviço externo e sem reiniciar o app.
+- **Página web do servidor:** português e inglês, com troca dinâmica no cliente
+  (sem recarregar), persistida em `localStorage` e aplicada a textos, estados,
+  contagem do QR e ações de dispositivo. O HTML mantém fallback em português
+  para navegadores sem JavaScript.
 
 ## Navegação entre notas, caixinha e agenda
 
@@ -321,6 +331,13 @@ continua como interoperabilidade futura; não há conta pública nem multiusuár
 - Página web administrativa no servidor: login com `ADMIN_TOKEN`, QR de
   pareamento renovado enquanto aberta, lista/revogação de dispositivos. O token
   temporário nunca é persistido no cliente; o QR contém o JSON aceito pelo app.
+  A página alterna português/inglês no cliente e persiste a escolha no navegador.
+- Configurações separa o estado do sync das ações de endereço: o card mostra
+  “Pareado/Não pareado”, pendências, último sync e erro; o endereço e o teste de
+  conexão ficam na tela **Endereço e teste de conexão**. O ícone de nuvem no
+  topo reflete o estado e abre a seção já focada.
+- A tela **Sobre** lê a versão do pacote (`package_info_plus`), mostra descrição
+  curta e abre o repositório e o perfil do GitHub (`url_launcher`).
 - Sessão web em memória (cookie HttpOnly/SameSite=Strict), separada dos tokens
   de dispositivo.
 - O CLI `pair` permanece para automação e diagnóstico.
@@ -423,14 +440,16 @@ dependência de Flutter:
 
 ### Escopo
 
-A implementação pertence a uma etapa futura ainda não iniciada. Esta rodada
-apenas registra as decisões e mantém o MVP local intacto.
+Implementado: servidor próprio em `server/`, pareamento por QR/código, tokens
+individuais revogáveis, sync manual/automático, página web administrativa em
+português/inglês e backup JSON. Continua fora do escopo: conta pública,
+multiusuário e CalDAV/iCalendar.
 
 ## Fora de escopo no MVP
 
-- Servidor, autenticação remota, sincronização distribuída.
+- Conta pública, multiusuário e CalDAV/iCalendar (interoperabilidade futura).
 - Posicionamento livre de post-its.
-- Editor WYSIWYG para Markdown e abertura de links externos.
+- Editor WYSIWYG para Markdown e abertura de links externos dentro das notas.
 - Seleção de substring arbitrária em listas (MVP: linha ou intervalo; em notas
   de texto o snapshot usa seleção no Markdown cru).
 
@@ -441,8 +460,9 @@ apenas registra as decisões e mantém o MVP local intacto.
   restaurado em falha.
 - **Acessibilidade:** dias têm rótulo completo, estados “hoje/selecionado” e ação
   de toque; textos ampliados em 1,3× são validados em agenda e notas.
-- **Offline:** teste de contrato garante ausência da permissão `INTERNET`; os
-  dados permanecem em SQLite local.
+- **Offline:** o app abre e opera sem servidor; `INTERNET` e
+  `ACCESS_NETWORK_STATE` existem apenas para a sincronização opcional. Os dados
+  permanecem em SQLite local.
 - **Entrega:** `docs/QUALIDADE.md` concentra matriz de validação, limitações e
   critérios finais.
 

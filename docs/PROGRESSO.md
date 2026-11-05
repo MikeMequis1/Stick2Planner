@@ -1224,5 +1224,53 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 `sync_engine.dart`, `app/controllers/sync_controller.dart`,
 `test/data/sync_engine_test.dart`, `test/app/sync_controller_test.dart`.
 
+## Configurações claras, Sobre e página web bilíngue (2026-11-05)
+
+### Configurações
+
+- Seções renomeadas para deixar o escopo explícito: “Aparência e idioma”,
+  “Comportamento da agenda”, “Conexão e sincronização” e “Backup e restauração”.
+- Itens mais diretos: “Tema do aplicativo”, “Idioma da interface”, “Cor de
+  destaque e fundo”, “Animações e transições”, “Mostrar dicas de gestos na
+  agenda”, “Sincronização automática”, “Parear este dispositivo” e “Desconectar
+  deste servidor”.
+- A antiga seção Sobre virou um item de navegação para uma tela própria.
+
+### Tela Sobre
+
+- Nova `features/settings/about_page.dart` com nome, versão instalada lida de
+  `package_info_plus` (`0.1.1`), descrição curta e links para o repositório e o
+  perfil de MikeMequis1 no GitHub.
+- Links abrem no navegador via `url_launcher`; falha mostra snackbar. Manifest
+  Android ganhou consulta explícita para intents `https`.
+- Teste de widget cobre versão, descrição e os dois links.
+
+### Página web do servidor
+
+- Login e painel agora têm botão **Português/English** com troca dinâmica, sem
+  recarregar; a escolha fica em `localStorage` e o idioma inicial segue o
+  navegador (fallback português).
+- Tradução cobre textos fixos, contagem do QR, estados dos dispositivos,
+  botões de renomear/revogar, prompt de renomeação e mensagem de token inválido.
+- O HTML mantém o texto em português como fallback; o JavaScript troca para
+  inglês quando selecionado.
+- Testes do servidor verificam a presença do seletor, do dicionário inglês e dos
+  atributos `data-i18n` no login e no painel.
+
+### Documentação
+
+- README, `docs/DECISOES.md`, `docs/QUALIDADE.md`, `docs/SINCRONIZACAO.md` e
+  `server/README.md` revisados para refletir sync, backup, página web, Sobre,
+  layout de celular e estado atual.
+- Removidas afirmações desatualizadas (“sem sincronização”, “Sobre sem
+  sincronização nesta versão”, “INTERNET ausente”, “etapa futura não iniciada”).
+
+### Validação
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **238 testes aprovados**.
+- `dart analyze` / `dart test` no servidor: sem issues; **12 testes aprovados**.
+- Release instalado no celular; telas de Configurações e Sobre verificadas.
+
 
 

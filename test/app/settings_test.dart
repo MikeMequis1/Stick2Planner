@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
 import 'package:stick2planner/app/bootstrap.dart';
@@ -72,5 +73,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.calendarHint), findsNothing);
+  });
+
+  testWidgets('Sobre mostra versão, descrição e links', (tester) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'Stick2Planner',
+      packageName: 'com.mikemequis1.planner',
+      version: '0.1.1',
+      buildNumber: '3',
+      buildSignature: '',
+    );
+
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const Key('open-settings')));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings-about')),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('settings-about')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.aboutTitle), findsOneWidget);
+    expect(find.text(AppStrings.aboutDescription), findsOneWidget);
+    expect(find.text(AppStrings.aboutVersion('0.1.1')), findsOneWidget);
+    expect(find.byKey(const Key('about-repository')), findsOneWidget);
+    expect(find.byKey(const Key('about-profile')), findsOneWidget);
   });
 }

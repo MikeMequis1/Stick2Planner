@@ -1,21 +1,25 @@
-# Qualidade e entrega — Etapa 6
+# Qualidade e entrega
 
-Checklist final do MVP local do Planner.
+Checklist do MVP local do Stick2Planner e das rodadas pós-MVP (sync opcional,
+backup, página web e ajustes de celular).
 
 ## Escopo validado
 
 - Agenda visual: períodos, eventos contínuos, criação, edição, arraste,
-  reordenação, redimensionamento, estados e recorrência.
+  reordenação, redimensionamento, estados, recorrência e janela ancorada de
+  4 dias.
 - Caixinha: filtros, busca, tarefas sem data e acesso aos detalhes.
 - Notas: texto Markdown, listas, snapshots e vínculos com post-its.
 - Navegação: post-it vinculado/snapshot → Agenda → detalhe existente; Caixinha
   com “Abrir na Agenda” para post-its datados.
-- Persistência local: drift/SQLite, transações, migrações v1 → v2 → v3 → v4 e
-  tombstones.
+- Persistência local: drift/SQLite, transações, migrações v1 → v5 e tombstones.
 - Configurações: tema, idioma Português/English, quatro paletas com gradiente,
-  animações, wakelock e dicas persistidos localmente.
+  animações, wakelock, dicas, conexão/sync e atalho para a tela Sobre.
+- Sobre: versão instalada lida do pacote, descrição e links do GitHub.
 - Backup: JSON versionado com checksum canônico, validação de versão/esquema,
   importação transacional com snapshot prévio e restauração de snapshots.
+- Sync: servidor próprio, pareamento por QR/código, tokens revogáveis, página
+  web em português/inglês, sync manual/automático e cópia de conflitos.
 
 ## Matriz de validação
 
@@ -26,9 +30,10 @@ Checklist final do MVP local do Planner.
 | Backup | canonicalização, checksum, versões, round-trip, snapshots |
 | Sync | outbox transacional, coalescência, migração v5, apply remoto |
 | Servidor | auth, pareamento, idempotência, conflito, paginação, revogação |
-| UI | agenda, caixinha, notas, editor, detalhes, vínculos, backup |
-| Layout | 1280×800, 800×1280, 500×800 e texto ampliado em 1,3× |
-| Aparelho | tablet Android 3200×2136, tema escuro |
+| Web | login, sessão, QR vivo, dispositivos, renomear/revogar, PT/EN |
+| UI | agenda, caixinha, notas, editor, detalhes, vínculos, backup, Sobre |
+| Layout | 1280×800, 800×1280, 780×360, 360×780, 500×800 e texto 1,3× |
+| Aparelho | tablet Android 3200×2136 e celular 1080×2340, tema escuro |
 | Carga | 200 post-its na agenda |
 | Offline | sem servidor o app segue local; `INTERNET` só para sync opcional |
 
@@ -63,8 +68,12 @@ Checklist final do MVP local do Planner.
 
 ## Limitações conhecidas
 
-- O app não sincroniza entre dispositivos.
-- Links Markdown são renderizados, mas não abrem navegador.
+- CalDAV/iCalendar e Radicale não estão implementados; a interoperabilidade
+  planejada está em `docs/DECISOES.md`.
+- A sincronização exige um servidor próprio configurado e rede; não há conta
+  pública nem multiusuário. Sem servidor, o app continua local.
+- Links Markdown das notas são renderizados, mas não abrem navegador; os links
+  da tela Sobre usam `url_launcher`.
 - Snapshot de texto usa o Markdown cru; não é uma seleção WYSIWYG.
 - Um post-it aceita um vínculo de nota por vez.
 - Não há desfazer para exclusão de nota nem busca própria no caderno.
@@ -75,13 +84,14 @@ Checklist final do MVP local do Planner.
   em “Trechos desta nota”; continuam acessíveis pela Caixinha.
 - “Abrir na Agenda” em Notas fica desabilitado para post-its sem data; o popup
   de detalhes continua disponível.
-- Importação, exportação, CalDAV e sincronização não foram implementados;
-  decisões registradas em `docs/DECISOES.md`.
+- WorkManager periódico é best-effort; o sistema pode adiar a execução.
+- Filtros da Caixinha não são persistidos entre reinícios.
 
 ## Tamanho e desempenho
 
 - APK debug: ~188 MB (runtime/símbolos de depuração).
-- APK release split: ~19–22 MB; arm64 ~21 MB.
+- APK release split: ~25–31 MB por ABI, principalmente pelo ML Kit do leitor de
+  QR; arm64 medido em ~25,8 MB no build mais recente.
 - Banco local: ~80 KB para 17 post-its, 3 notas e 58 registros de histórico.
 - Release é a referência para avaliar fluidez; animações podem ser desligadas.
 
@@ -90,11 +100,16 @@ Checklist final do MVP local do Planner.
 ```bash
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --release --split-per-abi
+
+cd server
+dart analyze
+dart test
 ```
 
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 237 testes aprovados.
-- `flutter build apk --debug`: aprovado.
+- `flutter test`: 238 testes aprovados.
+- `dart analyze` / `dart test` no servidor: sem issues; 12 testes aprovados.
+- `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

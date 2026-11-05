@@ -324,6 +324,9 @@ void main() {
     final page = await raw('GET', '/');
     expect(page.status, 200);
     expect(page.text, contains('ADMIN_TOKEN'));
+    expect(page.text, contains('data-lang-toggle'));
+    expect(page.text, contains("switchTo: 'English'"));
+    expect(page.text, contains("loginButton: 'Sign in'"));
 
     final denied = await raw(
       'POST',
@@ -332,6 +335,8 @@ void main() {
       form: true,
     );
     expect(denied.status, 401);
+    expect(denied.text, contains('data-i18n="loginInvalid"'));
+    expect(denied.text, contains('data-lang-toggle'));
 
     final login = await raw(
       'POST',
@@ -416,6 +421,10 @@ void main() {
     expect(dashboard.status, 200);
     expect(dashboard.text, contains('Dispositivos pareados'));
     expect(dashboard.text, contains('/api/pairing'));
+    expect(dashboard.text, contains('data-i18n="devices"'));
+    expect(dashboard.text, contains('data-lang-toggle'));
+    expect(dashboard.text, contains("devices: 'Paired devices'"));
+    expect(dashboard.text, contains("switchTo: 'Português'"));
   });
 
   test('admin exige token administrativo', () async {

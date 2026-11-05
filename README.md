@@ -1,17 +1,21 @@
 # Stick2Planner
 
-Planner visual offline-first para tablets Android: agenda por períodos, caixinha
-de post-its e caderno de notas Markdown. Tudo fica em SQLite local.
+Planner visual offline-first para Android (celular e tablet): agenda por
+períodos, caixinha de post-its e caderno de notas Markdown. Tudo fica em SQLite
+local.
 
 ## Estado
 
-Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e paletas.
+Etapas 0 a 6 concluídas, incluindo a rodada pós-MVP de navegação, configurações,
+paletas, sincronização opcional, backup, pareamento web e ajustes de celular.
 
 - [x] Agenda, criação/edição, arraste, reordenação e redimensionamento
 - [x] Estados, caixinha, tarefas sem data e TO-DO recorrente
 - [x] Notas Markdown, listas, snapshots e vínculos com post-its
 - [x] Acessibilidade, offline, migrações e documentação
 - [x] Configurações, quatro paletas, português/inglês e gestos de navegação
+- [x] Sincronização opcional com servidor próprio, pareamento por QR e backup JSON
+- [x] Layout de celular em retrato/paisagem e tela Sobre com versão e links
 
 ## Funcionalidades
 
@@ -19,7 +23,8 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
   criam tarefa, três criam evento e segurar abre uma prévia que acompanha o dedo
   sobre os dias visíveis. Eventos podem ser arrastados entre semanas visíveis,
   inclusive para a faixa de eventos de outra semana; nas bordas, soltar move
-  ±7 dias.
+  ±7 dias. No modo de 4 dias a janela fica ancorada: selecionar um dia visível
+  não recarrega a grade.
 - **Navegação:** deslizar na horizontal folheia períodos; deslizar na vertical
   altera a quantidade de dias com transição de morphing.
 - **Caixinha:** filtros, busca, ordenação e “Abrir na Agenda” para post-its com
@@ -27,9 +32,15 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
 - **Notas:** texto Markdown renderizado, listas/checklists, snapshots e vínculos
   vivos. Post-its da nota abrem detalhes ou a Agenda.
 - **Configurações:** tema Sistema/Claro/Escuro, idioma Português/English,
-  paletas Verde/Oceano/Pôr do sol/Lavanda, animações, wakelock e dicas.
+  paletas Verde/Oceano/Pôr do sol/Lavanda, animações, wakelock, dicas e atalho
+  para a tela **Sobre**.
+- **Sobre:** descrição curta do projeto, versão instalada (lida do pacote),
+  repositório e perfil do GitHub com links externos.
 - **Sincronização:** servidor próprio com URL manual ou QR, token seguro por
-  dispositivo, sync manual/automático e cópia de conflitos.
+  dispositivo, sync manual/automático e cópia de conflitos. O ícone de nuvem no
+  topo resume o estado e abre Configurações na seção de conexão.
+- **Servidor:** página administrativa de pareamento com QR vivo, renomeação e
+  revogação de dispositivos, disponível em português e inglês.
 - **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
   por substituição integral, com snapshot automático antes de importar.
 
@@ -39,7 +50,7 @@ Etapas 0 a 6 concluídas e rodada pós-MVP de navegação, configurações e pal
 - drift + SQLite (esquema v5, migrações v1 → v5)
 - `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`, `crypto`,
   `file_picker`, `http`, `flutter_secure_storage`, `mobile_scanner`,
-  `connectivity_plus`, `workmanager`
+  `connectivity_plus`, `workmanager`, `package_info_plus`, `url_launcher`
 - Servidor de sync em `server/` (Dart/shelf + SQLite, Docker Compose)
 - Android SDK 36; alvo principal: tablet Android
 
@@ -98,7 +109,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 237 testes aprovados.
+- `flutter test`: 238 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 
@@ -118,5 +129,6 @@ locais existentes.
 
 ## Futuro
 
-Importação/exportação JSON, Radicale/CalDAV/iCalendar e sincronização própria
-estão documentados em `docs/DECISOES.md`, mas não implementados.
+CalDAV/iCalendar e Radicale continuam como interoperabilidade futura,
+documentados em `docs/DECISOES.md`. Sincronização própria, backup, pareamento
+por QR e página web já estão implementados.

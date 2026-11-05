@@ -8,6 +8,7 @@ import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
+import 'about_page.dart';
 import 'connection_test_page.dart';
 import 'qr_scan_page.dart';
 
@@ -165,8 +166,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 24),
-                Text(AppStrings.agenda, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 24),
+                Text(
+                  AppStrings.settingsAgendaBehavior,
+                  style: theme.textTheme.titleSmall,
+                ),
                 SizedBox(height: 8),
                 Card(
                   margin: EdgeInsets.zero,
@@ -211,17 +215,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 SizedBox(height: 8),
                 const _BackupSection(),
                 SizedBox(height: 24),
-                Text(
-                  AppStrings.settingsAbout,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
                 Card(
                   margin: EdgeInsets.zero,
                   child: ListTile(
-                    leading: Icon(Icons.cloud_off_outlined),
-                    title: Text(AppStrings.offlineNotice),
-                    subtitle: Text(AppStrings.settingsLocalData),
+                    key: const Key('settings-about'),
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(AppStrings.settingsAbout),
+                    subtitle: Text(AppStrings.settingsAboutHelp),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const AboutPage(),
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -210,18 +210,16 @@ abstract final class AppStrings {
   static String get statusMenu => _t('Ações de estado', 'Status actions');
 
   static String get nextStage => _t('Próxima etapa', 'Next stage');
-  static String get offlineNotice => _t(
-    'Funciona offline; a sincronização é opcional.',
-    'Works offline; sync is optional.',
-  );
 
   static String get settings => _t('Configurações', 'Settings');
-  static String get settingsAppearance => _t('Aparência', 'Appearance');
-  static String get settingsTheme => _t('Tema', 'Theme');
+  static String get settingsAppearance =>
+      _t('Aparência e idioma', 'Appearance and language');
+  static String get settingsTheme => _t('Tema do aplicativo', 'App theme');
   static String get settingsThemeSystem => _t('Sistema', 'System');
   static String get settingsThemeLight => _t('Claro', 'Light');
   static String get settingsThemeDark => _t('Escuro', 'Dark');
-  static String get settingsPalette => _t('Paleta de cores', 'Color palette');
+  static String get settingsPalette =>
+      _t('Cor de destaque e fundo', 'Accent and background color');
   static String get paletteEmerald => _t('Verde', 'Emerald');
   static String get paletteOcean => _t('Oceano', 'Ocean');
   static String get paletteSunset => _t('Pôr do sol', 'Sunset');
@@ -230,24 +228,30 @@ abstract final class AppStrings {
     'Gradiente de fundo e cor de destaque do aplicativo.',
     'App background gradient and accent color.',
   );
-  static String get settingsAnimations => _t('Animações', 'Animations');
+  static String get settingsAnimations =>
+      _t('Animações e transições', 'Animations and transitions');
   static String get settingsAnimationsHelp => _t(
     'Ativa transições, folhear de páginas e efeitos de toque.',
     'Enables transitions, page turning and touch effects.',
   );
   static String get settingsKeepAwake =>
-      _t('Manter tela ligada', 'Keep screen awake');
+      _t('Manter tela ligada durante o uso', 'Keep screen on while in use');
   static String get settingsKeepAwakeHelp => _t(
     'Evita que a tela desligue enquanto o planner estiver aberto.',
     'Prevents the screen from sleeping while the planner is open.',
   );
-  static String get settingsHints => _t('Dicas da agenda', 'Calendar hints');
+  static String get settingsAgendaBehavior =>
+      _t('Comportamento da agenda', 'Calendar behavior');
+  static String get settingsHints =>
+      _t('Mostrar dicas de gestos na agenda', 'Show calendar gesture hints');
   static String get settingsHintsHelp => _t(
     'Mostra a dica de gestos e a contagem de post-its sem data.',
     'Shows gesture hints and the undated post-it count.',
   );
-  static String get settingsSync => _t('Sincronização', 'Sync');
-  static String get syncConnection => _t('Conexão', 'Connection');
+  static String get settingsSync =>
+      _t('Conexão e sincronização', 'Connection and sync');
+  static String get syncConnection =>
+      _t('Endereço e teste de conexão', 'Server address and connection test');
   static String get syncPaired => _t('Pareado', 'Paired');
   static String get syncNotPaired => _t('Não pareado', 'Not paired');
   static String get syncPairFirst =>
@@ -271,7 +275,7 @@ abstract final class AppStrings {
     'Could not reach the server.',
   );
   static String get syncEnabled =>
-      _t('Sincronizar automaticamente', 'Sync automatically');
+      _t('Sincronização automática', 'Automatic sync');
   static String get syncNow => _t('Sincronizar agora', 'Sync now');
   static String get syncRunning => _t('Sincronizando…', 'Syncing…');
   static String syncDone(int pushed, int pulled, int copies) =>
@@ -303,7 +307,8 @@ abstract final class AppStrings {
     'Falha na sincronização. Verifique servidor e rede.',
     'Sync failed. Check server and network.',
   );
-  static String get syncPair => _t('Parear dispositivo', 'Pair device');
+  static String get syncPair =>
+      _t('Parear este dispositivo', 'Pair this device');
   static String get syncPairTitle => _t('Pareamento', 'Pairing');
   static String get syncPairHelp => _t(
     'Cole o JSON/código gerado no servidor ou escaneie o QR.',
@@ -322,7 +327,8 @@ abstract final class AppStrings {
     'Câmera indisponível. Use o código manual.',
     'Camera unavailable. Use the manual code.',
   );
-  static String get syncDisconnect => _t('Desconectar', 'Disconnect');
+  static String get syncDisconnect =>
+      _t('Desconectar deste servidor', 'Disconnect from this server');
   static String get syncDisconnectConfirm => _t(
     'Remover servidor e token deste dispositivo?',
     'Remove server and token from this device?',
@@ -331,12 +337,25 @@ abstract final class AppStrings {
       _t('Servidor desconectado.', 'Server disconnected.');
   static String get syncErrorDetail => _t('Detalhes', 'Details');
 
-  static String get settingsAbout => _t('Sobre', 'About');
-  static String get settingsLocalData => _t(
-    'Dados salvos localmente neste aparelho; o servidor de sincronização é opcional.',
-    'Data saved locally on this device; the sync server is optional.',
+  static String get settingsAbout => _t('Sobre o aplicativo', 'About the app');
+  static String get settingsAboutHelp =>
+      _t('Versão, descrição e links', 'Version, description and links');
+  static String get aboutTitle =>
+      _t('Sobre o Stick2Planner', 'About Stick2Planner');
+  static String get aboutDescription => _t(
+    'Planner visual offline-first para Android. Agenda, Caixinha e notas Markdown ficam no aparelho; a sincronização entre dispositivos é opcional e usa um servidor próprio.',
+    'Offline-first visual planner for Android. Calendar, inbox and Markdown notes stay on the device; syncing between devices is optional and uses your own server.',
   );
-  static String get settingsLanguage => _t('Idioma', 'Language');
+  static String aboutVersion(String version) =>
+      _language == AppLanguage.en ? 'Version $version' : 'Versão $version';
+  static String get aboutRepository =>
+      _t('Repositório no GitHub', 'GitHub repository');
+  static String get aboutProfile =>
+      _t('MikeMequis1 no GitHub', 'MikeMequis1 on GitHub');
+  static String get aboutLinkFailed =>
+      _t('Não foi possível abrir o link.', 'Could not open the link.');
+  static String get settingsLanguage =>
+      _t('Idioma da interface', 'Interface language');
   static String get settingsLanguageHelp =>
       _t('Idioma da interface e das datas.', 'Interface and date language.');
   static String get settingsBackup =>
@@ -345,8 +364,10 @@ abstract final class AppStrings {
     'Exporte todos os dados em um arquivo JSON ou restaure um backup. A importação substitui os dados atuais.',
     'Export all data to a JSON file or restore a backup. Importing replaces current data.',
   );
-  static String get backupExport => _t('Exportar backup', 'Export backup');
-  static String get backupImport => _t('Importar backup', 'Import backup');
+  static String get backupExport =>
+      _t('Exportar dados (JSON)', 'Export data (JSON)');
+  static String get backupImport =>
+      _t('Importar dados (JSON)', 'Import data (JSON)');
   static String backupExportSuccess(String path) => _language == AppLanguage.en
       ? 'Backup exported: $path'
       : 'Backup exportado: $path';

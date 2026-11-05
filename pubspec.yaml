@@ -32,6 +32,8 @@ dependencies:
   connectivity_plus: ^7.3.2
   workmanager: ^0.10.10
   device_info_plus: ^13.3.0
+  package_info_plus: ^10.2.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

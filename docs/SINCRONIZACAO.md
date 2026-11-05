@@ -32,6 +32,8 @@ Teste rápido no navegador: `https://planner.<tailnet>.ts.net/v1/health`.
    - QR de pareamento (renovado enquanto a página estiver aberta);
    - código textual equivalente;
    - dispositivos já pareados.
+4. Use o botão de idioma no topo para alternar **Português/English**; a escolha
+   fica salva no navegador e a página atualiza sem recarregar.
 
 O QR contém `{url, serverId, pairingToken}`. Ele **expira em 5 minutos** e só
 pode ser usado uma vez.
@@ -40,8 +42,8 @@ pode ser usado uma vez.
 
 No aparelho:
 
-1. **Configurações → Sincronização**.
-2. Toque em **Parear dispositivo**.
+1. **Configurações → Conexão e sincronização**.
+2. Toque em **Parear este dispositivo**.
 3. Escaneie o QR ou cole o código.
 4. Confirme.
 
@@ -65,25 +67,26 @@ A seção deve mostrar:
 
 ## O que cada botão faz
 
-O card de sincronização mostra apenas o estado e as ações. O endereço e o teste
-ficam na tela **Conexão**, aberta pelo botão de mesmo nome.
+O card de sincronização em **Configurações → Conexão e sincronização** mostra
+apenas o estado e as ações. O endereço e o teste ficam na tela **Endereço e teste
+de conexão**, aberta pelo botão de mesmo nome.
 
 | Controle | Onde | Depende de pareamento? | Efeito |
 | --- | --- | --- | --- |
-| **Conexão** | Configurações | não | abre a tela dedicada de endereço/teste |
-| Campo de endereço | tela Conexão | não | apenas edita o texto |
-| **Salvar endereço** | tela Conexão | não | grava a URL; não autentica nem pareia |
-| **Testar conexão** | tela Conexão | não | consulta `/v1/health`; valida rede/URL, **não** pareia |
-| **Parear dispositivo** | Configurações | não | troca o código por um token e configura URL + token + automático |
+| **Endereço e teste de conexão** | Configurações | não | abre a tela dedicada |
+| Campo de endereço | tela de conexão | não | apenas edita o texto |
+| **Salvar endereço** | tela de conexão | não | grava a URL; não autentica nem pareia |
+| **Testar conexão** | tela de conexão | não | consulta `/v1/health`; valida rede/URL, **não** pareia |
+| **Parear este dispositivo** | Configurações | não | troca o código por um token e configura URL + token + automático |
 | **Sincronizar agora** | Configurações | **sim** | desabilitado até existir token; faz push/pull |
-| **Sincronizar automaticamente** | Configurações | **sim** | desabilitado até parear; liga os gatilhos |
-| **Desconectar** | Configurações | sim | apaga URL/token e desliga o automático; dados locais ficam |
+| **Sincronização automática** | Configurações | **sim** | desabilitado até parear; liga os gatilhos |
+| **Desconectar deste servidor** | Configurações | sim | apaga URL/token e desliga o automático; dados locais ficam |
 
 Ordem recomendada:
 
-1. (Opcional) **Conexão** → digitar URL → **Salvar endereço** →
-   **Testar conexão**;
-2. **Parear dispositivo** (QR/código);
+1. (Opcional) **Endereço e teste de conexão** → digitar URL →
+   **Salvar endereço** → **Testar conexão**;
+2. **Parear este dispositivo** (QR/código);
 3. **Sincronizar agora**, se quiser forçar.
 
 Em resumo: **testar não pareia; parear já configura; sincronizar só funciona
