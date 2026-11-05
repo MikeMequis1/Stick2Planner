@@ -1152,6 +1152,20 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Campo de URL em Configurações agora acompanha mudanças externas
   (pareamento/desconexão), evitando exibir endereço antigo.
 
+## Página web de pareamento (2026-11-05)
+
+- `GET /` no servidor exibe login administrativo (`ADMIN_TOKEN`) e, autenticado,
+  uma página com QR de pareamento ao vivo, código textual, dispositivos e
+  revogação.
+- QR gerado em SVG no próprio servidor (pacote `qr`), sem dependência de
+  `qrencode`/imagens externas; renovado a cada 4,5 min enquanto a página estiver
+  aberta, com TTL de 5 min.
+- Sessões em memória com cookie `HttpOnly`/`SameSite=Strict`; APIs
+  `/api/pairing` e `/api/devices` exigem sessão.
+- O comando de CLI `pair` continua disponível.
+- Testes de servidor cobrem login, QR, sessão, dispositivos e revogação
+  (12 testes no total).
+
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)
 

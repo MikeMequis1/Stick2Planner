@@ -4,6 +4,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
 import 'db.dart';
+import 'web.dart';
 
 const serverVersion = '0.1.0';
 const syncEntities = {'postIt', 'note', 'history'};
@@ -17,6 +18,22 @@ Handler buildHandler({
   int maxPayloadBytes = 1024 * 1024,
 }) {
   final router = Router();
+  final sessions = AdminSessions();
+
+  Future<Response> web(Request request) async {
+    final response = await adminWebRoute(request, db, adminToken, sessions);
+    return response ?? _json(404, {'error': 'not_found'});
+  }
+
+  router.get('/', web);
+  router.post('/login', web);
+  router.post('/logout', web);
+  router.get('/api/pairing', web);
+  router.get('/api/devices', web);
+  router.post(
+    '/api/devices/<id>/revoke',
+    (Request request, String id) => web(request),
+  );
 
   router.get('/v1/health', (Request request) {
     return _json(200, {

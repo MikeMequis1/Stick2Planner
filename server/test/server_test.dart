@@ -16,28 +16,45 @@ void main() {
 
   tearDown(() => db.close());
 
+  Future<({int status, String text, Map<String, String> headers})> raw(
+    String method,
+    String path, {
+    Object? body,
+    String? token,
+    Map<String, String> headers = const {},
+    bool form = false,
+  }) async {
+    final request = Request(
+      method,
+      Uri.parse('http://localhost$path'),
+      body: body == null ? null : (form ? body as String : jsonEncode(body)),
+      headers: {
+        if (token != null) 'authorization': 'Bearer $token',
+        if (!form) 'content-type': 'application/json',
+        if (form) 'content-type': 'application/x-www-form-urlencoded',
+        ...headers,
+      },
+    );
+    final response = await handler(request);
+    return (
+      status: response.statusCode,
+      text: await response.readAsString(),
+      headers: response.headers,
+    );
+  }
+
   Future<({int status, Map<String, Object?> body})> call(
     String method,
     String path, {
     Map<String, Object?>? body,
     String? token,
   }) async {
-    final request = Request(
-      method,
-      Uri.parse('http://localhost$path'),
-      body: body == null ? null : jsonEncode(body),
-      headers: {
-        if (token != null) 'authorization': 'Bearer $token',
-        'content-type': 'application/json',
-      },
-    );
-    final response = await handler(request);
-    final text = await response.readAsString();
+    final response = await raw(method, path, body: body, token: token);
     return (
-      status: response.statusCode,
-      body: text.isEmpty
+      status: response.status,
+      body: response.text.isEmpty
           ? <String, Object?>{}
-          : Map<String, Object?>.from(jsonDecode(text) as Map),
+          : Map<String, Object?>.from(jsonDecode(response.text) as Map),
     );
   }
 
@@ -301,6 +318,75 @@ void main() {
       },
     );
     expect(oversize.status, 413);
+  });
+
+  test('página web exige login e gera QR vivo', () async {
+    final page = await raw('GET', '/');
+    expect(page.status, 200);
+    expect(page.text, contains('ADMIN_TOKEN'));
+
+    final denied = await raw(
+      'POST',
+      '/login',
+      body: 'token=errado',
+      form: true,
+    );
+    expect(denied.status, 401);
+
+    final login = await raw(
+      'POST',
+      '/login',
+      body: 'token=admin-token',
+      form: true,
+    );
+    expect(login.status, 303);
+    final cookie = login.headers['set-cookie']!.split(';').first;
+    expect(cookie, startsWith('planner_admin='));
+
+    final pair = await raw('GET', '/api/pairing', headers: {'cookie': cookie});
+    expect(pair.status, 200);
+    final payload = jsonDecode(pair.text) as Map<String, Object?>;
+    expect(payload['pairingToken'], isA<String>());
+    expect((payload['pairingToken'] as String), isNotEmpty);
+    expect(payload['url'], 'http://localhost');
+    expect(payload['svg'], startsWith('<svg'));
+    expect(payload['ttlMs'], 300000);
+
+    final devices = await raw(
+      'GET',
+      '/api/devices',
+      headers: {'cookie': cookie},
+    );
+    expect(devices.status, 200);
+    expect((jsonDecode(devices.text) as Map)['devices'], isEmpty);
+
+    final noCookie = await raw('GET', '/api/pairing');
+    expect(noCookie.status, 401);
+
+    final revoked = await raw(
+      'POST',
+      '/api/devices/inexistente/revoke',
+      headers: {'cookie': cookie},
+    );
+    expect(revoked.status, 404);
+  });
+
+  test('dashboard exige sessão', () async {
+    final page = await raw('GET', '/');
+    expect(page.status, 200);
+    expect(page.text, contains('token administrativo'));
+
+    final login = await raw(
+      'POST',
+      '/login',
+      body: 'token=admin-token',
+      form: true,
+    );
+    final cookie = login.headers['set-cookie']!.split(';').first;
+    final dashboard = await raw('GET', '/', headers: {'cookie': cookie});
+    expect(dashboard.status, 200);
+    expect(dashboard.text, contains('Dispositivos pareados'));
+    expect(dashboard.text, contains('/api/pairing'));
   });
 
   test('admin exige token administrativo', () async {

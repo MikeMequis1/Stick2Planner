@@ -80,6 +80,27 @@ dart analyze
 dart test
 ```
 
+## Página web de pareamento
+
+Abra `https://planner.<tailnet>.ts.net/` (ou o endereço usado para o serviço) no
+navegador e informe o `ADMIN_TOKEN` para entrar. A página mostra:
+
+- QR Code de pareamento **renovado automaticamente** enquanto estiver aberta
+  (TTL de 5 min, renovação em 4,5 min);
+- código textual equivalente para colar no app;
+- dispositivos pareados, último acesso e botão de revogação;
+- botão de sair (sessão em memória, cookie `HttpOnly`/`SameSite=Strict`).
+
+O CLI continua disponível para automação:
+
+```bash
+docker compose exec api /app/bin/server pair 300
+```
+
+A página e as APIs `/api/pairing`, `/api/devices` exigem sessão administrativa;
+sem cookie, retornam a tela de login/401. Não exponha a página fora da
+LAN/Tailnet.
+
 ## Tailscale / tsdproxy
 
 O serviço pode ser exposto por HTTPS no Tailnet usando o `tsdproxy` já presente
