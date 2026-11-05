@@ -69,6 +69,10 @@ final class AppDependencies {
           transportFactory: syncTransportFactory,
           connectivityChanges: connectivityChanges,
         );
+    this.sync.onApplied = () async {
+      await planner.refresh();
+      await notes.refresh();
+    };
   }
 
   factory AppDependencies.fromDatabase(

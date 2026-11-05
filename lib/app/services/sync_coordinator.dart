@@ -45,6 +45,9 @@ final class SyncCoordinator extends ChangeNotifier {
   final DateTime Function() _now;
   final Duration debounce;
 
+  /// Chamado após um pull que trouxe mudanças remotas.
+  Future<void> Function()? onApplied;
+
   StreamSubscription<List<SyncOutboxRow>>? _outboxWatch;
   StreamSubscription<bool>? _connectivityWatch;
   Timer? _debounceTimer;
@@ -186,6 +189,13 @@ final class SyncCoordinator extends ChangeNotifier {
       _lastReport = report;
       _lastSyncAt = report.finishedAt;
       _lastError = null;
+      if (report.pulled > 0) {
+        try {
+          await onApplied?.call();
+        } on Object {
+          // A falha de refresh não invalida o sync já gravado.
+        }
+      }
       return report;
     } on Object catch (error) {
       _lastError = error.toString();
