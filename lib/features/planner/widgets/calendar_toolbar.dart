@@ -35,6 +35,7 @@ class CalendarToolbar extends StatelessWidget {
     final motion = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : Duration(milliseconds: 220);
+    final compact = MediaQuery.sizeOf(context).height < 520;
 
     final navigation = _ToolbarCapsule(
       child: Row(
@@ -89,16 +90,30 @@ class CalendarToolbar extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextButton(
-            key: Key('calendar-today'),
-            onPressed: onToday,
-            style: TextButton.styleFrom(
-              minimumSize: Size(0, 38),
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              shape: StadiumBorder(),
+          if (compact)
+            IconButton(
+              key: const Key('calendar-today'),
+              tooltip: AppStrings.today,
+              onPressed: onToday,
+              icon: const Icon(Icons.today, size: 18),
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(32, 32),
+                padding: EdgeInsets.zero,
+                shape: const CircleBorder(),
+              ),
+            )
+          else
+            TextButton(
+              key: const Key('calendar-today'),
+              onPressed: onToday,
+              style: TextButton.styleFrom(
+                minimumSize: Size(0, 38),
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                shape: StadiumBorder(),
+              ),
+              child: Text(AppStrings.today),
             ),
-            child: Text(AppStrings.today),
-          ),
           _ToolbarDivider(color: scheme.outlineVariant),
           _ToolbarIconButton(
             key: Key('calendar-mode-decrease'),
@@ -143,12 +158,11 @@ class CalendarToolbar extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 720) {
+        if (constraints.maxWidth >= (compact ? 480 : 720)) {
           return Row(
             children: [
               Flexible(child: navigation),
-              SizedBox(width: 16),
-              Spacer(),
+              SizedBox(width: compact ? 8 : 16),
               controls,
             ],
           );
@@ -177,8 +191,12 @@ class _ToolbarCapsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final compact = MediaQuery.sizeOf(context).height < 520;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 2 : 4,
+        vertical: compact ? 2 : 4,
+      ),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(999),
@@ -203,13 +221,14 @@ class _ToolbarIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 520;
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
-      icon: Icon(icon, size: 20),
+      icon: Icon(icon, size: compact ? 18 : 20),
       visualDensity: VisualDensity.compact,
       style: IconButton.styleFrom(
-        minimumSize: Size(36, 36),
+        minimumSize: Size(compact ? 32 : 36, compact ? 32 : 36),
         padding: EdgeInsets.zero,
         shape: CircleBorder(),
       ),
@@ -224,9 +243,10 @@ class _ToolbarDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 520;
     return Container(
       width: 1,
-      height: 22,
+      height: compact ? 16 : 22,
       margin: EdgeInsets.symmetric(horizontal: 4),
       color: color,
     );

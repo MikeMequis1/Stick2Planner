@@ -211,8 +211,8 @@ abstract final class AppStrings {
 
   static String get nextStage => _t('Próxima etapa', 'Next stage');
   static String get offlineNotice => _t(
-    'Funciona offline: dados salvos neste tablet.',
-    'Works offline: data saved on this tablet.',
+    'Funciona offline; a sincronização é opcional.',
+    'Works offline; sync is optional.',
   );
 
   static String get settings => _t('Configurações', 'Settings');
@@ -326,8 +326,8 @@ abstract final class AppStrings {
 
   static String get settingsAbout => _t('Sobre', 'About');
   static String get settingsLocalData => _t(
-    'Dados salvos localmente neste tablet, sem sincronização nesta versão.',
-    'Data saved locally on this tablet, without synchronization in this version.',
+    'Dados salvos localmente neste aparelho; o servidor de sincronização é opcional.',
+    'Data saved locally on this device; the sync server is optional.',
   );
   static String get settingsLanguage => _t('Idioma', 'Language');
   static String get settingsLanguageHelp =>

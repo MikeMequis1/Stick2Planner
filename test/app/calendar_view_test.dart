@@ -537,4 +537,21 @@ void main() {
     expect(find.byType(DayCell), findsNWidgets(7));
     expect(dependencies.planner.postIts, hasLength(2));
   });
+
+  testWidgets('celular em paisagem compacta a barra sem estourar', (
+    tester,
+  ) async {
+    await pumpPlanner(tester, size: const Size(780, 360));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('calendar-swipe-area')), findsOneWidget);
+    expect(find.byKey(const Key('add-post-it')), findsOneWidget);
+  });
+
+  testWidgets('celular em retrato não estoura', (tester) async {
+    await pumpPlanner(tester, size: const Size(360, 780));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('calendar-swipe-area')), findsOneWidget);
+  });
 }

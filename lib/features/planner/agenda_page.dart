@@ -59,10 +59,17 @@ class _AgendaPageState extends State<AgendaPage> {
       mode: mode,
     );
 
-    final compactWidth = MediaQuery.sizeOf(context).width < 600;
+    final size = MediaQuery.sizeOf(context);
+    final compactWidth = size.width < 600;
+    final shortHeight = size.height < 520;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, compactWidth ? 12 : 72),
+      padding: EdgeInsets.fromLTRB(
+        shortHeight ? 8 : 16,
+        shortHeight ? 4 : 8,
+        shortHeight ? 8 : 16,
+        shortHeight ? 12 : (compactWidth ? 12 : 72),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -99,7 +106,7 @@ class _AgendaPageState extends State<AgendaPage> {
               ),
             ),
           ],
-          const SizedBox(height: 8),
+          SizedBox(height: shortHeight ? 4 : 8),
           Expanded(
             child: Stack(
               children: [
@@ -263,8 +270,8 @@ class _AgendaPageState extends State<AgendaPage> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          if (settings.showCalendarHints)
+          SizedBox(height: shortHeight ? 2 : 8),
+          if (settings.showCalendarHints && !shortHeight)
             Row(
               children: [
                 Icon(
@@ -276,6 +283,8 @@ class _AgendaPageState extends State<AgendaPage> {
                 Expanded(
                   child: Text(
                     AppStrings.calendarHint,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -285,7 +294,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 _undatedChip(theme, planner),
               ],
             )
-          else
+          else if (!shortHeight)
             Align(
               alignment: Alignment.centerRight,
               child: _undatedChip(theme, planner),

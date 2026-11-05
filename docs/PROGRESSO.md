@@ -1151,6 +1151,11 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Post-its de teste confirmados no servidor após o corte do cabo.
 - Campo de URL em Configurações agora acompanha mudanças externas
   (pareamento/desconexão), evitando exibir endereço antigo.
+- Layout de celular ajustado: em paisagem (altura < 520 dp) a barra da agenda
+  fica em uma linha, “Hoje” vira ícone, dicas/chip somem e o FAB vira compacto;
+  em retrato a dica fica em 2 linhas. Testes cobrem 780×360 e 360×780.
+- Textos de “Sobre” atualizados: sincronização é opcional, não “sem
+  sincronização nesta versão”.
 
 ## Página web de pareamento (2026-11-05)
 
