@@ -4,6 +4,12 @@ Planner visual offline-first para Android (celular e tablet): agenda por
 períodos, caixinha de post-its e caderno de notas Markdown. Tudo fica em SQLite
 local.
 
+## Download
+
+APK mais recente: **[Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
+Use o APK universal em Android 7.0+ (`minSdk 24`). O aplicativo funciona offline;
+a sincronização é opcional.
+
 ## Estado
 
 Etapas 0 a 6 concluídas, incluindo a rodada pós-MVP de navegação, configurações,
