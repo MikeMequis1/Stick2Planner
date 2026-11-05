@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/db/app_database.dart';
 import '../../data/sync/pairing_payload.dart';
+import '../../data/sync/sync_dataset.dart';
 import '../../data/sync/sync_engine.dart';
 import '../../data/sync/sync_models.dart';
 import '../../data/sync/sync_state_store.dart';
@@ -60,6 +61,7 @@ final class SyncCoordinator extends ChangeNotifier {
   DateTime? _lastSyncAt;
   String? _lastError;
   SyncReport? _lastReport;
+  SyncPreflight? _pendingPreflight;
 
   bool get busy => _busy;
   bool get enabled => _enabled;
@@ -70,6 +72,9 @@ final class SyncCoordinator extends ChangeNotifier {
   DateTime? get lastSyncAt => _lastSyncAt;
   String? get lastError => _lastError;
   SyncReport? get lastReport => _lastReport;
+
+  /// Comparação pendente de dados local/remoto; exige escolha do usuário.
+  SyncPreflight? get pendingPreflight => _pendingPreflight;
 
   Future<void> initialize() async {
     _deviceId = await _state.ensureDeviceId();
@@ -118,6 +123,7 @@ final class SyncCoordinator extends ChangeNotifier {
     }
     await _state.setServerUrl(normalized);
     _serverUrl = normalized;
+    _pendingPreflight = null;
     _configured = await _hasCredentials();
     notifyListeners();
     if (_enabled) _schedule(immediate: true);
@@ -156,6 +162,7 @@ final class SyncCoordinator extends ChangeNotifier {
     await _tokens.write(result.token);
     await _state.setServerUrl(_normalize(payload.url.toString()));
     await _state.setEnabled(true);
+    _pendingPreflight = null;
     await refreshConfig();
     _schedule(immediate: true);
   }
@@ -164,32 +171,75 @@ final class SyncCoordinator extends ChangeNotifier {
     await _tokens.clear();
     await _state.setServerUrl(null);
     await _state.setEnabled(false);
+    _pendingPreflight = null;
     await refreshConfig();
   }
 
-  Future<SyncReport?> syncNow() async {
+  /// Consulta contagens local/remota antes de sincronizar.
+  ///
+  /// Retorna `null` sem credenciais. Quando há divergência não explicada por
+  /// alterações locais, `pendingPreflight` fica preenchido até o usuário
+  /// escolher manter local, remoto ou cancelar.
+  Future<SyncPreflight?> inspect() async {
+    if (!await _hasCredentials()) return null;
+    final transport = await _currentTransport();
+    final remote = await transport.stats();
+    final local = await SyncDatasetService(_db).counts();
+    final pending = (await _db.select(_db.syncOutbox).get()).length;
+    final preflight = SyncPreflight(
+      local: local,
+      remote: remote,
+      hasLocalChanges: pending > 0,
+      hasSyncedBefore: _lastSyncAt != null,
+    );
+    _pendingPreflight = preflight.requiresChoice ? preflight : null;
+    notifyListeners();
+    return preflight;
+  }
+
+  Future<SyncReport?> syncNow({
+    SyncMode mode = SyncMode.merge,
+    bool inspectFirst = true,
+  }) async {
     if (_busy) return null;
     if (!await _hasCredentials()) {
       _lastError = 'sync_not_configured';
       notifyListeners();
       return null;
     }
+    if (inspectFirst && mode == SyncMode.merge) {
+      SyncPreflight? preflight;
+      try {
+        preflight = await inspect();
+      } on Object catch (error) {
+        _lastError = error.toString();
+        notifyListeners();
+        return null;
+      }
+      if (preflight == null) return null;
+      if (preflight.requiresChoice) return null;
+    }
+    _pendingPreflight = null;
     _busy = true;
     notifyListeners();
     try {
-      final url = (await _state.serverUrl())!;
-      final token = (await _tokens.read())!;
+      final transport = await _currentTransport();
       final engine = SyncEngine(
         database: _db,
-        transport: _transportFactory(Uri.parse(url), token),
+        transport: transport,
         state: _state,
         now: _now,
       );
-      final report = await engine.run();
+      final report = switch (mode) {
+        SyncMode.merge => await engine.run(),
+        SyncMode.keepLocal => await engine.replaceWithLocal(),
+        SyncMode.keepRemote => await engine.replaceWithRemote(),
+      };
       _lastReport = report;
       _lastSyncAt = report.finishedAt;
       _lastError = null;
-      if (report.pulled > 0) {
+      if (mode == SyncMode.keepRemote ||
+          (mode == SyncMode.merge && report.pulled > 0)) {
         try {
           await onApplied?.call();
         } on Object {
@@ -207,12 +257,18 @@ final class SyncCoordinator extends ChangeNotifier {
     }
   }
 
+  Future<SyncTransport> _currentTransport() async {
+    final url = (await _state.serverUrl())!;
+    final token = (await _tokens.read())!;
+    return _transportFactory(Uri.parse(url), token);
+  }
+
   void handleAppResumed() {
     if (_enabled) _schedule(immediate: true);
   }
 
   void _schedule({bool immediate = false}) {
-    if (!_enabled) return;
+    if (!_enabled || _pendingPreflight != null) return;
     _debounceTimer?.cancel();
     final delay = immediate ? Duration.zero : debounce;
     _debounceTimer = Timer(delay, () {

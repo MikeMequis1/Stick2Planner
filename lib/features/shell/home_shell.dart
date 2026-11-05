@@ -206,6 +206,10 @@ class _SyncStatusButton extends StatelessWidget {
     if (!sync.configured) {
       icon = Icons.cloud_off_outlined;
       tooltip = AppStrings.syncNotPaired;
+    } else if (sync.pendingPreflight != null) {
+      icon = Icons.cloud_sync_outlined;
+      tooltip = AppStrings.syncPendingReview;
+      color = scheme.tertiary;
     } else if (sync.busy) {
       icon = Icons.cloud_sync_outlined;
       tooltip = AppStrings.syncRunning;

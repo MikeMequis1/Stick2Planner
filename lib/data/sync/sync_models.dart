@@ -107,6 +107,165 @@ final class SyncResponse {
   }
 }
 
+/// Estratégia escolhida antes de uma sincronização.
+enum SyncMode { merge, keepLocal, keepRemote }
+
+/// Contagem de dados de usuário de um lado da sincronização.
+final class SyncCounts {
+  const SyncCounts({
+    this.postIts = 0,
+    this.notes = 0,
+    this.events = 0,
+    this.tasks = 0,
+    this.history = 0,
+  });
+
+  final int postIts;
+  final int notes;
+  final int events;
+  final int tasks;
+  final int history;
+
+  bool get isEmpty => postIts == 0 && notes == 0;
+
+  /// Compara apenas os dados visíveis; histórico é auditoria e não decide.
+  bool hasSameUserData(SyncCounts other) =>
+      postIts == other.postIts &&
+      notes == other.notes &&
+      events == other.events &&
+      tasks == other.tasks;
+
+  Map<String, Object?> toJson() => {
+    'postIts': postIts,
+    'notes': notes,
+    'events': events,
+    'tasks': tasks,
+    'history': history,
+  };
+
+  factory SyncCounts.fromJson(Map<String, Object?> json) => SyncCounts(
+    postIts: _asInt(json['postIts']),
+    notes: _asInt(json['notes']),
+    events: _asInt(json['events']),
+    tasks: _asInt(json['tasks']),
+    history: _asInt(json['history']),
+  );
+}
+
+/// Comparação local/remota feita antes de sincronizar.
+final class SyncPreflight {
+  const SyncPreflight({
+    required this.local,
+    required this.remote,
+    required this.hasLocalChanges,
+    required this.hasSyncedBefore,
+  });
+
+  final SyncCounts local;
+  final SyncCounts remote;
+  final bool hasLocalChanges;
+  final bool hasSyncedBefore;
+
+  /// Pede escolha quando ambos têm dados e a diferença não é explicada por
+  /// alterações locais após um sync anterior. No primeiro sync, qualquer
+  /// diferença pede confirmação.
+  bool get requiresChoice {
+    if (local.isEmpty || remote.isEmpty) return false;
+    if (local.hasSameUserData(remote)) return false;
+    return !hasSyncedBefore || !hasLocalChanges;
+  }
+}
+
+/// Entidade de um snapshot remoto/local usado para substituição de conjunto.
+final class SyncSnapshotEntity {
+  const SyncSnapshotEntity({
+    required this.entity,
+    required this.entityId,
+    required this.rev,
+    required this.updatedAt,
+    required this.deleted,
+    required this.payload,
+  });
+
+  final String entity;
+  final String entityId;
+  final int rev;
+  final DateTime updatedAt;
+  final bool deleted;
+  final Map<String, Object?> payload;
+
+  Map<String, Object?> toJson() => {
+    'entity': entity,
+    'entityId': entityId,
+    'rev': rev,
+    'updatedAt': updatedAt.toUtc().millisecondsSinceEpoch,
+    'deleted': deleted,
+    'payload': payload,
+  };
+
+  factory SyncSnapshotEntity.fromJson(Map<String, Object?> json) {
+    final payload = json['payload'];
+    return SyncSnapshotEntity(
+      entity: _string(json['entity'], 'snapshot.entity'),
+      entityId: _string(json['entityId'], 'snapshot.entityId'),
+      rev: _int(json['rev'], 'snapshot.rev'),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        _int(json['updatedAt'], 'snapshot.updatedAt'),
+        isUtc: true,
+      ),
+      deleted: json['deleted'] == true,
+      payload: payload is Map
+          ? Map<String, Object?>.from(payload)
+          : <String, Object?>{},
+    );
+  }
+}
+
+/// Snapshot remoto com cursor da mudança mais recente.
+final class RemoteSyncSnapshot {
+  const RemoteSyncSnapshot({required this.entities, required this.cursor});
+
+  final List<SyncSnapshotEntity> entities;
+  final int cursor;
+
+  factory RemoteSyncSnapshot.fromJson(Map<String, Object?> json) {
+    final raw = json['entities'];
+    return RemoteSyncSnapshot(
+      entities: [
+        if (raw is List)
+          for (final item in raw)
+            if (item is Map)
+              SyncSnapshotEntity.fromJson(Map<String, Object?>.from(item)),
+      ],
+      cursor: _int(json['cursor'], 'snapshot.cursor'),
+    );
+  }
+}
+
+/// Resultado de uma substituição de conjunto no servidor.
+final class SyncReplaceResult {
+  const SyncReplaceResult({required this.revs, required this.cursor});
+
+  final Map<String, int> revs;
+  final int cursor;
+
+  factory SyncReplaceResult.fromJson(Map<String, Object?> json) {
+    final raw = json['entities'];
+    final revs = <String, int>{};
+    if (raw is List) {
+      for (final item in raw) {
+        if (item is! Map) continue;
+        final map = Map<String, Object?>.from(item);
+        revs['${map['entity']}\u0000${map['entityId']}'] = _asInt(map['rev']);
+      }
+    }
+    return SyncReplaceResult(
+      revs: revs,
+      cursor: _int(json['cursor'], 'replace.cursor'),
+    );
+  }
+}
+
 /// Resumo de uma rodada de sincronização.
 final class SyncReport {
   const SyncReport({
@@ -199,3 +358,9 @@ int _int(Object? value, String field) {
   if (value is num) return value.toInt();
   throw SyncException('$field inválido');
 }
+
+int _asInt(Object? value) => value is int
+    ? value
+    : value is num
+    ? value.toInt()
+    : 0;

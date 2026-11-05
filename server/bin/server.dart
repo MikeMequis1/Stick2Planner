@@ -12,6 +12,11 @@ Future<void> main(List<String> args) async {
   final adminToken = Platform.environment['ADMIN_TOKEN'] ?? '';
   final publicUrl = Platform.environment['PUBLIC_URL'] ?? '';
 
+  if (args.isNotEmpty && args.first == 'token') {
+    stdout.writeln(newToken());
+    return;
+  }
+
   final db = PlannerDb.open(dbPath);
 
   switch (args.isEmpty ? 'serve' : args.first) {
@@ -79,7 +84,9 @@ Future<void> main(List<String> args) async {
       return;
 
     default:
-      stderr.writeln('Comandos: serve | pair [ttl] | devices | revoke <id>');
+      stderr.writeln(
+        'Comandos: serve | token | pair [ttl] | devices | revoke <id>',
+      );
       exitCode = 2;
   }
 }

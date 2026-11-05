@@ -126,6 +126,65 @@ Handler buildHandler({
     });
   });
 
+  router.get('/v1/sync/stats', (Request request) {
+    final deviceId = _authenticatedDevice(request, db);
+    if (deviceId == null) return _json(401, {'error': 'unauthorized'});
+    return _json(200, db.stats());
+  });
+
+  router.get('/v1/sync/snapshot', (Request request) {
+    final deviceId = _authenticatedDevice(request, db);
+    if (deviceId == null) return _json(401, {'error': 'unauthorized'});
+    final snapshot = db.snapshot();
+    return _json(200, {
+      'entities': snapshot.entities,
+      'cursor': snapshot.cursor,
+    });
+  });
+
+  router.post('/v1/sync/replace', (Request request) async {
+    final deviceId = _authenticatedDevice(request, db);
+    if (deviceId == null) return _json(401, {'error': 'unauthorized'});
+
+    final body = await _readJson(request, maxBodyBytes);
+    if (body == null) return _json(400, {'error': 'invalid_body'});
+    if (body['deviceId'] != deviceId) {
+      return _json(403, {'error': 'device_mismatch'});
+    }
+    final rawEntities = body['entities'];
+    if (rawEntities is! List) return _json(400, {'error': 'invalid_entities'});
+    if (rawEntities.length > 20000) {
+      return _json(413, {'error': 'too_many_entities'});
+    }
+
+    final entities = <Map<String, Object?>>[];
+    for (final raw in rawEntities) {
+      if (raw is! Map) return _json(400, {'error': 'invalid_entity'});
+      final map = Map<String, Object?>.from(raw);
+      final entity = map['entity'];
+      final entityId = map['entityId'];
+      final payload = map['payload'];
+      if (entity is! String || !syncEntities.contains(entity)) {
+        return _json(400, {'error': 'invalid_entity'});
+      }
+      if (entityId is! String || entityId.isEmpty || entityId.length > 200) {
+        return _json(400, {'error': 'invalid_entity_id'});
+      }
+      if (payload is! Map) return _json(400, {'error': 'invalid_payload'});
+      if (jsonEncode(payload).length > maxPayloadBytes) {
+        return _json(413, {'error': 'invalid_payload'});
+      }
+      entities.add({
+        'entity': entity,
+        'entityId': entityId,
+        'payload': Map<String, Object?>.from(payload),
+      });
+    }
+
+    final result = db.replaceDataset(deviceId: deviceId, entities: entities);
+    return _json(200, {'entities': result.entities, 'cursor': result.cursor});
+  });
+
   router.post('/v1/pair', (Request request) async {
     final body = await _readJson(request, maxBodyBytes);
     if (body == null) return _json(400, {'error': 'invalid_body'});

@@ -8,6 +8,7 @@ import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
+import '../../data/sync/sync_models.dart';
 import 'about_page.dart';
 import 'connection_test_page.dart';
 import 'qr_scan_page.dart';
@@ -277,7 +278,34 @@ class _SyncSectionState extends State<_SyncSection> {
   Future<void> _syncNow() async {
     final messenger = ScaffoldMessenger.of(context);
     final sync = AppScope.of(context).sync;
-    final report = await sync.syncNow();
+    SyncPreflight? preflight;
+    try {
+      preflight = await sync.inspect();
+    } on Object {
+      preflight = null;
+    }
+    if (!mounted) return;
+    if (preflight == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            sync.configured
+                ? AppStrings.syncError
+                : AppStrings.syncNotConfigured,
+          ),
+        ),
+      );
+      return;
+    }
+
+    var mode = SyncMode.merge;
+    if (preflight.requiresChoice) {
+      final chosen = await _askSyncMode(preflight);
+      if (chosen == null || !mounted) return;
+      mode = chosen;
+    }
+
+    final report = await sync.syncNow(mode: mode, inspectFirst: false);
     if (!mounted) return;
     if (report == null) {
       messenger.showSnackBar(
@@ -296,6 +324,55 @@ class _SyncSectionState extends State<_SyncSection> {
         content: Text(
           AppStrings.syncDone(report.pushed, report.pulled, report.copies),
         ),
+      ),
+    );
+  }
+
+  Future<SyncMode?> _askSyncMode(SyncPreflight preflight) {
+    return showDialog<SyncMode>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.syncReviewTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(AppStrings.syncReviewHelp),
+              const SizedBox(height: 14),
+              _SyncCountsTable(preflight: preflight),
+              const SizedBox(height: 14),
+              Text(
+                '${AppStrings.syncKeepLocal}: ${AppStrings.syncKeepLocalHelp}',
+                style: Theme.of(dialogContext).textTheme.labelSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${AppStrings.syncKeepRemote}: ${AppStrings.syncKeepRemoteHelp}',
+                style: Theme.of(dialogContext).textTheme.labelSmall,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const Key('sync-review-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppStrings.cancel),
+          ),
+          OutlinedButton(
+            key: const Key('sync-review-remote'),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(SyncMode.keepRemote),
+            child: Text(AppStrings.syncKeepRemote),
+          ),
+          FilledButton(
+            key: const Key('sync-review-local'),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(SyncMode.keepLocal),
+            child: Text(AppStrings.syncKeepLocal),
+          ),
+        ],
       ),
     );
   }
@@ -395,6 +472,26 @@ class _SyncSectionState extends State<_SyncSection> {
                     ),
                   ),
                 ],
+                if (sync.pendingPreflight != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    AppStrings.syncPendingReview,
+                    key: const Key('settings-sync-pending-review'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.tertiary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('settings-sync-review'),
+                      onPressed: _busy ? null : () => _syncNow(),
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: Text(AppStrings.syncReviewAction),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 SwitchListTile(
                   key: const Key('settings-sync-enabled'),
@@ -419,7 +516,7 @@ class _SyncSectionState extends State<_SyncSection> {
                       child: FilledButton.icon(
                         key: const Key('settings-sync-now'),
                         onPressed: sync.configured && !sync.busy && !_busy
-                            ? _syncNow
+                            ? () => _syncNow()
                             : null,
                         icon: sync.busy
                             ? const SizedBox(
@@ -465,6 +562,87 @@ class _SyncSectionState extends State<_SyncSection> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SyncCountsTable extends StatelessWidget {
+  const _SyncCountsTable({required this.preflight});
+
+  final SyncPreflight preflight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final header = theme.textTheme.labelSmall?.copyWith(
+      fontWeight: FontWeight.w700,
+    );
+    final cell = theme.textTheme.bodySmall;
+    final rows = <(String, int, int)>[
+      (
+        AppStrings.syncCountPostIts,
+        preflight.local.postIts,
+        preflight.remote.postIts,
+      ),
+      (
+        AppStrings.syncCountNotes,
+        preflight.local.notes,
+        preflight.remote.notes,
+      ),
+      (
+        AppStrings.syncCountEvents,
+        preflight.local.events,
+        preflight.remote.events,
+      ),
+      (
+        AppStrings.syncCountTasks,
+        preflight.local.tasks,
+        preflight.remote.tasks,
+      ),
+      (
+        AppStrings.syncCountHistory,
+        preflight.local.history,
+        preflight.remote.history,
+      ),
+    ];
+
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(1.4),
+        1: FlexColumnWidth(1),
+        2: FlexColumnWidth(1),
+      },
+      border: TableBorder(
+        horizontalInside: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      children: [
+        TableRow(
+          children: [
+            Text('', style: header),
+            Text(
+              AppStrings.syncLocalData,
+              style: header,
+              textAlign: TextAlign.end,
+            ),
+            Text(
+              AppStrings.syncRemoteData,
+              style: header,
+              textAlign: TextAlign.end,
+            ),
+          ],
+        ),
+        for (final row in rows)
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(row.$1, style: cell),
+              ),
+              Text('${row.$2}', style: cell, textAlign: TextAlign.end),
+              Text('${row.$3}', style: cell, textAlign: TextAlign.end),
+            ],
+          ),
+      ],
     );
   }
 }

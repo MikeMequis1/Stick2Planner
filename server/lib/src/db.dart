@@ -306,6 +306,208 @@ final class PlannerDb {
     return (changes: changes, cursor: cursor, more: more);
   }
 
+  /// Contagens dos dados ativos, para a confirmação antes do sync.
+  Map<String, Object?> stats() {
+    var postIts = 0;
+    var notes = 0;
+    var events = 0;
+    var tasks = 0;
+    var history = 0;
+    final rows = _db.select(
+      "SELECT entity, payload FROM entities WHERE deleted = 0 "
+      "AND entity IN ('postIt', 'note', 'history')",
+    );
+    for (final row in rows) {
+      switch (row['entity']) {
+        case 'note':
+          notes++;
+          break;
+        case 'history':
+          history++;
+          break;
+        case 'postIt':
+          postIts++;
+          final payload = _decodePayload(row['payload']);
+          if (payload['type'] == 'event') {
+            events++;
+          } else {
+            tasks++;
+          }
+          break;
+      }
+    }
+    return {
+      'postIts': postIts,
+      'notes': notes,
+      'events': events,
+      'tasks': tasks,
+      'history': history,
+    };
+  }
+
+  /// Snapshot de todas as entidades ativas, com o cursor atual.
+  ({List<Map<String, Object?>> entities, int cursor}) snapshot() {
+    final cursor =
+        _db
+                .select('SELECT COALESCE(MAX(seq), 0) AS seq FROM changes')
+                .first['seq']
+            as int;
+    final rows = _db.select(
+      'SELECT entity, id, rev, updated_at, deleted, payload FROM entities '
+      'WHERE deleted = 0 ORDER BY entity, id',
+    );
+    return (
+      entities: [
+        for (final row in rows)
+          {
+            'entity': row['entity'],
+            'entityId': row['id'],
+            'rev': row['rev'],
+            'updatedAt': row['updated_at'],
+            'deleted': false,
+            'payload': _decodePayload(row['payload']),
+          },
+      ],
+      cursor: cursor,
+    );
+  }
+
+  /// Substitui o conjunto remoto pelo snapshot enviado pelo dispositivo.
+  ///
+  /// Entidades remotas ausentes no snapshot viram tombstones, preservando o
+  /// histórico de mudanças para os demais dispositivos. Histórico é tratado
+  /// como auditoria: entradas antigas não são apagadas.
+  ({List<Map<String, Object?>> entities, int cursor}) replaceDataset({
+    required String deviceId,
+    required List<Map<String, Object?>> entities,
+  }) {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final incoming = <String, Map<String, Object?>>{};
+    for (final raw in entities) {
+      final entity = raw['entity'] as String;
+      final entityId = raw['entityId'] as String;
+      incoming['$entity\u0000$entityId'] = raw;
+    }
+
+    _db.execute('BEGIN IMMEDIATE');
+    try {
+      final existing = _db.select(
+        'SELECT entity, id, rev, deleted, payload FROM entities',
+      );
+      for (final row in existing) {
+        final entity = row['entity'] as String;
+        final entityId = row['id'] as String;
+        final key = '$entity\u0000$entityId';
+        if (incoming.containsKey(key) || entity == 'history') continue;
+        if ((row['deleted'] as int) == 1) continue;
+
+        final payload = _decodePayload(row['payload']);
+        payload['deletedAt'] = _isoTime(now);
+        payload['updatedAt'] = _isoTime(now);
+        final nextRev = (row['rev'] as int) + 1;
+        _writeEntity(
+          entity: entity,
+          entityId: entityId,
+          rev: nextRev,
+          deleted: true,
+          updatedAt: now,
+          originDevice: deviceId,
+          payload: jsonEncode(payload),
+        );
+        _writeChange(entity, entityId, nextRev);
+      }
+
+      final result = <Map<String, Object?>>[];
+      for (final entry in incoming.entries) {
+        final raw = entry.value;
+        final entity = raw['entity'] as String;
+        final entityId = raw['entityId'] as String;
+        final payload = Map<String, Object?>.from(raw['payload'] as Map);
+        final deleted = payload['deletedAt'] != null;
+        final existingRow = _db.select(
+          'SELECT rev FROM entities WHERE entity = ? AND id = ?',
+          [entity, entityId],
+        );
+        final nextRev = existingRow.isEmpty
+            ? 1
+            : (existingRow.first['rev'] as int) + 1;
+        _writeEntity(
+          entity: entity,
+          entityId: entityId,
+          rev: nextRev,
+          deleted: deleted,
+          updatedAt: now,
+          originDevice: deviceId,
+          payload: jsonEncode(payload),
+        );
+        _writeChange(entity, entityId, nextRev);
+        result.add({'entity': entity, 'entityId': entityId, 'rev': nextRev});
+      }
+
+      final cursor =
+          _db
+                  .select('SELECT COALESCE(MAX(seq), 0) AS seq FROM changes')
+                  .first['seq']
+              as int;
+      _db.execute('COMMIT');
+      return (entities: result, cursor: cursor);
+    } on Object {
+      _db.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
+  void _writeEntity({
+    required String entity,
+    required String entityId,
+    required int rev,
+    required bool deleted,
+    required int updatedAt,
+    required String originDevice,
+    required String payload,
+  }) {
+    _db.execute(
+      'INSERT INTO entities '
+      '(entity, id, rev, deleted, updated_at, origin_device, payload) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?) '
+      'ON CONFLICT (entity, id) DO UPDATE SET '
+      'rev = excluded.rev, deleted = excluded.deleted, '
+      'updated_at = excluded.updated_at, origin_device = excluded.origin_device, '
+      'payload = excluded.payload',
+      [
+        entity,
+        entityId,
+        rev,
+        deleted ? 1 : 0,
+        updatedAt,
+        originDevice,
+        payload,
+      ],
+    );
+  }
+
+  void _writeChange(String entity, String entityId, int rev) {
+    _db.execute('INSERT INTO changes (entity, id, rev) VALUES (?, ?, ?)', [
+      entity,
+      entityId,
+      rev,
+    ]);
+  }
+
+  static Map<String, Object?> _decodePayload(Object? raw) {
+    if (raw is String) {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return Map<String, Object?>.from(decoded);
+    }
+    return <String, Object?>{};
+  }
+
+  static String _isoTime(int milliseconds) =>
+      DateTime.fromMillisecondsSinceEpoch(
+        milliseconds,
+        isUtc: true,
+      ).toIso8601String();
+
   String _randomToken() => base64Url
       .encode(List<int>.generate(32, (_) => RandomSeed.nextByte()))
       .replaceAll('=', '');

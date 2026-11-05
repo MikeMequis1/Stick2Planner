@@ -55,6 +55,19 @@ final class FakeTransport implements SyncTransport {
     pairCalls++;
     return PairResult(deviceId: deviceId, token: 'device-token');
   }
+
+  @override
+  Future<SyncCounts> stats() async => const SyncCounts();
+
+  @override
+  Future<RemoteSyncSnapshot> snapshot() async =>
+      const RemoteSyncSnapshot(entities: [], cursor: 0);
+
+  @override
+  Future<SyncReplaceResult> replace({
+    required String deviceId,
+    required List<SyncSnapshotEntity> entities,
+  }) async => const SyncReplaceResult(revs: {}, cursor: 0);
 }
 
 void main() {

@@ -256,6 +256,32 @@ abstract final class AppStrings {
   static String get syncNotPaired => _t('Não pareado', 'Not paired');
   static String get syncPairFirst =>
       _t('Pareie o dispositivo primeiro', 'Pair the device first');
+  static String get syncReviewTitle =>
+      _t('Revisar sincronização', 'Review sync');
+  static String get syncReviewHelp => _t(
+    'Os dados deste aparelho e do servidor são diferentes. Escolha qual conjunto deve ser mantido antes de continuar.',
+    'Data on this device and on the server differ. Choose which set to keep before continuing.',
+  );
+  static String get syncLocalData => _t('Este aparelho', 'This device');
+  static String get syncRemoteData => _t('Servidor', 'Server');
+  static String get syncCountPostIts => _t('Post-its', 'Post-its');
+  static String get syncCountNotes => _t('Notas', 'Notes');
+  static String get syncCountEvents => _t('Eventos', 'Events');
+  static String get syncCountTasks => _t('Tarefas', 'Tasks');
+  static String get syncCountHistory => _t('Histórico', 'History');
+  static String get syncKeepLocal => _t('Manter local', 'Keep local');
+  static String get syncKeepRemote => _t('Manter remoto', 'Keep remote');
+  static String get syncKeepLocalHelp => _t(
+    'Envia notas, post-its e eventos deste aparelho e remove do servidor os que não existem aqui. O histórico é preservado.',
+    'Sends notes, post-its and events from this device and removes from the server those that do not exist here. History is preserved.',
+  );
+  static String get syncKeepRemoteHelp => _t(
+    'Substitui os dados deste aparelho pelos dados do servidor.',
+    'Replaces this device data with the server data.',
+  );
+  static String get syncPendingReview =>
+      _t('Revisão necessária', 'Review required');
+  static String get syncReviewAction => _t('Revisar agora', 'Review now');
   static String get syncServerUrl =>
       _t('Endereço do servidor', 'Server address');
   static String get syncServerUrlHint =>

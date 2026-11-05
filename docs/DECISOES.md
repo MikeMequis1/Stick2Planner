@@ -348,6 +348,13 @@ continua como interoperabilidade futura; não há conta pública nem multiusuár
   cada dispositivo recebe token próprio, revogável no servidor.
 - Gatilhos: mudança local (watch da outbox + debounce), retomada, reconexão,
   botão manual e WorkManager periódico (15 min, best-effort, restrito a rede).
+- Antes de aplicar, o app consulta `/v1/sync/stats` e compara com as contagens
+  locais. Se ambos os lados têm dados, as contagens divergem e este é o primeiro
+  sync ou não há outbox pendente, a operação para e pede escolha: manter local
+  (envia o snapshot local e tombstone do que só existe no servidor), manter
+  remoto (substitui o conteúdo local pelo snapshot remoto) ou cancelar. O sync
+  automático nunca decide sozinho: fica em “Revisão necessária” até a escolha do
+  usuário.
 - Falha de sync não bloqueia a UI; estado e erro ficam visíveis em Configurações.
 - `INTERNET`/`ACCESS_NETWORK_STATE` entraram apenas para o sync opcional;
   cleartext é aceito para servidor próprio na LAN/Tailscale.

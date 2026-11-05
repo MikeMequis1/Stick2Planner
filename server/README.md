@@ -11,6 +11,9 @@ Fluxo de conexão/pareamento/sync do app: `../docs/SINCRONIZACAO.md`.
 | --- | --- | --- | --- |
 | GET | `/v1/health` | — | saúde/versão/serverId |
 | POST | `/v1/sync` | token do dispositivo | push + pull em uma chamada |
+| GET | `/v1/sync/stats` | token do dispositivo | contagens de dados ativos |
+| GET | `/v1/sync/snapshot` | token do dispositivo | snapshot completo (manter remoto) |
+| POST | `/v1/sync/replace` | token do dispositivo | substitui conjunto (manter local) |
 | POST | `/v1/pair` | token de pareamento | troca por token do dispositivo |
 | POST | `/v1/admin/pairing-tokens` | token admin | cria token de pareamento (TTL) |
 | GET | `/v1/admin/devices` | token admin | lista dispositivos |
@@ -20,6 +23,10 @@ Push aplica apenas com `baseRev` igual à revisão atual; divergência devolve
 `conflicts` com a versão do servidor. Reenvio do mesmo `changeId` devolve o ack
 anterior. Pull retorna mudanças após `since` com o estado atual da entidade.
 
+`/v1/sync/stats` e `/v1/sync/snapshot` alimentam a conferência local × remota do
+app. `/v1/sync/replace` substitui o conjunto remoto pelo snapshot local: o que
+não existir no envio vira tombstone e o histórico é preservado como auditoria.
+
 ## Variáveis
 
 | Variável | Padrão | Descrição |
@@ -28,6 +35,32 @@ anterior. Pull retorna mudanças após `since` com o estado atual da entidade.
 | `DB_PATH` | `data/planner-server.sqlite` | arquivo SQLite |
 | `ADMIN_TOKEN` | — | obrigatório para servir/parear |
 | `PUBLIC_URL` | — | URL exibida no pareamento |
+
+### Gerar o ADMIN_TOKEN
+
+O servidor lê `ADMIN_TOKEN` do ambiente; ele não é criado automaticamente ao
+subir o container. Gere um valor forte e grave no `.env` antes de iniciar:
+
+```bash
+# No diretório server/
+dart run bin/server token
+# ou: openssl rand -hex 32
+```
+
+Copie a saída para `ADMIN_TOKEN=` no `.env` e recrie o serviço:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+Para consultar o valor atual (no host, com acesso ao `.env`):
+
+```bash
+grep '^ADMIN_TOKEN=' .env
+```
+
+Esse token é a senha administrativa da página web e dos endpoints
+`/v1/admin/*`; o app pareado usa tokens de dispositivo separados.
 
 ## Docker Compose
 
@@ -57,7 +90,7 @@ Saída (uma vez, com TTL):
 
 ```json
 {
-  "url": "http://192.168.219.130:8090",
+  "url": "http://192.168.0.10:8090",
   "serverId": "…",
   "pairingToken": "…",
   "expiresAt": "2026-11-04T…Z"
@@ -105,28 +138,17 @@ A página e as APIs `/api/pairing`, `/api/devices` exigem sessão administrativa
 sem cookie, retornam a tela de login/401. Não exponha a página fora da
 LAN/Tailnet.
 
-## Tailscale / tsdproxy
+## Exposição opcional
 
-O serviço pode ser exposto por HTTPS no Tailnet usando o `tsdproxy` já presente
-no host:
+O serviço pode ficar na LAN ou ser exposto por VPN/Tailscale ou proxy reverso
+com TLS. Nesse caso:
 
-```yaml
-labels:
-  tsdproxy.enable: "true"
-  tsdproxy.name: "planner"
-  tsdproxy.container_port: "8090"
-  tsdproxy.ephemeral: "false"
-```
-
-- URL resultante: `https://planner.<tailnet>.ts.net`.
-- O nó novo exige **uma autorização manual** no Tailscale (dashboard do
-  tsdproxy ou link de login). Autorizações seguintes reaproveitam o estado em
-  `tsdproxy_data`.
-- `tsdproxy.ephemeral: "false"` mantém o nó registrado ao recriar o container.
-- `PUBLIC_URL` no `.env` deve usar a URL HTTPS para que o pareamento gere QR com
-  o endereço correto.
-- O tráfego é WireGuard do Tailscale; não é necessário publicar 8090 na
-  internet.
+- use `PUBLIC_URL` com a URL externa para que o QR de pareamento carregue o
+  endereço correto;
+- encaminhe o proxy para a porta `8090`;
+- mantenha autenticação/TLS no proxy e não publique a porta diretamente na
+  internet;
+- configure labels/regras do proxy no ambiente de deploy, fora deste repositório.
 
 ## Segurança
 

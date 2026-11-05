@@ -40,6 +40,19 @@ final class _EmptyTransport implements SyncTransport {
     required String deviceId,
     required String deviceName,
   }) => throw UnimplementedError();
+
+  @override
+  Future<SyncCounts> stats() async => const SyncCounts();
+
+  @override
+  Future<RemoteSyncSnapshot> snapshot() async =>
+      const RemoteSyncSnapshot(entities: [], cursor: 0);
+
+  @override
+  Future<SyncReplaceResult> replace({
+    required String deviceId,
+    required List<SyncSnapshotEntity> entities,
+  }) async => const SyncReplaceResult(revs: {}, cursor: 0);
 }
 
 final class _FailingTransport implements SyncTransport {
@@ -60,6 +73,19 @@ final class _FailingTransport implements SyncTransport {
     required String deviceId,
     required String deviceName,
   }) => throw UnimplementedError();
+
+  @override
+  Future<SyncCounts> stats() async => const SyncCounts();
+
+  @override
+  Future<RemoteSyncSnapshot> snapshot() async =>
+      const RemoteSyncSnapshot(entities: [], cursor: 0);
+
+  @override
+  Future<SyncReplaceResult> replace({
+    required String deviceId,
+    required List<SyncSnapshotEntity> entities,
+  }) async => const SyncReplaceResult(revs: {}, cursor: 0);
 }
 
 void main() {

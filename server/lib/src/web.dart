@@ -397,7 +397,30 @@ String _dashboardHtml({required String serverId}) =>
     color:#e7f2ed; font:16px/1.5 system-ui, sans-serif; }
   main { max-width:1050px; margin:0 auto; display:grid; gap:20px;
     grid-template-columns:minmax(280px, 380px) 1fr; }
-  @media (max-width: 820px) { main { grid-template-columns:1fr; } }
+  @media (max-width: 820px) and (orientation: portrait) {
+    main { grid-template-columns:1fr; }
+  }
+  @media (orientation: landscape) and (max-height: 700px) {
+    body { padding:16px 18px; }
+    main { max-width:1100px; gap:14px; align-items:start;
+      grid-template-columns:minmax(220px, 320px) 1fr; }
+    .card { padding:14px; }
+    h1 { font-size:18px; }
+    h2 { margin-bottom:10px; }
+    .sub { margin-bottom:10px; }
+    .qr { max-width:220px; margin:0 auto; }
+    button { font-size:13px; padding:8px 12px; }
+    textarea { height:46px; }
+  }
+  @media (orientation: landscape) and (max-width: 559px) {
+    main { grid-template-columns:1fr; }
+  }
+  @media (orientation: landscape) and (max-height: 480px) {
+    .sub { display:none; }
+    .qr { max-width:150px; }
+    textarea { height:40px; }
+    .actions { margin-top:8px; }
+  }
   .card { background:#121c18cc; border:1px solid #2a3a33; border-radius:16px;
     padding:20px; }
   h1 { font-size:20px; margin:0 0 4px; }

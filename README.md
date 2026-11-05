@@ -37,8 +37,11 @@ paletas, sincronização opcional, backup, pareamento web e ajustes de celular.
 - **Sobre:** descrição curta do projeto, versão instalada (lida do pacote),
   repositório e perfil do GitHub com links externos.
 - **Sincronização:** servidor próprio com URL manual ou QR, token seguro por
-  dispositivo, sync manual/automático e cópia de conflitos. O ícone de nuvem no
-  topo resume o estado e abre Configurações na seção de conexão.
+  dispositivo, sync manual/automático e cópia de conflitos. Antes de aplicar,
+  compara as contagens local/remota e pede confirmação (manter local, manter
+  remoto ou cancelar) quando há divergência sem alterações locais pendentes. O
+  ícone de nuvem no topo resume o estado e abre Configurações na seção de
+  conexão.
 - **Servidor:** página administrativa de pareamento com QR vivo, renomeação e
   revogação de dispositivos, disponível em português e inglês.
 - **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
@@ -109,7 +112,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 238 testes aprovados.
+- `flutter test`: 243 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

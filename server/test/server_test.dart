@@ -262,6 +262,129 @@ void main() {
     expect(second.body['more'], isFalse);
   });
 
+  test('stats, snapshot e replace refletem os dados ativos', () async {
+    final token = await pairDevice();
+
+    Map<String, Object?> postIt(
+      String id,
+      String type, {
+      String? deletedAt,
+    }) => {
+      'changeId': 'ch-$id',
+      'entity': 'postIt',
+      'entityId': id,
+      'baseRev': 0,
+      'updatedAt': 1000,
+      'deleted': deletedAt != null,
+      'payload': jsonEncode({
+        'id': id,
+        'title': id,
+        'type': type,
+        'status': 'active',
+        'deletedAt': deletedAt,
+      }),
+    };
+
+    await call(
+      'POST',
+      '/v1/sync',
+      token: token,
+      body: {
+        'deviceId': 'device-1',
+        'since': 0,
+        'changes': [
+          postIt('t1', 'task'),
+          postIt('e1', 'event'),
+          {
+            'changeId': 'ch-n1',
+            'entity': 'note',
+            'entityId': 'n1',
+            'baseRev': 0,
+            'updatedAt': 1000,
+            'deleted': false,
+            'payload': jsonEncode({
+              'id': 'n1',
+              'title': 'Nota',
+              'type': 'text',
+              'lines': [],
+            }),
+          },
+        ],
+      },
+    );
+
+    final stats = await raw(
+      'GET',
+      '/v1/sync/stats',
+      headers: {'authorization': 'Bearer $token'},
+    );
+    expect(stats.status, 200);
+    final counts = jsonDecode(stats.text) as Map<String, Object?>;
+    expect(counts['postIts'], 2);
+    expect(counts['events'], 1);
+    expect(counts['tasks'], 1);
+    expect(counts['notes'], 1);
+
+    final snapshot = await raw(
+      'GET',
+      '/v1/sync/snapshot',
+      headers: {'authorization': 'Bearer $token'},
+    );
+    expect(snapshot.status, 200);
+    final snapshotJson = jsonDecode(snapshot.text) as Map<String, Object?>;
+    expect(snapshotJson['entities'], hasLength(3));
+    expect(snapshotJson['cursor'], isA<int>());
+
+    final replaced = await raw(
+      'POST',
+      '/v1/sync/replace',
+      token: token,
+      body: {
+        'deviceId': 'device-1',
+        'entities': [
+          {
+            'entity': 'postIt',
+            'entityId': 't1',
+            'payload': {
+              'id': 't1',
+              'title': 't1',
+              'type': 'task',
+              'status': 'active',
+              'deletedAt': null,
+            },
+          },
+        ],
+      },
+    );
+    expect(replaced.status, 200);
+    final replaceJson = jsonDecode(replaced.text) as Map<String, Object?>;
+    expect(replaceJson['entities'], hasLength(1));
+
+    final after = await call(
+      'GET',
+      '/v1/sync/stats',
+      token: token,
+    );
+    expect(after.body['postIts'], 1);
+    expect(after.body['notes'], 0);
+    expect(after.body['events'], 0);
+    expect(after.body['tasks'], 1);
+  });
+
+  test('replace sem dispositivo autenticado é recusado', () async {
+    final response = await call(
+      'POST',
+      '/v1/sync/replace',
+      body: {'deviceId': 'device-1', 'entities': []},
+    );
+    expect(response.status, 401);
+  });
+
+  test('stats exige token de dispositivo', () async {
+    final response = await call('GET', '/v1/sync/stats');
+    expect(response.status, 401);
+  });
+
   test('revogar dispositivo invalida o token', () async {
     final token = await pairDevice();
     final revoke = await call(

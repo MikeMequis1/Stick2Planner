@@ -19,7 +19,9 @@ backup, página web e ajustes de celular).
 - Backup: JSON versionado com checksum canônico, validação de versão/esquema,
   importação transacional com snapshot prévio e restauração de snapshots.
 - Sync: servidor próprio, pareamento por QR/código, tokens revogáveis, página
-  web em português/inglês, sync manual/automático e cópia de conflitos.
+  web em português/inglês, sync manual/automático, cópia de conflitos e
+  conferência de contagens local × remoto antes de aplicar (manter local,
+  manter remoto ou cancelar).
 
 ## Matriz de validação
 
@@ -30,7 +32,7 @@ backup, página web e ajustes de celular).
 | Backup | canonicalização, checksum, versões, round-trip, snapshots |
 | Sync | outbox transacional, coalescência, migração v5, apply remoto |
 | Servidor | auth, pareamento, idempotência, conflito, paginação, revogação |
-| Web | login, sessão, QR vivo, dispositivos, renomear/revogar, PT/EN |
+| Web | login, sessão, QR vivo, dispositivos, renomear/revogar, PT/EN, retrato/paisagem |
 | UI | agenda, caixinha, notas, editor, detalhes, vínculos, backup, Sobre |
 | Layout | 1280×800, 800×1280, 780×360, 360×780, 500×800 e texto 1,3× |
 | Aparelho | tablet Android 3200×2136 e celular 1080×2340, tema escuro |
@@ -72,6 +74,8 @@ backup, página web e ajustes de celular).
   planejada está em `docs/DECISOES.md`.
 - A sincronização exige um servidor próprio configurado e rede; não há conta
   pública nem multiusuário. Sem servidor, o app continua local.
+- Quando local e remoto divergem, o sync automático pausa em “Revisão
+  necessária” até o usuário escolher manter local, manter remoto ou cancelar.
 - Links Markdown das notas são renderizados, mas não abrem navegador; os links
   da tela Sobre usam `url_launcher`.
 - Snapshot de texto usa o Markdown cru; não é uma seleção WYSIWYG.
@@ -110,6 +114,6 @@ dart test
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 238 testes aprovados.
-- `dart analyze` / `dart test` no servidor: sem issues; 12 testes aprovados.
+- `flutter test`: 243 testes aprovados.
+- `dart analyze` / `dart test` no servidor: sem issues; 15 testes aprovados.
 - `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

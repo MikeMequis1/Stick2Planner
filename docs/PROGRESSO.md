@@ -287,7 +287,7 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
 ### Validação em aparelho físico (2026-11-03)
 
-Aparelho: `2410CRP4CG` (`9a80298a`), Android 16 / HyperOS 3.0, arm64,
+Aparelho: tablet Android físico, Android 16 / HyperOS 3.0, arm64,
 2136×3200 a 440 dpi (776×1164 dp), modo escuro do sistema.
 
 Executado com sucesso:
@@ -1058,7 +1058,7 @@ Levantamento read-only via SSH, sem alterações na máquina:
 - Ubuntu 26.04.1 LTS, kernel 7.0, x86_64, 2 vCPU, 3,3 GiB RAM, 5,3 GB livres.
 - Docker 29.9.2 e Compose v5.6.1 instalados; 6 containers ativos (portas 3000,
   8080, 8081, 8082, 9000).
-- Tailscale ativo em `100.83.146.74`; LAN em `192.168.219.130/24`.
+- Tailscale ativo em `IP-do-host-no-Tailnet`; LAN em `IP-do-host-na-LAN/24`.
 - Porta **8090** livre para o serviço do Planner; UFW ausente/inativo.
 - `sudo` exige senha; operações privilegiadas dependem do usuário.
 
@@ -1092,7 +1092,7 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Dockerfile multi-stage com `dart build cli` (build hooks do sqlite3) e imagem
   Debian slim non-root; Compose na porta **8090** com volume nomeado
   `planner-data` e healthcheck.
-- Deploy em `~/stick2planner` na máquina Ubuntu 26.04; container
+- Deploy em `diretório-do-servidor` na máquina Ubuntu 26.04; container
   `stick2planner-api` saudável e acessível na LAN.
 - Smoke test: health 200, pareamento 200, sync 200, revogação 200 e sync
   pós-revogação 401. Nenhum token foi impresso.
@@ -1129,12 +1129,12 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 
 ## Exposição via Tailscale (2026-11-04)
 
-- Host `marselo-linux` no Tailnet `crayfish-saturation.ts.net`.
+- Host `host-do-servidor` no Tailnet `tailnet.example.ts.net`.
 - tsdproxy 1.4.7 saudável expondo homepage, portainer, filebrowser, it-tools,
   ports e tsdproxy por HTTPS (todos 200 testados).
 - Planner exposto como `planner`: labels `tsdproxy.enable/name/container_port` e
   `tsdproxy.ephemeral=false`.
-- `https://planner.crayfish-saturation.ts.net/v1/health` responde 200; sync sem
+- `https://planner.tailnet.example.ts.net/v1/health` responde 200; sync sem
   token responde 401.
 - `PUBLIC_URL` do servidor aponta para a URL HTTPS.
 - Primeira autorização do nó `planner` foi manual; o estado fica no volume
@@ -1143,10 +1143,10 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
   (`127.0.0.1:8090`). Para uso sem fio, instalar Tailscale no tablet ou mover o
   tablet para a LAN do servidor.
 - Tailscale instalado no tablet: o túnel USB foi removido e o sync passou a usar
-  `http://100.83.146.74:8090` (IP do host no Tailnet) como teste inicial.
+  `http://IP-do-host-no-Tailnet:8090` (IP do host no Tailnet) como teste inicial.
 - MagicDNS não resolvia por causa do DNS privado (AdGuard DoT) do tablet.
   Alterado para “Automático/oportunista”, o nome passou a resolver; a URL foi
-  trocada para `https://planner.crayfish-saturation.ts.net` via pareamento e o
+  trocada para `https://planner.tailnet.example.ts.net` via pareamento e o
   sync HTTPS funciona (logs do tsdproxy: `/v1/pair` e `/v1/sync` 200).
 - Post-its de teste confirmados no servidor após o corte do cabo.
 - Campo de URL em Configurações agora acompanha mudanças externas
@@ -1197,8 +1197,7 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
   (12 testes no total).
 - Nome do dispositivo vem do modelo Android (`device_info_plus`) no próximo
   pareamento; dispositivos existentes podem ser renomeados na página web
-  (`POST /api/devices/<id>/label`). Tablet e celular foram ajustados para
-  “Xiaomi Pad 7” e “SM-S942B”.
+  (`POST /api/devices/<id>/label`).
 
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)
@@ -1271,6 +1270,54 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter test`: **238 testes aprovados**.
 - `dart analyze` / `dart test` no servidor: sem issues; **12 testes aprovados**.
 - Release instalado no celular; telas de Configurações e Sobre verificadas.
+
+## Revisão de sync, ADMIN_TOKEN e limpeza da documentação (2026-11-05)
+
+### Conferência antes do sync
+
+- `GET /v1/sync/stats` no servidor devolve contagens de post-its, notas,
+  eventos, tarefas e histórico ativos.
+- O app conta o mesmo conjunto local e compara antes de sincronizar. Quando os
+  dois lados têm dados e as contagens de post-its/notas/eventos/tarefas
+  divergem, o sync para no primeiro sync ou quando não há outbox pendente, e
+  mostra uma tabela local × remoto.
+- A confirmação oferece **Manter local**, **Manter remoto** ou **Cancelar**.
+  Manter local envia o snapshot local por `POST /v1/sync/replace` (o servidor
+  tombstoneia o que não existe no aparelho); manter remoto baixa
+  `GET /v1/sync/snapshot` e substitui o conteúdo local. Histórico é preservado
+  como auditoria no modo local.
+- Sync automático não decide sozinho: fica em “Revisão necessária”, a nuvem
+  muda de estado e o usuário confirma em Configurações → Revisar agora.
+- O diálogo usa tabela com contagens; os testes cobrem detecção de divergência,
+  manter local, manter remoto e o fluxo pela UI.
+
+### ADMIN_TOKEN e documentação
+
+- Novo comando `dart run bin/server token` gera um valor aleatório para o
+  `ADMIN_TOKEN` (alternativa: `openssl rand -hex 32`).
+- `docs/SINCRONIZACAO.md` documenta o processo completo: gerar, gravar no
+  `.env`, recriar o container e consultar o valor.
+- Removidas da documentação referências à configuração pessoal: domínio público,
+  IPs da LAN/Tailnet, host, diretório de deploy e nomes de dispositivos. Ficaram
+  apenas placeholders genéricos.
+- `server/.env.example` e o exemplo de pareamento usam endereço genérico;
+  `docker-compose.yml` não carrega mais labels específicas do proxy/Tailscale.
+- `server/README.md` explica a diferença entre `ADMIN_TOKEN` e token de
+  dispositivo e a exposição opcional por LAN/VPN/proxy.
+
+### Página web
+
+- Layout de paisagem compactado: duas colunas para telas largas e baixas (até
+  700 px de altura), QR reduzido e, em alturas ≤ 480 px, ocultação do texto
+  auxiliar para caber melhor. Retrato permanece como estava.
+
+### Validação
+
+- `flutter analyze`: sem issues.
+- `flutter test`: **243 testes aprovados**.
+- `dart analyze` / `dart test` no servidor: sem issues; **15 testes aprovados**.
+- Servidor reconstruído e `GET /v1/health` respondendo; release instalado no
+  celular.
 
 
 

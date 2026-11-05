@@ -9,6 +9,7 @@ import '../../core/canonical_json.dart';
 import '../db/app_database.dart';
 import '../db/converters.dart';
 import '../sync/sync_apply.dart';
+import '../sync/sync_dataset.dart';
 import '../sync/sync_models.dart';
 import '../sync/sync_outbox.dart';
 import '../sync/sync_payload.dart';
@@ -72,6 +73,98 @@ final class SyncEngine {
         conflicts: conflicts,
         copies: copies,
         cursor: cursor,
+        finishedAt: finishedAt,
+      );
+    } on Object catch (error) {
+      await _state.setLastError(error.toString());
+      rethrow;
+    }
+  }
+
+  /// Envia o conjunto local completo e remove do servidor o que não existe
+  /// aqui. Usado quando o usuário escolhe “manter local”.
+  Future<SyncReport> replaceWithLocal() async {
+    final deviceId = await _state.ensureDeviceId();
+    final dataset = await SyncDatasetService(_db).snapshot();
+    try {
+      final result = await _transport.replace(
+        deviceId: deviceId,
+        entities: dataset,
+      );
+      final finishedAt = _now().toUtc();
+      await _db.transaction(() async {
+        await _db.delete(_db.syncOutbox).go();
+        await _db.delete(_db.syncRowStates).go();
+        for (final entry in result.revs.entries) {
+          final parts = entry.key.split('\u0000');
+          if (parts.length != 2) continue;
+          await _db
+              .into(_db.syncRowStates)
+              .insertOnConflictUpdate(
+                SyncRowStatesCompanion.insert(
+                  entity: parts[0],
+                  entityId: parts[1],
+                  serverRev: entry.value,
+                  lastSyncedAt: dateTimeToStorage(finishedAt),
+                ),
+              );
+        }
+        await _state.setCursor(result.cursor);
+      });
+      await _state.setLastSyncAt(finishedAt);
+      await _state.setLastError(null);
+      return SyncReport(
+        pushed: dataset.length,
+        pulled: 0,
+        conflicts: 0,
+        copies: 0,
+        cursor: result.cursor,
+        finishedAt: finishedAt,
+      );
+    } on Object catch (error) {
+      await _state.setLastError(error.toString());
+      rethrow;
+    }
+  }
+
+  /// Substitui o conteúdo local pelo snapshot remoto. Usado quando o usuário
+  /// escolhe “manter remoto”.
+  Future<SyncReport> replaceWithRemote() async {
+    final snapshot = await _transport.snapshot();
+    try {
+      await _db.transaction(() async {
+        await _db.delete(_db.syncOutbox).go();
+        await _db.delete(_db.syncRowStates).go();
+        await _db.delete(_db.postItHistoryEntries).go();
+        await _db.delete(_db.postIts).go();
+        await _db.delete(_db.noteLines).go();
+        await _db.delete(_db.notes).go();
+        await _state.setCursor(0);
+
+        for (final change in _sortedSnapshotEntities(snapshot.entities)) {
+          switch (change.entity) {
+            case syncEntityNote:
+              await _apply.applyNote(change.payload, change.rev);
+              break;
+            case syncEntityPostIt:
+              await _apply.applyPostIt(change.payload, change.rev);
+              break;
+            case syncEntityHistory:
+              await _apply.applyHistory(change.payload, change.rev);
+              break;
+          }
+        }
+        await _state.setCursor(snapshot.cursor);
+      });
+      final finishedAt = _now().toUtc();
+      await _state.setLastSyncAt(finishedAt);
+      await _state.setLastError(null);
+      return SyncReport(
+        pushed: 0,
+        pulled: snapshot.entities.length,
+        conflicts: 0,
+        copies: 0,
+        cursor: snapshot.cursor,
         finishedAt: finishedAt,
       );
     } on Object catch (error) {
@@ -340,6 +433,18 @@ final class SyncEngine {
       _ => 2,
     };
     return [...changes]
+      ..sort((a, b) => priority(a.entity).compareTo(priority(b.entity)));
+  }
+
+  static List<SyncSnapshotEntity> _sortedSnapshotEntities(
+    List<SyncSnapshotEntity> entities,
+  ) {
+    int priority(String entity) => switch (entity) {
+      syncEntityNote => 0,
+      syncEntityPostIt => 1,
+      _ => 2,
+    };
+    return [...entities]
       ..sort((a, b) => priority(a.entity).compareTo(priority(b.entity)));
   }
 

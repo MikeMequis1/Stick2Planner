@@ -41,6 +41,18 @@ abstract interface class SyncTransport {
     required String deviceId,
     required String deviceName,
   });
+
+  /// Contagens de dados de usuário no servidor.
+  Future<SyncCounts> stats();
+
+  /// Todas as entidades ativas do servidor, para o modo “manter remoto”.
+  Future<RemoteSyncSnapshot> snapshot();
+
+  /// Substitui o conjunto remoto pelo snapshot local (“manter local”).
+  Future<SyncReplaceResult> replace({
+    required String deviceId,
+    required List<SyncSnapshotEntity> entities,
+  });
 }
 
 final class HttpSyncTransport implements SyncTransport {
@@ -108,6 +120,30 @@ final class HttpSyncTransport implements SyncTransport {
       throw const SyncException('resposta de pareamento inválida');
     }
     return PairResult(deviceId: resultDevice, token: token);
+  }
+
+  @override
+  Future<SyncCounts> stats() async {
+    final json = await _get('/v1/sync/stats');
+    return SyncCounts.fromJson(json);
+  }
+
+  @override
+  Future<RemoteSyncSnapshot> snapshot() async {
+    final json = await _get('/v1/sync/snapshot');
+    return RemoteSyncSnapshot.fromJson(json);
+  }
+
+  @override
+  Future<SyncReplaceResult> replace({
+    required String deviceId,
+    required List<SyncSnapshotEntity> entities,
+  }) async {
+    final json = await _post('/v1/sync/replace', {
+      'deviceId': deviceId,
+      'entities': [for (final entity in entities) entity.toJson()],
+    });
+    return SyncReplaceResult.fromJson(json);
   }
 
   Future<Map<String, Object?>> _get(String path) async {

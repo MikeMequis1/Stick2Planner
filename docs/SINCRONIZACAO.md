@@ -14,20 +14,49 @@ Três credenciais são diferentes:
 | token de pareamento | QR/código gerado pela página (TTL 5 min, uso único) | autorizar um aparelho |
 | token do dispositivo | `flutter_secure_storage` no aparelho | autenticar sync e pull |
 
+## Obter o ADMIN_TOKEN
+
+O servidor **não cria** o `ADMIN_TOKEN` sozinho: ele lê a variável do ambiente.
+O processo é:
+
+1. Gere um token forte no diretório `server/`:
+   ```bash
+   dart run bin/server token
+   # alternativa: openssl rand -hex 32
+   ```
+   O comando imprime um valor aleatório e não altera o servidor em execução.
+2. Grave o valor no arquivo `.env` do servidor:
+   ```dotenv
+   ADMIN_TOKEN=valor-gerado
+   ```
+3. Recrie o serviço para carregar o novo valor:
+   ```bash
+   docker compose up -d --force-recreate
+   ```
+4. Para consultar o valor já configurado:
+   ```bash
+   grep '^ADMIN_TOKEN=' .env
+   ```
+5. Use esse valor na tela de login da página web.
+
+O `ADMIN_TOKEN` é uma senha administrativa; não é o token do aparelho. Alterá-lo
+encerra as sessões web em memória, mas não revoga os dispositivos já pareados.
+Mantenha o `.env` fora do Git e com permissão restrita.
+
 ## Pré-requisitos
 
 1. Servidor no ar (`docker compose ps` → `healthy`).
 2. Aparelho alcançando o servidor por LAN ou Tailscale.
 3. App instalado e aberto pelo menos uma vez (banco local criado).
 
-Teste rápido no navegador: `https://planner.<tailnet>.ts.net/v1/health`.
+Teste rápido no navegador: `<PUBLIC_URL>/v1/health`.
 
 ## Fluxo de conexão (primeira vez)
 
 ### 1. Gerar o QR no servidor
 
-1. Abra `https://planner.<tailnet>.ts.net/`.
-2. Informe o `ADMIN_TOKEN` (está em `~/stick2planner/.env`).
+1. Abra a URL configurada em `PUBLIC_URL` (LAN ou Tailscale).
+2. Informe o `ADMIN_TOKEN` gerado no passo anterior.
 3. A página mostra:
    - QR de pareamento (renovado enquanto a página estiver aberta);
    - código textual equivalente;
@@ -92,6 +121,33 @@ Ordem recomendada:
 Em resumo: **testar não pareia; parear já configura; sincronizar só funciona
 depois de parear.**
 
+## Conferência antes de sincronizar
+
+Antes de qualquer sync (manual, automático ou pela nuvem), o app consulta
+`/v1/sync/stats` e conta os dados locais ativos:
+
+- post-its;
+- notas;
+- eventos;
+- tarefas;
+- histórico.
+
+Se os dois lados têm dados e as contagens de post-its/notas/eventos/tarefas são
+diferentes, a operação é interrompida quando este é o primeiro sync ou quando
+não há alterações locais pendentes na outbox. A tela mostra a comparação.
+Escolha:
+
+- **Manter local:** envia notas, post-its e eventos deste aparelho; o servidor
+  passa a refletir este conjunto e remove o que não existe aqui (o histórico é
+  preservado como auditoria);
+- **Manter remoto:** substitui o conteúdo local pelo conjunto do servidor;
+- **Cancelar:** não altera nenhum dos lados.
+
+Quando há alterações locais pendentes, o sync normal continua: a diferença é
+explicada por dados que ainda serão enviados. Se o sync automático encontrar a
+divergência, ele **não sobrescreve nada**: fica em “Revisão necessária”, a nuvem
+muda de estado e o usuário decide em Configurações → **Revisar agora**.
+
 ## Ícone de nuvem no topo
 
 O ícone ao lado de Configurações resume o estado e abre **Configurações** já
@@ -114,7 +170,8 @@ rolada até a seção de sincronização:
 - No botão **Sincronizar agora**.
 
 Falhas não bloqueiam a interface: a fila local permanece e o erro aparece no
-status.
+status. Se a conferência exigir escolha, o sync automático fica suspenso até o
+usuário decidir.
 
 ## Notas e vínculos
 

@@ -4,11 +4,6 @@ services:
     image: stick2planner-api:local
     container_name: stick2planner-api
     restart: unless-stopped
-    labels:
-      tsdproxy.enable: "true"
-      tsdproxy.name: "planner"
-      tsdproxy.container_port: "8090"
-      tsdproxy.ephemeral: "false"
     ports:
       - "8090:8090"
     env_file:
