@@ -75,26 +75,32 @@ void main() {
     await tester.tap(find.byKey(const Key('open-settings')));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const Key('settings-sync-url')),
+      find.byKey(const Key('settings-sync-connection')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const Key('settings-sync-connection')));
+    await tester.pumpAndSettle();
+
     await tester.enterText(
-      find.byKey(const Key('settings-sync-url')),
+      find.byKey(const Key('sync-connection-url')),
       'http://192.168.0.10:8090',
     );
-    await tester.tap(find.byKey(const Key('settings-sync-save')));
+    await tester.tap(find.byKey(const Key('sync-connection-save')));
     await tester.pumpAndSettle();
     expect(dependencies.sync.serverUrl, 'http://192.168.0.10:8090');
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('settings-sync-test')));
+    await tester.tap(find.byKey(const Key('sync-connection-test')));
     await tester.pumpAndSettle();
     expect(transport.healthCalls, 1);
     expect(find.text(AppStrings.syncTestOk('srv-ui')), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('settings-sync-pair')));
     await tester.pumpAndSettle();
@@ -109,10 +115,7 @@ void main() {
     expect(await tokens.read(), 'token-ui');
     expect(dependencies.sync.enabled, isTrue);
     expect(dependencies.sync.configured, isTrue);
-    final urlField = tester.widget<TextField>(
-      find.byKey(const Key('settings-sync-url')),
-    );
-    expect(urlField.controller?.text, 'http://192.168.0.10:8090');
+    expect(dependencies.sync.serverUrl, 'http://192.168.0.10:8090');
     await dependencies.sync.setEnabled(false);
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();

@@ -1168,6 +1168,20 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
   pareia e que sincronizar/automático só habilitam após o pareamento.
 - Fluxo completo documentado em `docs/SINCRONIZACAO.md`.
 
+## Refinamentos de navegação e sync (2026-11-05)
+
+- Modo de 4 dias agora ancora a janela: tocar em outro dia visível move apenas a
+  seleção, sem refazer a grade; as setas/gesto deslocam exatamente 4 dias e
+  preservam o deslocamento da seleção. “Hoje” reancora quando necessário.
+- Textos descritivos do card de sincronização removidos. Endereço e teste de
+  conexão foram movidos para a tela dedicada **Conexão**
+  (`connection_test_page.dart`), com resultado inline.
+- Ícone de nuvem no topo reflete o estado (não pareado, sincronizando, erro,
+  pendências, em dia) e abre Configurações rolada até a sincronização.
+- “+” do topo aparece em Agenda e Caixinha e fica oculto em Notas; a Agenda
+  mantém o FAB em telas largas.
+- `flutter test`: 237 testes aprovados.
+
 ## Página web de pareamento (2026-11-05)
 
 - `GET /` no servidor exibe login administrativo (`ADMIN_TOKEN`) e, autenticado,

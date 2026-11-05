@@ -5,6 +5,7 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/app_settings_controller.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../core/date_only.dart';
+import '../../domain/calendar/agenda_view_mode.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/entities/post_it.dart';
 import 'widgets/calendar_grid.dart';
@@ -28,6 +29,11 @@ class _AgendaPageState extends State<AgendaPage> {
   int _pageTurnDirection = 1;
   _GridMotion _gridMotion = _GridMotion.page;
   bool _eventDragActive = false;
+
+  /// Início da janela de 4 dias. Mantém a grade estável ao selecionar um dia
+  /// dentro dela em vez de recomeçar na data tocada.
+  DateOnly? _fourDayStart;
+  AgendaViewMode? _anchoredMode;
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +60,7 @@ class _AgendaPageState extends State<AgendaPage> {
     }
 
     final mode = planner.modeFor(orientation);
-    final period = CalendarPeriod.compute(
-      selectedDate: planner.selectedDate,
-      mode: mode,
-    );
+    final period = _periodFor(planner, mode);
 
     final size = MediaQuery.sizeOf(context);
     final compactWidth = size.width < 600;
@@ -78,9 +81,8 @@ class _AgendaPageState extends State<AgendaPage> {
             mode: mode,
             canDecreaseMode: planner.canDecreaseMode(orientation),
             canIncreaseMode: planner.canIncreaseMode(orientation),
-            onPreviousPeriod: () =>
-                _turnPage(-1, () => planner.previousPeriod(mode)),
-            onNextPeriod: () => _turnPage(1, () => planner.nextPeriod(mode)),
+            onPreviousPeriod: () => _changePeriod(planner, mode, -1),
+            onNextPeriod: () => _changePeriod(planner, mode, 1),
             onToday: () => _turnPage(1, planner.goToToday),
             onDecreaseMode: () => _turnPage(
               -1,
@@ -117,11 +119,7 @@ class _AgendaPageState extends State<AgendaPage> {
                     onHorizontalDragEnd: (details) {
                       final dx = details.velocity.pixelsPerSecond.dx;
                       if (dx.abs() < 220) return;
-                      if (dx < 0) {
-                        _turnPage(1, () => planner.nextPeriod(mode));
-                      } else {
-                        _turnPage(-1, () => planner.previousPeriod(mode));
-                      }
+                      _changePeriod(planner, mode, dx < 0 ? 1 : -1);
                     },
                     onVerticalDragEnd: (details) {
                       final dy = details.velocity.pixelsPerSecond.dy;
@@ -338,6 +336,60 @@ class _AgendaPageState extends State<AgendaPage> {
         ),
       ),
     );
+  }
+
+  /// Calcula a janela visível, ancorando os 4 dias fora da data selecionada.
+  ///
+  /// Ao alternar para 4 dias (ou mudar a orientação), a janela começa na data
+  /// selecionada. Selecionar outro dia já visível não desloca a grade.
+  CalendarPeriod _periodFor(PlannerController planner, AgendaViewMode mode) {
+    if (_anchoredMode != mode) {
+      _anchoredMode = mode;
+      _fourDayStart = null;
+    }
+
+    if (mode != AgendaViewMode.fourDays) {
+      return CalendarPeriod.compute(
+        selectedDate: planner.selectedDate,
+        mode: mode,
+      );
+    }
+
+    final selected = planner.selectedDate;
+    var start = _fourDayStart ?? selected;
+    if (selected.isBefore(start) || selected.isAfter(start.addDays(3))) {
+      start = selected;
+    }
+    _fourDayStart = start;
+    return CalendarPeriod.fourDays(selectedDate: selected, start: start);
+  }
+
+  /// Folheia um período inteiro, deslocando a janela de 4 dias se necessário.
+  void _changePeriod(
+    PlannerController planner,
+    AgendaViewMode mode,
+    int direction,
+  ) {
+    if (mode == AgendaViewMode.fourDays) {
+      _shiftFourDays(planner, direction);
+      return;
+    }
+    _turnPage(
+      direction,
+      () => direction > 0
+          ? planner.nextPeriod(mode)
+          : planner.previousPeriod(mode),
+    );
+  }
+
+  void _shiftFourDays(PlannerController planner, int direction) {
+    final start = _fourDayStart ?? planner.selectedDate;
+    setState(() {
+      _pageTurnDirection = direction;
+      _gridMotion = _GridMotion.page;
+      _fourDayStart = start.addDays(4 * direction);
+    });
+    planner.selectDate(planner.selectedDate.addDays(4 * direction));
   }
 
   void _turnPage(int direction, VoidCallback action, {bool morph = false}) {

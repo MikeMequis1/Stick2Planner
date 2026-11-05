@@ -43,6 +43,18 @@ final class CalendarPeriod {
 
   bool contains(DateOnly date) => !date.isBefore(start) && !date.isAfter(end);
 
+  factory CalendarPeriod.fourDays({
+    required DateOnly selectedDate,
+    required DateOnly start,
+  }) {
+    return _singleRow(
+      selectedDate: selectedDate,
+      mode: AgendaViewMode.fourDays,
+      start: start,
+      length: 4,
+    );
+  }
+
   factory CalendarPeriod.compute({
     required DateOnly selectedDate,
     required AgendaViewMode mode,
@@ -76,7 +88,10 @@ final class CalendarPeriod {
           selectedDate: selectedDate,
           mode: mode,
           days: days,
-          weeks: [CalendarWeek(days: days.sublist(0, 7)), CalendarWeek(days: days.sublist(7))],
+          weeks: [
+            CalendarWeek(days: days.sublist(0, 7)),
+            CalendarWeek(days: days.sublist(7)),
+          ],
           start: days.first.date,
           end: days.last.date,
         );

@@ -495,6 +495,37 @@ void main() {
     expect(find.byType(DayCell), findsNWidgets(4));
   });
 
+  testWidgets('quatro dias mantêm a janela ao trocar o dia focado', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(800, 1280),
+      portraitMode: AgendaViewMode.fourDays,
+    );
+
+    expect(find.byType(DayCell), findsNWidgets(4));
+    expect(find.text('4 – 7 nov 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('day-2026-11-05')));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(CalendarGrid), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+    expect(find.text('4 – 7 nov 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('calendar-next')));
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 9));
+    expect(find.text('8 – 11 nov 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('calendar-today')));
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 4));
+    expect(find.text('4 – 7 nov 2026'), findsOneWidget);
+  });
+
   testWidgets('mudar orientação preserva seleção e dados', (tester) async {
     final dependencies = await pumpPlanner(
       tester,

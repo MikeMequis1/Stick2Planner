@@ -76,12 +76,49 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.inbox),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('add-post-it')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('add-post-it')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('editor-title')), findsOneWidget);
+    await tester.tap(find.text(AppStrings.cancel));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
         matching: find.text(AppStrings.notes),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('add-post-it')), findsNothing);
     expect(find.byKey(const Key('add-note')), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nuvem reflete o estado e abre a conexão nas configurações', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpApp(tester);
+
+    expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('open-sync-settings')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.settings), findsOneWidget);
+    final status = tester.getRect(find.byKey(const Key('settings-sync-status')));
+    expect(status.top, greaterThanOrEqualTo(0));
+    expect(status.bottom, lessThan(600));
   });
 }

@@ -65,24 +65,42 @@ A seção deve mostrar:
 
 ## O que cada botão faz
 
-| Controle | Depende de pareamento? | Efeito |
-| --- | --- | --- |
-| Campo de endereço | não | apenas edita o texto |
-| **Salvar endereço** | não | grava a URL; não autentica nem pareia |
-| **Testar conexão** | não | consulta `/v1/health`; valida rede/URL, **não** pareia |
-| **Parear dispositivo** | não | troca o código por um token e configura URL + token + automático |
-| **Sincronizar agora** | **sim** | desabilitado até existir token; faz push/pull |
-| **Sincronizar automaticamente** | **sim** | desabilitado até parear; liga os gatilhos |
-| **Desconectar** | sim | apaga URL/token e desliga o automático; dados locais ficam |
+O card de sincronização mostra apenas o estado e as ações. O endereço e o teste
+ficam na tela **Conexão**, aberta pelo botão de mesmo nome.
+
+| Controle | Onde | Depende de pareamento? | Efeito |
+| --- | --- | --- | --- |
+| **Conexão** | Configurações | não | abre a tela dedicada de endereço/teste |
+| Campo de endereço | tela Conexão | não | apenas edita o texto |
+| **Salvar endereço** | tela Conexão | não | grava a URL; não autentica nem pareia |
+| **Testar conexão** | tela Conexão | não | consulta `/v1/health`; valida rede/URL, **não** pareia |
+| **Parear dispositivo** | Configurações | não | troca o código por um token e configura URL + token + automático |
+| **Sincronizar agora** | Configurações | **sim** | desabilitado até existir token; faz push/pull |
+| **Sincronizar automaticamente** | Configurações | **sim** | desabilitado até parear; liga os gatilhos |
+| **Desconectar** | Configurações | sim | apaga URL/token e desliga o automático; dados locais ficam |
 
 Ordem recomendada:
 
-1. (Opcional) digitar URL → **Testar conexão** → **Salvar endereço**;
+1. (Opcional) **Conexão** → digitar URL → **Salvar endereço** →
+   **Testar conexão**;
 2. **Parear dispositivo** (QR/código);
 3. **Sincronizar agora**, se quiser forçar.
 
 Em resumo: **testar não pareia; parear já configura; sincronizar só funciona
 depois de parear.**
+
+## Ícone de nuvem no topo
+
+O ícone ao lado de Configurações resume o estado e abre **Configurações** já
+rolada até a seção de sincronização:
+
+| Ícone | Estado |
+| --- | --- |
+| nuvem cortada (cinza) | dispositivo não pareado |
+| nuvem com sincronização | sync em andamento |
+| nuvem cortada (vermelha) | último sync falhou |
+| nuvem com seta para cima | há alterações pendentes |
+| nuvem com check | pareado e sem pendências |
 
 ## Quando o sync acontece
 

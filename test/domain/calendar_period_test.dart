@@ -30,6 +30,21 @@ void main() {
       expect(period.end, DateOnly(2026, 11, 7));
     });
 
+    test('quatro dias ancoram a janela fora da data selecionada', () {
+      final period = CalendarPeriod.fourDays(
+        selectedDate: DateOnly(2026, 11, 5),
+        start: DateOnly(2026, 11, 4),
+      );
+
+      expect(period.days, hasLength(4));
+      expect(period.columnCount, 4);
+      expect(period.start, DateOnly(2026, 11, 4));
+      expect(period.end, DateOnly(2026, 11, 7));
+      expect(period.selectedDate, DateOnly(2026, 11, 5));
+      expect(period.contains(DateOnly(2026, 11, 7)), isTrue);
+      expect(period.contains(DateOnly(2026, 11, 8)), isFalse);
+    });
+
     test('semana começa na segunda-feira', () {
       final period = CalendarPeriod.compute(
         selectedDate: DateOnly(2026, 11, 4),

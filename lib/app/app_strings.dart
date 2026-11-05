@@ -247,22 +247,11 @@ abstract final class AppStrings {
     'Shows gesture hints and the undated post-it count.',
   );
   static String get settingsSync => _t('Sincronização', 'Sync');
-  static String get settingsSyncHelp => _t(
-    'Envie e receba alterações de um servidor próprio. O app continua funcionando offline.',
-    'Send and receive changes from your own server. The app keeps working offline.',
-  );
-  static String get syncFlowHelp => _t(
-    '1) Teste o endereço (opcional). 2) Pareie com o QR/código — isso salva o endereço e o token. 3) Sincronize.',
-    '1) Test the address (optional). 2) Pair with the QR/code — this saves the address and token. 3) Sync.',
-  );
+  static String get syncConnection => _t('Conexão', 'Connection');
   static String get syncPaired => _t('Pareado', 'Paired');
   static String get syncNotPaired => _t('Não pareado', 'Not paired');
   static String get syncPairFirst =>
       _t('Pareie o dispositivo primeiro', 'Pair the device first');
-  static String get syncTestHelp => _t(
-    'Testa só o endereço; não pareia.',
-    'Checks the address only; does not pair.',
-  );
   static String get syncServerUrl =>
       _t('Endereço do servidor', 'Server address');
   static String get syncServerUrlHint =>
@@ -283,10 +272,6 @@ abstract final class AppStrings {
   );
   static String get syncEnabled =>
       _t('Sincronizar automaticamente', 'Sync automatically');
-  static String get syncEnabledHelp => _t(
-    'Tenta sincronizar ao abrir, ao alterar dados, ao reconectar e periodicamente.',
-    'Tries to sync on open, on data changes, on reconnect and periodically.',
-  );
   static String get syncNow => _t('Sincronizar agora', 'Sync now');
   static String get syncRunning => _t('Sincronizando…', 'Syncing…');
   static String syncDone(int pushed, int pulled, int copies) =>
@@ -297,6 +282,18 @@ abstract final class AppStrings {
       _language == AppLanguage.en ? '$count pending' : '$count pendentes';
   static String syncLastSync(String date) =>
       _language == AppLanguage.en ? 'Last sync: $date' : 'Último sync: $date';
+  static String syncLastSyncLabel(DateTime? value) {
+    if (value == null) return syncNever;
+    final local = value.toLocal();
+    final date =
+        '${local.year.toString().padLeft(4, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    return syncLastSync(date);
+  }
+
   static String get syncNever => _t('Nunca sincronizado.', 'Never synced.');
   static String get syncNotConfigured => _t(
     'Configure o endereço e pareie o dispositivo.',
@@ -332,8 +329,6 @@ abstract final class AppStrings {
   );
   static String get syncDisconnected =>
       _t('Servidor desconectado.', 'Server disconnected.');
-  static String get syncNotConfiguredShort =>
-      _t('Não configurado', 'Not configured');
   static String get syncErrorDetail => _t('Detalhes', 'Details');
 
   static String get settingsAbout => _t('Sobre', 'About');

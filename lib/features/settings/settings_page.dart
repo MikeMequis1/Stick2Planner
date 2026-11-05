@@ -2,18 +2,51 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/services/device_name.dart';
-import '../../app/services/sync_coordinator.dart';
 import '../../app/app_strings.dart';
 import '../../app/theme/app_palette.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
+import 'connection_test_page.dart';
 import 'qr_scan_page.dart';
 
 /// Preferências básicas e chaves de ativação/desativação de funções.
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key, this.focusSync = false});
+
+  /// Rola até a seção de conexão/sincronização ao abrir.
+  final bool focusSync;
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  final ScrollController _scroll = ScrollController();
+  final GlobalKey _syncKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.focusSync) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _syncKey.currentContext;
+      if (!mounted || target == null || !_scroll.hasClients) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        alignment: 0.05,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,158 +58,174 @@ class SettingsPage extends StatelessWidget {
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(title: Text(AppStrings.settings)),
-          body: ListView(
+          body: SingleChildScrollView(
+            controller: _scroll,
             padding: EdgeInsets.fromLTRB(
               16,
               16,
               16,
               16 + MediaQuery.viewPaddingOf(context).bottom,
             ),
-            children: [
-              Text(
-                AppStrings.settingsAppearance,
-                style: theme.textTheme.titleSmall,
-              ),
-              SizedBox(height: 8),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        AppStrings.settingsTheme,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      SizedBox(height: 8),
-                      SegmentedButton<ThemeMode>(
-                        key: Key('settings-theme'),
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                            value: ThemeMode.system,
-                            label: Text(AppStrings.settingsThemeSystem),
-                          ),
-                          ButtonSegment(
-                            value: ThemeMode.light,
-                            label: Text(AppStrings.settingsThemeLight),
-                          ),
-                          ButtonSegment(
-                            value: ThemeMode.dark,
-                            label: Text(AppStrings.settingsThemeDark),
-                          ),
-                        ],
-                        selected: {settings.themeMode},
-                        onSelectionChanged: (selection) =>
-                            settings.setThemeMode(selection.first),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        AppStrings.settingsLanguage,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      SizedBox(height: 8),
-                      SegmentedButton<AppLanguage>(
-                        key: Key('settings-language'),
-                        showSelectedIcon: false,
-                        segments: [
-                          for (final language in AppLanguage.values)
-                            ButtonSegment(
-                              value: language,
-                              label: Text(language.label),
-                            ),
-                        ],
-                        selected: {settings.language},
-                        onSelectionChanged: (selection) =>
-                            settings.setLanguage(selection.first),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        AppStrings.settingsPalette,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        AppStrings.settingsPaletteHelp,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  AppStrings.settingsAppearance,
+                  style: theme.textTheme.titleSmall,
+                ),
+                SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          AppStrings.settingsTheme,
+                          style: theme.textTheme.labelLarge,
                         ),
-                      ),
-                      SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final palette in AppPalette.values)
-                            _PaletteOption(
-                              palette: palette,
-                              selected: settings.palette == palette,
-                              onTap: () => settings.setPalette(palette),
+                        SizedBox(height: 8),
+                        SegmentedButton<ThemeMode>(
+                          key: Key('settings-theme'),
+                          showSelectedIcon: false,
+                          segments: [
+                            ButtonSegment(
+                              value: ThemeMode.system,
+                              label: Text(AppStrings.settingsThemeSystem),
                             ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
+                            ButtonSegment(
+                              value: ThemeMode.light,
+                              label: Text(AppStrings.settingsThemeLight),
+                            ),
+                            ButtonSegment(
+                              value: ThemeMode.dark,
+                              label: Text(AppStrings.settingsThemeDark),
+                            ),
+                          ],
+                          selected: {settings.themeMode},
+                          onSelectionChanged: (selection) =>
+                              settings.setThemeMode(selection.first),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          AppStrings.settingsLanguage,
+                          style: theme.textTheme.labelLarge,
+                        ),
+                        SizedBox(height: 8),
+                        SegmentedButton<AppLanguage>(
+                          key: Key('settings-language'),
+                          showSelectedIcon: false,
+                          segments: [
+                            for (final language in AppLanguage.values)
+                              ButtonSegment(
+                                value: language,
+                                label: Text(language.label),
+                              ),
+                          ],
+                          selected: {settings.language},
+                          onSelectionChanged: (selection) =>
+                              settings.setLanguage(selection.first),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          AppStrings.settingsPalette,
+                          style: theme.textTheme.labelLarge,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          AppStrings.settingsPaletteHelp,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final palette in AppPalette.values)
+                              _PaletteOption(
+                                palette: palette,
+                                selected: settings.palette == palette,
+                                onTap: () => settings.setPalette(palette),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        SwitchListTile(
+                          key: Key('settings-animations'),
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(AppStrings.settingsAnimations),
+                          subtitle: Text(AppStrings.settingsAnimationsHelp),
+                          value: settings.animationsEnabled,
+                          onChanged: settings.setAnimationsEnabled,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24),
+                Text(AppStrings.agenda, style: theme.textTheme.titleSmall),
+                SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Column(
+                    children: [
                       SwitchListTile(
-                        key: Key('settings-animations'),
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(AppStrings.settingsAnimations),
-                        subtitle: Text(AppStrings.settingsAnimationsHelp),
-                        value: settings.animationsEnabled,
-                        onChanged: settings.setAnimationsEnabled,
+                        key: Key('settings-keep-awake'),
+                        title: Text(AppStrings.settingsKeepAwake),
+                        subtitle: Text(AppStrings.settingsKeepAwakeHelp),
+                        value: settings.keepScreenAwake,
+                        onChanged: settings.setKeepScreenAwake,
+                      ),
+                      Divider(height: 1),
+                      SwitchListTile(
+                        key: Key('settings-hints'),
+                        title: Text(AppStrings.settingsHints),
+                        subtitle: Text(AppStrings.settingsHintsHelp),
+                        value: settings.showCalendarHints,
+                        onChanged: settings.setShowCalendarHints,
                       ),
                     ],
                   ),
                 ),
-              ),
-              SizedBox(height: 24),
-              Text(AppStrings.agenda, style: theme.textTheme.titleSmall),
-              SizedBox(height: 8),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Column(
+                SizedBox(height: 24),
+                Column(
+                  key: _syncKey,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SwitchListTile(
-                      key: Key('settings-keep-awake'),
-                      title: Text(AppStrings.settingsKeepAwake),
-                      subtitle: Text(AppStrings.settingsKeepAwakeHelp),
-                      value: settings.keepScreenAwake,
-                      onChanged: settings.setKeepScreenAwake,
+                    Text(
+                      AppStrings.settingsSync,
+                      style: theme.textTheme.titleSmall,
                     ),
-                    Divider(height: 1),
-                    SwitchListTile(
-                      key: Key('settings-hints'),
-                      title: Text(AppStrings.settingsHints),
-                      subtitle: Text(AppStrings.settingsHintsHelp),
-                      value: settings.showCalendarHints,
-                      onChanged: settings.setShowCalendarHints,
-                    ),
+                    SizedBox(height: 8),
+                    const _SyncSection(),
                   ],
                 ),
-              ),
-              SizedBox(height: 24),
-              Text(AppStrings.settingsSync, style: theme.textTheme.titleSmall),
-              SizedBox(height: 8),
-              const _SyncSection(),
-              SizedBox(height: 24),
-              Text(
-                AppStrings.settingsBackup,
-                style: theme.textTheme.titleSmall,
-              ),
-              SizedBox(height: 8),
-              const _BackupSection(),
-              SizedBox(height: 24),
-              Text(AppStrings.settingsAbout, style: theme.textTheme.titleSmall),
-              SizedBox(height: 8),
-              Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  leading: Icon(Icons.cloud_off_outlined),
-                  title: Text(AppStrings.offlineNotice),
-                  subtitle: Text(AppStrings.settingsLocalData),
+                SizedBox(height: 24),
+                Text(
+                  AppStrings.settingsBackup,
+                  style: theme.textTheme.titleSmall,
                 ),
-              ),
-            ],
+                SizedBox(height: 8),
+                const _BackupSection(),
+                SizedBox(height: 24),
+                Text(
+                  AppStrings.settingsAbout,
+                  style: theme.textTheme.titleSmall,
+                ),
+                SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: Icon(Icons.cloud_off_outlined),
+                    title: Text(AppStrings.offlineNotice),
+                    subtitle: Text(AppStrings.settingsLocalData),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -192,66 +241,7 @@ class _SyncSection extends StatefulWidget {
 }
 
 class _SyncSectionState extends State<_SyncSection> {
-  final TextEditingController _url = TextEditingController();
-  final FocusNode _urlFocus = FocusNode();
-  SyncCoordinator? _sync;
   bool _busy = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final sync = AppScope.of(context).sync;
-    if (identical(sync, _sync)) return;
-    _sync?.removeListener(_syncUrlFromState);
-    _sync = sync;
-    _sync!.addListener(_syncUrlFromState);
-    _url.text = sync.serverUrl ?? '';
-  }
-
-  /// Mantém o campo alinhado quando pareamento/desconexão mudam a URL.
-  void _syncUrlFromState() {
-    if (!mounted || _urlFocus.hasFocus) return;
-    final value = _sync?.serverUrl ?? '';
-    if (_url.text != value) _url.text = value;
-  }
-
-  @override
-  void dispose() {
-    _sync?.removeListener(_syncUrlFromState);
-    _urlFocus.dispose();
-    _url.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveUrl() async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await AppScope.of(context).sync.setServerUrl(_url.text);
-      messenger.showSnackBar(SnackBar(content: Text(AppStrings.syncUrlSaved)));
-    } on FormatException {
-      messenger.showSnackBar(
-        SnackBar(content: Text(AppStrings.syncUrlInvalid)),
-      );
-    }
-  }
-
-  Future<void> _test() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final sync = AppScope.of(context).sync;
-    setState(() => _busy = true);
-    try {
-      final health = await sync.testConnection(_url.text);
-      messenger.showSnackBar(
-        SnackBar(content: Text(AppStrings.syncTestOk(health.serverId))),
-      );
-    } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(AppStrings.syncTestFailed)),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
 
   Future<void> _pair() async {
     final code = await showDialog<String>(
@@ -327,22 +317,15 @@ class _SyncSectionState extends State<_SyncSection> {
     if (confirmed != true) return;
     await sync.disconnect();
     if (!mounted) return;
-    _url.clear();
     messenger.showSnackBar(
       SnackBar(content: Text(AppStrings.syncDisconnected)),
     );
   }
 
-  String _lastSyncLabel(DateTime? value) {
-    if (value == null) return AppStrings.syncNever;
-    final local = value.toLocal();
-    final label =
-        '${local.year.toString().padLeft(4, '0')}-'
-        '${local.month.toString().padLeft(2, '0')}-'
-        '${local.day.toString().padLeft(2, '0')} '
-        '${local.hour.toString().padLeft(2, '0')}:'
-        '${local.minute.toString().padLeft(2, '0')}';
-    return AppStrings.syncLastSync(label);
+  void _openConnection() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ConnectionTestPage()));
   }
 
   @override
@@ -359,62 +342,61 @@ class _SyncSectionState extends State<_SyncSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Row(
+                  children: [
+                    Icon(
+                      sync.configured
+                          ? Icons.cloud_done_outlined
+                          : Icons.cloud_off_outlined,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        sync.configured
+                            ? '${AppStrings.syncPaired} · '
+                                  '${AppStrings.syncPending(sync.pendingCount)}'
+                            : AppStrings.syncNotPaired,
+                        key: const Key('settings-sync-status'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 Text(
-                  AppStrings.settingsSyncHelp,
+                  AppStrings.syncLastSyncLabel(sync.lastSyncAt),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  AppStrings.syncFlowHelp,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const Key('settings-sync-url'),
-                  controller: _url,
-                  focusNode: _urlFocus,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: AppStrings.syncServerUrl,
-                    hintText: AppStrings.syncServerUrlHint,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onSubmitted: (_) => _saveUrl(),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.tonalIcon(
-                      key: const Key('settings-sync-save'),
-                      onPressed: _busy ? null : _saveUrl,
-                      icon: const Icon(Icons.save_outlined),
-                      label: Text(AppStrings.syncSaveUrl),
+                if (sync.lastError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.syncError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
                     ),
-                    OutlinedButton.icon(
-                      key: const Key('settings-sync-test'),
-                      onPressed: _busy ? null : _test,
-                      icon: const Icon(Icons.wifi_tethering),
-                      label: Text(AppStrings.syncTest),
+                  ),
+                  Text(
+                    sync.lastError!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.error,
                     ),
-                  ],
-                ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 SwitchListTile(
                   key: const Key('settings-sync-enabled'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(AppStrings.syncEnabled),
-                  subtitle: Text(
-                    sync.configured
-                        ? AppStrings.syncEnabledHelp
-                        : AppStrings.syncPairFirst,
-                  ),
+                  subtitle: sync.configured
+                      ? null
+                      : Text(AppStrings.syncPairFirst),
                   value: sync.enabled,
                   onChanged: sync.configured && !_busy
                       ? (value) => sync.setEnabled(value)
@@ -463,40 +445,15 @@ class _SyncSectionState extends State<_SyncSection> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  sync.configured
-                      ? '${AppStrings.syncPaired} · '
-                            '${AppStrings.syncPending(sync.pendingCount)}'
-                      : AppStrings.syncNotPaired,
-                  key: const Key('settings-sync-status'),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('settings-sync-connection'),
+                    onPressed: _busy ? null : _openConnection,
+                    icon: const Icon(Icons.lan_outlined),
+                    label: Text(AppStrings.syncConnection),
                   ),
                 ),
-                Text(
-                  _lastSyncLabel(sync.lastSyncAt),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (sync.lastError != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    AppStrings.syncError,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  Text(
-                    sync.lastError!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

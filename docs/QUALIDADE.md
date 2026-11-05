@@ -96,5 +96,5 @@ flutter build apk --debug
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 234 testes aprovados.
+- `flutter test`: 237 testes aprovados.
 - `flutter build apk --debug`: aprovado.

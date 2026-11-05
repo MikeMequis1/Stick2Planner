@@ -100,7 +100,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final navigation = app.navigation;
 
     return ListenableBuilder(
-      listenable: navigation,
+      listenable: Listenable.merge([navigation, app.sync]),
       builder: (context, _) {
         final index = navigation.section.index;
         return Scaffold(
@@ -108,7 +108,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           appBar: AppBar(
             title: Text(AppStrings.appName),
             actions: [
-              if (isCompact)
+              if (index != AppSection.notes.index &&
+                  (isCompact || index == AppSection.inbox.index))
                 IconButton(
                   key: Key('add-post-it'),
                   tooltip: AppStrings.newPostIt,
@@ -127,13 +128,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 ),
                 icon: Icon(Icons.settings_outlined),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Tooltip(
-                  message: AppStrings.offlineNotice,
-                  child: Icon(Icons.cloud_off_outlined),
-                ),
-              ),
+              const _SyncStatusButton(),
+              const SizedBox(width: 4),
             ],
           ),
           body: SafeArea(
@@ -190,6 +186,50 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               : null,
         );
       },
+    );
+  }
+}
+
+/// Ícone de nuvem que reflete o estado da sincronização e abre Configurações
+/// já rolada até a seção de conexão.
+class _SyncStatusButton extends StatelessWidget {
+  const _SyncStatusButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final sync = AppScope.of(context).sync;
+    final scheme = Theme.of(context).colorScheme;
+
+    final IconData icon;
+    final String tooltip;
+    Color? color;
+    if (!sync.configured) {
+      icon = Icons.cloud_off_outlined;
+      tooltip = AppStrings.syncNotPaired;
+    } else if (sync.busy) {
+      icon = Icons.cloud_sync_outlined;
+      tooltip = AppStrings.syncRunning;
+    } else if (sync.lastError != null) {
+      icon = Icons.cloud_off_outlined;
+      tooltip = AppStrings.syncError;
+      color = scheme.error;
+    } else if (sync.pendingCount > 0) {
+      icon = Icons.cloud_upload_outlined;
+      tooltip = AppStrings.syncPending(sync.pendingCount);
+    } else {
+      icon = Icons.cloud_done_outlined;
+      tooltip = AppStrings.syncLastSyncLabel(sync.lastSyncAt);
+    }
+
+    return IconButton(
+      key: const Key('open-sync-settings'),
+      tooltip: tooltip,
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => const SettingsPage(focusSync: true),
+        ),
+      ),
+      icon: Icon(icon, color: color),
     );
   }
 }
