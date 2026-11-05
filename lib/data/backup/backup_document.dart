@@ -163,7 +163,8 @@ final class BackupDocument {
     }
 
     final counts = BackupCounts.fromJson(root['counts']);
-    if (counts != _countsOf(data)) {
+    final activeCounts = _countsOf(data);
+    if (counts != activeCounts && counts != _rawCountsOf(data)) {
       throw const BackupException(
         BackupErrorCode.invalidData,
         'contagens divergem do conteúdo',
@@ -212,7 +213,39 @@ final class BackupDocument {
     );
   }
 
-  static BackupCounts _countsOf(Map<String, Object?> data) => BackupCounts(
+  static BackupCounts _countsOf(Map<String, Object?> data) {
+    final postIts = _asList(data['postIts'], 'data.postIts');
+    final notes = _asList(data['notes'], 'data.notes');
+    final activePostItIds = <String>{};
+    for (final entry in postIts) {
+      final row = _asMap(entry, 'data.postIts[]');
+      if (row['deletedAt'] == null) {
+        activePostItIds.add(_asString(row['id'], 'postIts.id'));
+      }
+    }
+    final activeNoteIds = <String>{};
+    for (final entry in notes) {
+      final row = _asMap(entry, 'data.notes[]');
+      if (row['deletedAt'] == null) {
+        activeNoteIds.add(_asString(row['id'], 'notes.id'));
+      }
+    }
+    return BackupCounts(
+      postIts: activePostItIds.length,
+      notes: activeNoteIds.length,
+      noteLines: _asList(data['noteLines'], 'data.noteLines').where((entry) {
+        final row = _asMap(entry, 'data.noteLines[]');
+        return activeNoteIds.contains(row['noteId']);
+      }).length,
+      history: _asList(data['history'], 'data.history').where((entry) {
+        final row = _asMap(entry, 'data.history[]');
+        return activePostItIds.contains(row['postItId']);
+      }).length,
+      settings: _asList(data['settings'], 'data.settings').length,
+    );
+  }
+
+  static BackupCounts _rawCountsOf(Map<String, Object?> data) => BackupCounts(
     postIts: _asList(data['postIts'], 'data.postIts').length,
     notes: _asList(data['notes'], 'data.notes').length,
     noteLines: _asList(data['noteLines'], 'data.noteLines').length,

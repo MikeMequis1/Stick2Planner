@@ -376,7 +376,10 @@ continua como interoperabilidade futura; não há conta pública nem multiusuár
 - Canonicalização: chaves ordenadas por code units, apenas inteiros, UTF-8
   literal, listas em ordem determinística (UUID, nota+posição, data+UUID).
 - Exporta post-its, notas, linhas, histórico, tombstones e preferências de UI;
-  credenciais e chaves `planner.sync.*` nunca entram no arquivo.
+  credenciais e chaves `planner.sync.*` nunca entram no arquivo. As contagens do
+  documento consideram apenas itens ativos (sem `deletedAt`), embora o backup
+  continue preservando tombstones e todo o histórico. Backups antigos com
+  contagens legadas continuam aceitos.
 - Importação substitui todos os dados, com confirmação explícita, em uma única
   transação e após snapshot automático verificado (retenção de 5).
 - Compatibilidade: aceita `formatVersion` 1 com `schemaVersion` 4 ou 5; recusa

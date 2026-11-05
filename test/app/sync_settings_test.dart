@@ -144,6 +144,11 @@ void main() {
     expect(dependencies.sync.enabled, isTrue);
     expect(dependencies.sync.configured, isTrue);
     expect(dependencies.sync.serverUrl, 'http://192.168.0.10:8090');
+    expect(find.textContaining('${AppStrings.syncPaired}:'), findsOneWidget);
+    final pairButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('settings-sync-pair')),
+    );
+    expect(pairButton.onPressed, isNull);
     await dependencies.sync.setEnabled(false);
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
@@ -159,6 +164,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(transport.syncCalls, greaterThan(callsBefore));
     expect(dependencies.sync.lastReport, isNotNull);
+  });
+
+  testWidgets('desconectar atualiza nuvem e libera pareamento', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final tokens = InMemoryTokenStore();
+    final dependencies = testDependencies(
+      now: DateTime(2026, 11, 5, 12),
+      tokens: tokens,
+    );
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    await tokens.write('token-ui');
+    await dependencies.sync.setServerUrl('http://192.168.0.10:8090');
+    await dependencies.sync.refreshConfig();
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('open-settings')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings-sync-disconnect')),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('settings-sync-disconnect')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, AppStrings.confirm));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.syncNotPaired), findsOneWidget);
+    final pair = tester.widget<OutlinedButton>(
+      find.byKey(const Key('settings-sync-pair')),
+    );
+    expect(pair.onPressed, isNotNull);
+
+    Navigator.of(tester.element(find.text(AppStrings.settings))).pop();
+    await tester.pumpAndSettle();
+    expect(dependencies.sync.configured, isFalse);
+    final icons = tester
+        .widgetList<Icon>(find.byType(Icon))
+        .map((icon) => icon.icon)
+        .toList();
+    expect(icons, contains(Icons.cloud_off_outlined), reason: '$icons');
   });
 
   testWidgets('divergência pede confirmação antes de sincronizar', (

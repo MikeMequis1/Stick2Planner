@@ -17,7 +17,8 @@ backup, página web e ajustes de celular).
   animações, wakelock, dicas, conexão/sync e atalho para a tela Sobre.
 - Sobre: versão instalada lida do pacote, descrição e links do GitHub.
 - Backup: JSON versionado com checksum canônico, validação de versão/esquema,
-  importação transacional com snapshot prévio e restauração de snapshots.
+  importação transacional com snapshot prévio e restauração de snapshots. As
+  contagens exibidas ignoram itens apagados; os tombstones permanecem no JSON.
 - Sync: servidor próprio, pareamento por QR/código, tokens revogáveis, página
   web em português/inglês, sync manual/automático, cópia de conflitos e
   conferência de contagens local × remoto antes de aplicar (manter local,
@@ -114,6 +115,6 @@ dart test
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 243 testes aprovados.
+- `flutter test`: 246 testes aprovados.
 - `dart analyze` / `dart test` no servidor: sem issues; 15 testes aprovados.
 - `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

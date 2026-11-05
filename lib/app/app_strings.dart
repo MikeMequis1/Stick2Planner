@@ -253,6 +253,7 @@ abstract final class AppStrings {
   static String get syncConnection =>
       _t('Endereço e teste de conexão', 'Server address and connection test');
   static String get syncPaired => _t('Pareado', 'Paired');
+  static String get syncDeviceFallback => _t('dispositivo', 'device');
   static String get syncNotPaired => _t('Não pareado', 'Not paired');
   static String get syncPairFirst =>
       _t('Pareie o dispositivo primeiro', 'Pair the device first');

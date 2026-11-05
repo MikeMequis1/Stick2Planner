@@ -117,7 +117,7 @@ void main() {
     final raw = await service.exportToJson();
     final document = BackupDocument.parse(raw);
 
-    expect(document.counts.postIts, 2);
+    expect(document.counts.postIts, 1);
     expect(document.counts.notes, 1);
     expect(document.counts.noteLines, 2);
     expect(document.counts.history, 1);
@@ -135,6 +135,26 @@ void main() {
     );
   });
 
+  test('contagens ignoram itens apagados, mas o backup preserva tombstones', () async {
+    final db = openDb();
+    await seed(db);
+    final dir = await tempDir();
+    final postIts = DriftPostItRepository(db);
+    final notes = DriftNoteRepository(db);
+
+    await postIts.softDelete(id: 'p1', deletedAt: exportedAt);
+    await notes.softDelete(id: 'n1', deletedAt: exportedAt);
+
+    final document = await serviceFor(db, dir).buildExport();
+
+    expect(document.counts.postIts, 0);
+    expect(document.counts.notes, 0);
+    expect(document.counts.noteLines, 0);
+    expect(document.counts.history, 0);
+    expect(document.data['postIts'], hasLength(2));
+    expect(document.data['notes'], hasLength(1));
+  });
+
   test('ida e volta reconstrói o mesmo estado', () async {
     final source = openDb();
     await seed(source);
@@ -144,7 +164,7 @@ void main() {
     final target = openDb();
     final result = await serviceFor(target, dir).importJson(sourceJson);
 
-    expect(result.counts.postIts, 2);
+    expect(result.counts.postIts, 1);
     expect(result.counts.notes, 1);
     expect(result.counts.noteLines, 2);
     expect(result.counts.history, 1);
@@ -296,7 +316,7 @@ void main() {
       final snapshot = File(result.snapshot.path);
       expect(await snapshot.exists(), isTrue);
       final parsed = BackupDocument.parse(await snapshot.readAsString());
-      expect(parsed.counts.postIts, 2);
+      expect(parsed.counts.postIts, 1);
     }
 
     final snapshots = await service.listSnapshots();

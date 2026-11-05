@@ -152,6 +152,23 @@ void main() {
     expect(ctx.coordinator.configured, isTrue);
   });
 
+  test('pareamento define rótulo e desconexão limpa o estado', () async {
+    final ctx = build();
+    await ctx.coordinator.initialize();
+
+    await ctx.coordinator.pair(
+      '{"u":"http://host:8090","p":"pair-token"}',
+      deviceName: 'Tablet de teste',
+    );
+    expect(ctx.coordinator.configured, isTrue);
+    expect(ctx.coordinator.pairedDeviceLabel, 'Tablet de teste');
+
+    await ctx.coordinator.disconnect();
+    expect(ctx.coordinator.configured, isFalse);
+    expect(ctx.coordinator.pairedDeviceLabel, isNull);
+    expect(ctx.coordinator.serverUrl, isNull);
+  });
+
   test('teste de conexão usa o endereço informado', () async {
     final ctx = build();
     await ctx.coordinator.initialize();

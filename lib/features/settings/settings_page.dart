@@ -438,8 +438,9 @@ class _SyncSectionState extends State<_SyncSection> {
                     Expanded(
                       child: Text(
                         sync.configured
-                            ? '${AppStrings.syncPaired} · '
-                                  '${AppStrings.syncPending(sync.pendingCount)}'
+                            ? '${AppStrings.syncPaired}: '
+                                  '${sync.pairedDeviceLabel ?? AppStrings.syncDeviceFallback}'
+                                  ' · ${AppStrings.syncPending(sync.pendingCount)}'
                             : AppStrings.syncNotPaired,
                         key: const Key('settings-sync-status'),
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -536,7 +537,7 @@ class _SyncSectionState extends State<_SyncSection> {
                     ),
                     OutlinedButton.icon(
                       key: const Key('settings-sync-pair'),
-                      onPressed: _busy ? null : _pair,
+                      onPressed: sync.configured || _busy ? null : _pair,
                       icon: const Icon(Icons.link),
                       label: Text(AppStrings.syncPair),
                     ),

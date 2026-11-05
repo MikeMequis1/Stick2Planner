@@ -11,6 +11,7 @@ abstract final class SyncKeys {
   static const enabled = 'enabled';
   static const lastSyncAt = 'last_sync_at';
   static const lastError = 'last_error';
+  static const deviceLabel = 'device_label';
 }
 
 /// Estado global de sincronização, sempre local ao aparelho.
@@ -78,4 +79,9 @@ final class SyncStateStore {
   Future<String?> lastError() => read(SyncKeys.lastError);
 
   Future<void> setLastError(String? error) => write(SyncKeys.lastError, error);
+
+  Future<String?> deviceLabel() => read(SyncKeys.deviceLabel);
+
+  Future<void> setDeviceLabel(String? label) =>
+      write(SyncKeys.deviceLabel, label);
 }

@@ -88,6 +88,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     AppScope.of(context).navigation.select(AppSection.values[index]);
   }
 
+  Future<void> _openSettings() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+    if (!mounted) return;
+    await AppScope.of(context).sync.refreshConfig();
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -123,12 +131,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               IconButton(
                 key: Key('open-settings'),
                 tooltip: AppStrings.settings,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (context) => SettingsPage()),
-                ),
+                onPressed: _openSettings,
                 icon: Icon(Icons.settings_outlined),
               ),
-              const _SyncStatusButton(),
+              _SyncStatusButton(onReturned: () => app.sync.refreshConfig()),
               const SizedBox(width: 4),
             ],
           ),
@@ -193,7 +199,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 /// Ícone de nuvem que reflete o estado da sincronização e abre Configurações
 /// já rolada até a seção de conexão.
 class _SyncStatusButton extends StatelessWidget {
-  const _SyncStatusButton();
+  const _SyncStatusButton({required this.onReturned});
+
+  final Future<void> Function() onReturned;
 
   @override
   Widget build(BuildContext context) {
@@ -228,11 +236,14 @@ class _SyncStatusButton extends StatelessWidget {
     return IconButton(
       key: const Key('open-sync-settings'),
       tooltip: tooltip,
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => const SettingsPage(focusSync: true),
-        ),
-      ),
+      onPressed: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => const SettingsPage(focusSync: true),
+          ),
+        );
+        await onReturned();
+      },
       icon: Icon(icon, color: color),
     );
   }

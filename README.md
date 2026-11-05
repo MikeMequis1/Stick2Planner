@@ -45,7 +45,9 @@ paletas, sincronização opcional, backup, pareamento web e ajustes de celular.
 - **Servidor:** página administrativa de pareamento com QR vivo, renomeação e
   revogação de dispositivos, disponível em português e inglês.
 - **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
-  por substituição integral, com snapshot automático antes de importar.
+  por substituição integral, com snapshot automático antes de importar. As
+  contagens mostram apenas itens ativos; tombstones continuam no arquivo para
+  preservar exclusões e histórico.
 
 ## Stack
 
@@ -112,7 +114,7 @@ docs/          progresso, decisões, qualidade e evidências
 ## Qualidade
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 243 testes aprovados.
+- `flutter test`: 246 testes aprovados.
 - `flutter build apk --debug` e release split: aprovados.
 - Matriz e limitações: `docs/QUALIDADE.md`.
 

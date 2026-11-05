@@ -106,7 +106,7 @@ de conexão**, aberta pelo botão de mesmo nome.
 | Campo de endereço | tela de conexão | não | apenas edita o texto |
 | **Salvar endereço** | tela de conexão | não | grava a URL; não autentica nem pareia |
 | **Testar conexão** | tela de conexão | não | consulta `/v1/health`; valida rede/URL, **não** pareia |
-| **Parear este dispositivo** | Configurações | não | troca o código por um token e configura URL + token + automático |
+| **Parear este dispositivo** | Configurações | não | troca o código por um token e configura URL + token + automático; fica desabilitado depois de pareado e o card mostra “Pareado: <nome>” |
 | **Sincronizar agora** | Configurações | **sim** | desabilitado até existir token; faz push/pull |
 | **Sincronização automática** | Configurações | **sim** | desabilitado até parear; liga os gatilhos |
 | **Desconectar deste servidor** | Configurações | sim | apaga URL/token e desliga o automático; dados locais ficam |

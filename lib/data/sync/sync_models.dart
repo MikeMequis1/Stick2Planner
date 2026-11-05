@@ -118,6 +118,7 @@ final class SyncCounts {
     this.events = 0,
     this.tasks = 0,
     this.history = 0,
+    this.deviceLabel = '',
   });
 
   final int postIts;
@@ -125,6 +126,9 @@ final class SyncCounts {
   final int events;
   final int tasks;
   final int history;
+
+  /// Nome do dispositivo pareado, devolvido pelo servidor em `/stats`.
+  final String deviceLabel;
 
   bool get isEmpty => postIts == 0 && notes == 0;
 
@@ -141,6 +145,7 @@ final class SyncCounts {
     'events': events,
     'tasks': tasks,
     'history': history,
+    'deviceLabel': deviceLabel,
   };
 
   factory SyncCounts.fromJson(Map<String, Object?> json) => SyncCounts(
@@ -149,6 +154,9 @@ final class SyncCounts {
     events: _asInt(json['events']),
     tasks: _asInt(json['tasks']),
     history: _asInt(json['history']),
+    deviceLabel: json['deviceLabel'] is String
+        ? json['deviceLabel'] as String
+        : '',
   );
 }
 

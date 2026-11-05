@@ -324,6 +324,7 @@ void main() {
     expect(counts['events'], 1);
     expect(counts['tasks'], 1);
     expect(counts['notes'], 1);
+    expect(counts['deviceLabel'], 'Tablet');
 
     final snapshot = await raw(
       'GET',

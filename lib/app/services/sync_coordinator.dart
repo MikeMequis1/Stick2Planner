@@ -58,6 +58,7 @@ final class SyncCoordinator extends ChangeNotifier {
   int _pending = 0;
   String? _serverUrl;
   String? _deviceId;
+  String? _pairedDeviceLabel;
   DateTime? _lastSyncAt;
   String? _lastError;
   SyncReport? _lastReport;
@@ -69,6 +70,9 @@ final class SyncCoordinator extends ChangeNotifier {
   int get pendingCount => _pending;
   String? get serverUrl => _serverUrl;
   String? get deviceId => _deviceId;
+
+  /// Rótulo do dispositivo pareado, atualizado pelo servidor quando possível.
+  String? get pairedDeviceLabel => _pairedDeviceLabel;
   DateTime? get lastSyncAt => _lastSyncAt;
   String? get lastError => _lastError;
   SyncReport? get lastReport => _lastReport;
@@ -79,6 +83,7 @@ final class SyncCoordinator extends ChangeNotifier {
   Future<void> initialize() async {
     _deviceId = await _state.ensureDeviceId();
     _serverUrl = await _state.serverUrl();
+    _pairedDeviceLabel = await _state.deviceLabel();
     _enabled = await _state.enabled();
     _lastSyncAt = await _state.lastSyncAt();
     _lastError = await _state.lastError();
@@ -162,6 +167,10 @@ final class SyncCoordinator extends ChangeNotifier {
     await _tokens.write(result.token);
     await _state.setServerUrl(_normalize(payload.url.toString()));
     await _state.setEnabled(true);
+    _pairedDeviceLabel = deviceName;
+    await _state.setDeviceLabel(deviceName);
+    _lastError = null;
+    _lastReport = null;
     _pendingPreflight = null;
     await refreshConfig();
     _schedule(immediate: true);
@@ -171,6 +180,10 @@ final class SyncCoordinator extends ChangeNotifier {
     await _tokens.clear();
     await _state.setServerUrl(null);
     await _state.setEnabled(false);
+    await _state.setDeviceLabel(null);
+    _pairedDeviceLabel = null;
+    _lastError = null;
+    _lastReport = null;
     _pendingPreflight = null;
     await refreshConfig();
   }
@@ -184,6 +197,11 @@ final class SyncCoordinator extends ChangeNotifier {
     if (!await _hasCredentials()) return null;
     final transport = await _currentTransport();
     final remote = await transport.stats();
+    if (remote.deviceLabel.isNotEmpty &&
+        remote.deviceLabel != _pairedDeviceLabel) {
+      _pairedDeviceLabel = remote.deviceLabel;
+      await _state.setDeviceLabel(remote.deviceLabel);
+    }
     final local = await SyncDatasetService(_db).counts();
     final pending = (await _db.select(_db.syncOutbox).get()).length;
     final preflight = SyncPreflight(

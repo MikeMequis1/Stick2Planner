@@ -1314,10 +1314,24 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 ### Validação
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **243 testes aprovados**.
+- `flutter test`: **246 testes aprovados**.
 - `dart analyze` / `dart test` no servidor: sem issues; **15 testes aprovados**.
 - Servidor reconstruído e `GET /v1/health` respondendo; release instalado no
   celular.
+
+## Estado do pareamento e contagens de backup (2026-11-05)
+
+- Nuvem atualiza ao parear/desconectar: o coordenador limpa erro/relatório
+  pendente, grava/limpa o rótulo do dispositivo e notifica a casca na hora.
+- O servidor passou a devolver `deviceLabel` em `/v1/sync/stats`; o app persiste
+  o rótulo localmente e o atualiza após rename na página web.
+- O botão **Parear este dispositivo** fica desabilitado quando já existe token e
+  o card mostra **Pareado: <nome do dispositivo>**.
+- Contagens de backup/exportação ignoram itens com `deletedAt`: excluir todas as
+  notas/post-its zera as contagens exibidas. O JSON continua guardando os
+  tombstones e o histórico; backups antigos com contagens legadas continuam
+  aceitos.
+- `flutter test`: **246 testes aprovados**; servidor: **15 testes aprovados**.
 
 
 

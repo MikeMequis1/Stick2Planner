@@ -307,7 +307,7 @@ final class PlannerDb {
   }
 
   /// Contagens dos dados ativos, para a confirmação antes do sync.
-  Map<String, Object?> stats() {
+  Map<String, Object?> stats({required String deviceId}) {
     var postIts = 0;
     var notes = 0;
     var events = 0;
@@ -342,7 +342,15 @@ final class PlannerDb {
       'events': events,
       'tasks': tasks,
       'history': history,
+      'deviceLabel': _deviceLabel(deviceId),
     };
+  }
+
+  String _deviceLabel(String deviceId) {
+    final rows = _db.select('SELECT label FROM devices WHERE id = ?', [
+      deviceId,
+    ]);
+    return rows.isEmpty ? '' : rows.first['label'] as String;
   }
 
   /// Snapshot de todas as entidades ativas, com o cursor atual.

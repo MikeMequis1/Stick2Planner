@@ -129,7 +129,7 @@ Handler buildHandler({
   router.get('/v1/sync/stats', (Request request) {
     final deviceId = _authenticatedDevice(request, db);
     if (deviceId == null) return _json(401, {'error': 'unauthorized'});
-    return _json(200, db.stats());
+    return _json(200, db.stats(deviceId: deviceId));
   });
 
   router.get('/v1/sync/snapshot', (Request request) {
