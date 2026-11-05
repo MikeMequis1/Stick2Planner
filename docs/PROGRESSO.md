@@ -1157,6 +1157,17 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Textos de “Sobre” atualizados: sincronização é opcional, não “sem
   sincronização nesta versão”.
 
+## Caixinha e clareza do fluxo de sync (2026-11-05)
+
+- Caixinha não reserva mais 72 px para um FAB que só existe na Agenda; a lista
+  ganhou a altura toda (o vazio no rodapé desapareceu).
+- Filtros passaram para uma faixa horizontal rolável, economizando uma linha no
+  retrato e mais duas em telas estreitas.
+- Configurações de sync agora explicam a ordem (“1) testar, 2) parear, 3)
+  sincronizar”), mostram “Pareado · N pendentes” e deixam claro que testar não
+  pareia e que sincronizar/automático só habilitam após o pareamento.
+- Fluxo completo documentado em `docs/SINCRONIZACAO.md`.
+
 ## Página web de pareamento (2026-11-05)
 
 - `GET /` no servidor exibe login administrativo (`ADMIN_TOKEN`) e, autenticado,

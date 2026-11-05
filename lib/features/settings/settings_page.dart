@@ -365,6 +365,13 @@ class _SyncSectionState extends State<_SyncSection> {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.syncFlowHelp,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   key: const Key('settings-sync-url'),
@@ -403,7 +410,11 @@ class _SyncSectionState extends State<_SyncSection> {
                   key: const Key('settings-sync-enabled'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(AppStrings.syncEnabled),
-                  subtitle: Text(AppStrings.syncEnabledHelp),
+                  subtitle: Text(
+                    sync.configured
+                        ? AppStrings.syncEnabledHelp
+                        : AppStrings.syncPairFirst,
+                  ),
                   value: sync.enabled,
                   onChanged: sync.configured && !_busy
                       ? (value) => sync.setEnabled(value)
@@ -413,20 +424,29 @@ class _SyncSectionState extends State<_SyncSection> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    FilledButton.icon(
-                      key: const Key('settings-sync-now'),
-                      onPressed: sync.configured && !sync.busy && !_busy
-                          ? _syncNow
-                          : null,
-                      icon: sync.busy
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.sync),
-                      label: Text(
-                        sync.busy ? AppStrings.syncRunning : AppStrings.syncNow,
+                    Tooltip(
+                      message: sync.configured
+                          ? AppStrings.syncNow
+                          : AppStrings.syncPairFirst,
+                      child: FilledButton.icon(
+                        key: const Key('settings-sync-now'),
+                        onPressed: sync.configured && !sync.busy && !_busy
+                            ? _syncNow
+                            : null,
+                        icon: sync.busy
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.sync),
+                        label: Text(
+                          sync.busy
+                              ? AppStrings.syncRunning
+                              : AppStrings.syncNow,
+                        ),
                       ),
                     ),
                     OutlinedButton.icon(
@@ -446,8 +466,9 @@ class _SyncSectionState extends State<_SyncSection> {
                 const SizedBox(height: 8),
                 Text(
                   sync.configured
-                      ? AppStrings.syncPending(sync.pendingCount)
-                      : AppStrings.syncNotConfiguredShort,
+                      ? '${AppStrings.syncPaired} · '
+                            '${AppStrings.syncPending(sync.pendingCount)}'
+                      : AppStrings.syncNotPaired,
                   key: const Key('settings-sync-status'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

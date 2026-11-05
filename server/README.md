@@ -3,6 +3,8 @@
 Serviço pequeno em Dart/shelf, sem Flutter. Armazena blobs opacos por entidade,
 com revisão por item, idempotência por `changeId` e cursor global de mudanças.
 
+Fluxo de conexão/pareamento/sync do app: `../docs/SINCRONIZACAO.md`.
+
 ## Endpoints
 
 | Método | Rota | Auth | Uso |

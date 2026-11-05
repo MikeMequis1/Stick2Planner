@@ -85,9 +85,9 @@ class _InboxPageState extends State<InboxPage> {
     try {
       await planner.setPostItStatus(postIt, status);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.statusUpdatedMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppStrings.statusUpdatedMessage)));
     } on Object {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
@@ -115,10 +115,10 @@ class _InboxPageState extends State<InboxPage> {
         }
 
         final items = _visiblePostIts(planner);
-        final compactWidth = MediaQuery.sizeOf(context).width < 600;
+        final shortHeight = MediaQuery.sizeOf(context).height < 520;
 
         return Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, compactWidth ? 12 : 72),
+          padding: EdgeInsets.fromLTRB(16, shortHeight ? 4 : 8, 16, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -143,19 +143,25 @@ class _InboxPageState extends State<InboxPage> {
                   isDense: true,
                 ),
               ),
-              SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _filterChip(_InboxFilter.all, AppStrings.allFilter),
-                  _filterChip(_InboxFilter.active, AppStrings.active),
-                  _filterChip(_InboxFilter.done, AppStrings.done),
-                  _filterChip(_InboxFilter.cancelled, AppStrings.cancelled),
-                  _filterChip(_InboxFilter.undated, AppStrings.undated),
-                ],
+              SizedBox(height: shortHeight ? 6 : 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final filter in _InboxFilter.values) ...[
+                      _filterChip(filter, switch (filter) {
+                        _InboxFilter.all => AppStrings.allFilter,
+                        _InboxFilter.active => AppStrings.active,
+                        _InboxFilter.done => AppStrings.done,
+                        _InboxFilter.cancelled => AppStrings.cancelled,
+                        _InboxFilter.undated => AppStrings.undated,
+                      }),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
               ),
-              SizedBox(height: 4),
+              SizedBox(height: shortHeight ? 2 : 4),
               Row(
                 children: [
                   Text(

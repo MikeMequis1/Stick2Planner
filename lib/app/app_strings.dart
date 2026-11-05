@@ -251,6 +251,18 @@ abstract final class AppStrings {
     'Envie e receba alterações de um servidor próprio. O app continua funcionando offline.',
     'Send and receive changes from your own server. The app keeps working offline.',
   );
+  static String get syncFlowHelp => _t(
+    '1) Teste o endereço (opcional). 2) Pareie com o QR/código — isso salva o endereço e o token. 3) Sincronize.',
+    '1) Test the address (optional). 2) Pair with the QR/code — this saves the address and token. 3) Sync.',
+  );
+  static String get syncPaired => _t('Pareado', 'Paired');
+  static String get syncNotPaired => _t('Não pareado', 'Not paired');
+  static String get syncPairFirst =>
+      _t('Pareie o dispositivo primeiro', 'Pair the device first');
+  static String get syncTestHelp => _t(
+    'Testa só o endereço; não pareia.',
+    'Checks the address only; does not pair.',
+  );
   static String get syncServerUrl =>
       _t('Endereço do servidor', 'Server address');
   static String get syncServerUrlHint =>

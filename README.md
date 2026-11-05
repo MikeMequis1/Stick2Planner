@@ -106,8 +106,9 @@ docs/          progresso, decisões, qualidade e evidências
 
 - `docs/PROGRESSO.md` — histórico por etapa.
 - `docs/DECISOES.md` — arquitetura, dados, i18n e interoperabilidade futura.
-- `docs/QUALIDADE.md` — validação, acessibilidade, offline e limitações.
-- `docs/validacao/` — evidências visuais no tablet.
+- `docs/QUALIDADE.md` - validação, acessibilidade, offline e limitações.
+- `docs/SINCRONIZACAO.md` - fluxo de conexão, pareamento e sync de notas.
+- `docs/validacao/` - evidências visuais no tablet.
 
 ## Identificador
 
