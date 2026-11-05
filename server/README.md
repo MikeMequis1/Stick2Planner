@@ -88,7 +88,7 @@ navegador e informe o `ADMIN_TOKEN` para entrar. A página mostra:
 - QR Code de pareamento **renovado automaticamente** enquanto estiver aberta
   (TTL de 5 min, renovação em 4,5 min);
 - código textual equivalente para colar no app;
-- dispositivos pareados, último acesso e botão de revogação;
+- dispositivos pareados, último acesso e botões de **renomear** e revogar;
 - botão de sair (sessão em memória, cookie `HttpOnly`/`SameSite=Strict`).
 
 O CLI continua disponível para automação:

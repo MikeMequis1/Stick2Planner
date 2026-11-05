@@ -1165,6 +1165,10 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - O comando de CLI `pair` continua disponível.
 - Testes de servidor cobrem login, QR, sessão, dispositivos e revogação
   (12 testes no total).
+- Nome do dispositivo vem do modelo Android (`device_info_plus`) no próximo
+  pareamento; dispositivos existentes podem ser renomeados na página web
+  (`POST /api/devices/<id>/label`). Tablet e celular foram ajustados para
+  “Xiaomi Pad 7” e “SM-S942B”.
 
 
 ## Etapa 4 — motor de sincronização no app (2026-11-04)

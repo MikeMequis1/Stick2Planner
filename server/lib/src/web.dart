@@ -42,12 +42,12 @@ final class AdminSessions {
 const _sessionCookie = 'planner_admin';
 
 /// Página de login/dashboard e APIs usadas por ela.
-FutureOr<Response?> adminWebRoute(
+Future<Response?> adminWebRoute(
   Request request,
   PlannerDb db,
   String adminToken,
   AdminSessions sessions,
-) {
+) async {
   final path = request.url.path;
   final session = _cookie(request, _sessionCookie);
 
@@ -83,6 +83,23 @@ FutureOr<Response?> adminWebRoute(
   if (path == 'api/devices' && request.method == 'GET') {
     if (!sessions.valid(session)) return _json(401, {'error': 'unauthorized'});
     return _json(200, {'devices': db.listDevices()});
+  }
+  if (path.startsWith('api/devices/') &&
+      path.endsWith('/label') &&
+      request.method == 'POST') {
+    if (!sessions.valid(session)) return _json(401, {'error': 'unauthorized'});
+    final segments = path.split('/');
+    if (segments.length < 4) return _json(400, {'error': 'invalid_device'});
+    final id = segments[2];
+    final body = await _readJson(request);
+    final label = (body?['label'] as String?)?.trim() ?? '';
+    if (label.isEmpty || label.length > 64) {
+      return _json(400, {'error': 'invalid_label'});
+    }
+    if (!db.renameDevice(id, label)) {
+      return _json(404, {'error': 'not_found'});
+    }
+    return _json(200, {'label': label});
   }
   if (path.startsWith('api/devices/') &&
       path.endsWith('/revoke') &&
@@ -181,6 +198,18 @@ String _baseUrl(Request request) {
       request.headers['host'] ??
       request.requestedUri.authority;
   return '$proto://$host';
+}
+
+Future<Map<String, Object?>?> _readJson(Request request) async {
+  final text = await request.readAsString();
+  if (text.isEmpty) return null;
+  try {
+    final decoded = jsonDecode(text);
+    if (decoded is Map) return Map<String, Object?>.from(decoded);
+  } on FormatException {
+    return null;
+  }
+  return null;
 }
 
 /// Gera um QR Code em SVG (texto puro, sem dependências nativas).
@@ -350,11 +379,22 @@ async function loadDevices() {
     const seen = d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : '—';
     const state = d.revokedAt ? 'revogado' : 'ativo';
     const action = d.revokedAt ? '' :
+      '<button data-rename="' + d.deviceId + '">Renomear</button> ' +
       '<button class="danger" data-id="' + d.deviceId + '">Revogar</button>';
     return '<tr><td>' + escapeHtml(d.label) + '<div class="muted">' +
       escapeHtml(d.deviceId) + '</div></td><td>' + seen + '</td><td>' + state +
       '</td><td>' + action + '</td></tr>';
   }).join('');
+  body.querySelectorAll('button[data-rename]').forEach((button) => {
+    button.onclick = async () => {
+      const label = prompt('Novo nome do dispositivo', '');
+      if (!label || !label.trim()) return;
+      await fetch('/api/devices/' + encodeURIComponent(button.dataset.rename) + '/label',
+        {method:'POST', headers:{'content-type':'application/json'},
+         body: JSON.stringify({label: label.trim()})});
+      loadDevices();
+    };
+  });
   body.querySelectorAll('button[data-id]').forEach((button) => {
     button.onclick = async () => {
       await fetch('/api/devices/' + encodeURIComponent(button.dataset.id) + '/revoke',

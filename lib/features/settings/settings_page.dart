@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_scope.dart';
+import '../../app/services/device_name.dart';
 import '../../app/services/sync_coordinator.dart';
 import '../../app/app_strings.dart';
 import '../../app/theme/app_palette.dart';
@@ -263,7 +264,8 @@ class _SyncSectionState extends State<_SyncSection> {
     final sync = AppScope.of(context).sync;
     setState(() => _busy = true);
     try {
-      await sync.pair(code, deviceName: 'Tablet');
+      final deviceName = await resolveDeviceName();
+      await sync.pair(code, deviceName: deviceName);
       messenger.showSnackBar(
         SnackBar(content: Text(AppStrings.syncPairSuccess)),
       );

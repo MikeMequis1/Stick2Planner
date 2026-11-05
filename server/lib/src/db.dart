@@ -147,6 +147,12 @@ final class PlannerDb {
     ]);
   }
 
+  /// Renomeia um dispositivo pareado.
+  bool renameDevice(String id, String label) {
+    _db.execute('UPDATE devices SET label = ? WHERE id = ?', [label, id]);
+    return _db.updatedRows > 0;
+  }
+
   bool revokeDevice(String id, {DateTime? now}) {
     final timestamp = (now ?? DateTime.now().toUtc()).millisecondsSinceEpoch;
     _db.execute(

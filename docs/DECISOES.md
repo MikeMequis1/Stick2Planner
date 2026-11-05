@@ -324,6 +324,9 @@ continua como interoperabilidade futura; não há conta pública nem multiusuár
 - Sessão web em memória (cookie HttpOnly/SameSite=Strict), separada dos tokens
   de dispositivo.
 - O CLI `pair` permanece para automação e diagnóstico.
+- Nome do dispositivo usa o modelo Android (`device_info_plus`) e pode ser
+  corrigido/renomeado na página web (`POST /api/devices/<id>/label`), sem
+  precisar reparear.
 - Pareamento por JSON/QR gerado no servidor, com token de uso único (TTL 5 min);
   cada dispositivo recebe token próprio, revogável no servidor.
 - Gatilhos: mudança local (watch da outbox + debounce), retomada, reconexão,

@@ -31,6 +31,10 @@ Handler buildHandler({
   router.get('/api/pairing', web);
   router.get('/api/devices', web);
   router.post(
+    '/api/devices/<id>/label',
+    (Request request, String id) => web(request),
+  );
+  router.post(
     '/api/devices/<id>/revoke',
     (Request request, String id) => web(request),
   );

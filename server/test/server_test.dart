@@ -363,6 +363,35 @@ void main() {
     final noCookie = await raw('GET', '/api/pairing');
     expect(noCookie.status, 401);
 
+    await pairDevice(deviceId: 'web-device');
+    final renamed = await raw(
+      'POST',
+      '/api/devices/web-device/label',
+      headers: {'cookie': cookie},
+      body: {'label': 'Sala'},
+    );
+    expect(renamed.status, 200);
+    final renamedList = await raw(
+      'GET',
+      '/api/devices',
+      headers: {'cookie': cookie},
+    );
+    final devicesJson = jsonDecode(renamedList.text) as Map;
+    expect(
+      (devicesJson['devices'] as List).any(
+        (device) => (device as Map)['label'] == 'Sala',
+      ),
+      isTrue,
+    );
+
+    final invalid = await raw(
+      'POST',
+      '/api/devices/web-device/label',
+      headers: {'cookie': cookie},
+      body: {'label': '  '},
+    );
+    expect(invalid.status, 400);
+
     final revoked = await raw(
       'POST',
       '/api/devices/inexistente/revoke',
