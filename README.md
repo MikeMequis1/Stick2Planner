@@ -1,145 +1,83 @@
 # Stick2Planner
 
-Planner visual offline-first para Android (celular e tablet): agenda por
-períodos, caixinha de post-its e caderno de notas Markdown. Tudo fica em SQLite
-local.
+Offline-first visual planner for Android. Calendar, inbox and Markdown notes stay
+on the device in SQLite; synchronization with your own server is optional.
+
+**Português:** [README-PTBR.md](README-PTBR.md)
 
 ## Download
 
-APK mais recente: **[Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
-Use o APK universal em Android 7.0+ (`minSdk 24`). O aplicativo funciona offline;
-a sincronização é opcional.
+Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
 
-## Estado
+- `Stick2Planner-*-arm64.apk` — recommended for most phones and tablets.
+- `Stick2Planner-*-universal.apk` — fallback for other Android devices.
+- Android 7.0+ (`minSdk 24`). No Play Store account is required.
 
-Etapas 0 a 6 concluídas, incluindo a rodada pós-MVP de navegação, configurações,
-paletas, sincronização opcional, backup, pareamento web e ajustes de celular.
+## Features
 
-- [x] Agenda, criação/edição, arraste, reordenação e redimensionamento
-- [x] Estados, caixinha, tarefas sem data e TO-DO recorrente
-- [x] Notas Markdown, listas, snapshots e vínculos com post-its
-- [x] Acessibilidade, offline, migrações e documentação
-- [x] Configurações, quatro paletas, português/inglês e gestos de navegação
-- [x] Sincronização opcional com servidor próprio, pareamento por QR e backup JSON
-- [x] Layout de celular em retrato/paisagem e tela Sobre com versão e links
+- **Calendar:** day, 4-day, week, 2-week and month views; multi-day events;
+  drag, resize, reorder and quick create; anchored 4-day window.
+- **Inbox:** search, status filters, sorting and undated post-its.
+- **Notes:** Markdown rendering, checklists, line selection, snapshots and live
+  links between notes and post-its.
+- **Offline first:** all data is stored locally in SQLite. No account is
+  required, and the app remains fully usable without a server.
+- **Optional sync:** device pairing by QR code or text code, per-device tokens,
+  manual/automatic sync, conflict copies and a local/remote data review before
+  applying changes.
+- **Backup:** versioned JSON export with checksum, transactional import and
+  automatic snapshots.
+- **Settings:** light/dark/system theme, four color palettes, Portuguese/English,
+  animations, screen wake lock and gesture hints.
+- **Admin web page:** live pairing QR, device rename/revoke and Portuguese/English
+  UI, served by the optional sync server.
 
-## Funcionalidades
+## Tech stack
 
-- **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos contínuos; dois toques
-  criam tarefa, três criam evento e segurar abre uma prévia que acompanha o dedo
-  sobre os dias visíveis. Eventos podem ser arrastados entre semanas visíveis,
-  inclusive para a faixa de eventos de outra semana; nas bordas, soltar move
-  ±7 dias. No modo de 4 dias a janela fica ancorada: selecionar um dia visível
-  não recarrega a grade.
-- **Navegação:** deslizar na horizontal folheia períodos; deslizar na vertical
-  altera a quantidade de dias com transição de morphing.
-- **Caixinha:** filtros, busca, ordenação e “Abrir na Agenda” para post-its com
-  data.
-- **Notas:** texto Markdown renderizado, listas/checklists, snapshots e vínculos
-  vivos. Post-its da nota abrem detalhes ou a Agenda.
-- **Configurações:** tema Sistema/Claro/Escuro, idioma Português/English,
-  paletas Verde/Oceano/Pôr do sol/Lavanda, animações, wakelock, dicas e atalho
-  para a tela **Sobre**.
-- **Sobre:** descrição curta do projeto, versão instalada (lida do pacote),
-  repositório e perfil do GitHub com links externos.
-- **Sincronização:** servidor próprio com URL manual ou QR, token seguro por
-  dispositivo, sync manual/automático e cópia de conflitos. Antes de aplicar,
-  compara as contagens local/remota e pede confirmação (manter local, manter
-  remoto ou cancelar) quando há divergência sem alterações locais pendentes. O
-  ícone de nuvem no topo resume o estado e abre Configurações na seção de
-  conexão.
-- **Servidor:** página administrativa de pareamento com QR vivo, renomeação e
-  revogação de dispositivos, disponível em português e inglês.
-- **Backup:** exportar tudo em JSON versionado (checksum SHA-256) e restaurar
-  por substituição integral, com snapshot automático antes de importar. As
-  contagens mostram apenas itens ativos; tombstones continuam no arquivo para
-  preservar exclusões e histórico.
+- Flutter / Dart, Android SDK.
+- Drift + SQLite (schema v5, migrations v1 → v5).
+- Optional sync server in Dart/shelf + SQLite, with Docker Compose support.
+- Secure device tokens stored with `flutter_secure_storage`.
 
-## Stack
-
-- Flutter 3.47.9 / Dart 3.13.7
-- drift + SQLite (esquema v5, migrações v1 → v5)
-- `flutter_markdown_plus`, `wakelock_plus`, `intl`, `uuid`, `crypto`,
-  `file_picker`, `http`, `flutter_secure_storage`, `mobile_scanner`,
-  `connectivity_plus`, `workmanager`, `package_info_plus`, `url_launcher`
-- Servidor de sync em `server/` (Dart/shelf + SQLite, Docker Compose)
-- Android SDK 36; alvo principal: tablet Android
-
-Arquitetura: `features -> app -> domain`, `data -> domain`. `domain` não
-depende de Flutter nem drift.
-
-## Offline, tamanho e desempenho
-
-- Sincronização é opcional: `INTERNET` existe apenas para o servidor
-  configurado; sem ele o app funciona normalmente offline.
-- HTTP é aceito na LAN/Tailscale (cleartext habilitado para servidor próprio).
-- O APK **debug** é grande (~188 MB) porque carrega runtime e símbolos de
-  depuração. O APK **release split por ABI** fica em ~25–31 MB (o leitor de QR
-  adiciona o ML Kit); usar release para avaliar fluidez e armazenamento.
-- O banco local é compacto: ~80 KB para 17 post-its, 3 notas e 58 registros de
-  histórico. O histórico preserva auditoria; não é removido automaticamente.
-- Animações e transições podem ser desativadas em Configurações. O build release
-  é a referência de desempenho.
-
-## Comandos
+## Main commands
 
 ```bash
 flutter pub get
 dart run build_runner build
 flutter analyze
 flutter test
-flutter build apk --debug
 flutter build apk --release --split-per-abi
+flutter build apk --release   # universal APK
+```
 
+Server:
+
+```bash
 cd server
 dart pub get
 dart analyze
 dart test
+docker compose up -d
 ```
 
-O arquivo `*.g.dart` é gerado pelo drift; rode o codegen ao alterar o esquema.
-Servidor: ver `server/README.md` (Compose, pareamento e tokens).
-Validação em tablet Android físico via `adb`; o projeto não usa emulador.
-Em HyperOS/MIUI, use `adb install -r -i com.android.vending app-debug.apk` se o
-install direto for bloqueado.
+For server configuration, pairing and deployment details, see
+[`server/README.md`](server/README.md) and
+[`docs/SINCRONIZACAO.md`](docs/SINCRONIZACAO.md).
 
-## Estrutura
+## Documentation
 
-```text
-lib/
-  core/        datas, clock e formatação localizada
-  domain/      entidades, calendário, validações e contratos
-  data/        drift/SQLite, mappers e repositórios
-  app/         bootstrap, controllers, tema, strings e paletas
-  features/    agenda, caixinha, notas, configurações e casca
-test/          domínio, banco, sync, backup, UI e fluxos
-server/        API Dart/shelf, Dockerfile e Compose
-docs/          progresso, decisões, qualidade e evidências
-```
+- [docs/PROGRESSO.md](docs/PROGRESSO.md) — development history.
+- [docs/DECISOES.md](docs/DECISOES.md) — architecture and technical decisions.
+- [docs/QUALIDADE.md](docs/QUALIDADE.md) — validation matrix and limitations.
+- [docs/SINCRONIZACAO.md](docs/SINCRONIZACAO.md) — connection, pairing and sync.
+- [server/README.md](server/README.md) — sync server, API and deployment.
+- [docs/validacao/](docs/validacao/) — device validation screenshots.
 
-## Qualidade
+## Requirements
 
-- `flutter analyze`: sem issues.
-- `flutter test`: 246 testes aprovados.
-- `flutter build apk --debug` e release split: aprovados.
-- Matriz e limitações: `docs/QUALIDADE.md`.
+- Android 7.0 or newer.
+- Optional sync server: Dart 3.13+ or Docker Compose, reachable over LAN, VPN or a
+  reverse proxy with HTTPS.
 
-## Documentação
-
-- `docs/PROGRESSO.md` — histórico por etapa.
-- `docs/DECISOES.md` — arquitetura, dados, i18n e interoperabilidade futura.
-- `docs/QUALIDADE.md` - validação, acessibilidade, offline e limitações.
-- `docs/SINCRONIZACAO.md` - fluxo de conexão, pareamento e sync de notas.
-- `docs/validacao/` - evidências visuais no tablet.
-
-## Identificador
-
-`applicationId` Android preservado: **`com.mikemequis1.planner`**. O nome de
-exibição é **Stick2Planner**. Alterar o ID implica um novo app e perda dos dados
-locais existentes.
-
-## Futuro
-
-CalDAV/iCalendar e Radicale continuam como interoperabilidade futura,
-documentados em `docs/DECISOES.md`. Sincronização própria, backup, pareamento
-por QR e página web já estão implementados.
+The application identifier is `com.mikemequis1.planner`; changing it creates a
+new app and does not migrate existing local data.
