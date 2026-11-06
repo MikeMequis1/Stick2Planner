@@ -1369,3 +1369,5 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   `docker-compose.build.yml` remains available for local builds.
 - The `server/` directory was removed from this app repository and links were
   updated to the new repository.
+- Both `Stick2Planner` and `stick2server` are public; the app README links the
+  source repository and the server README links the app repository.

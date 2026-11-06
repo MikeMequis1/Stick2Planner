@@ -5,6 +5,8 @@
 Offline-first visual planner for Android. Calendar, inbox and Markdown notes stay
 on the device in SQLite; synchronization with your own server is optional.
 
+Source code: [github.com/MikeMequis1/Stick2Planner](https://github.com/MikeMequis1/Stick2Planner)
+
 ## Download
 
 Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.

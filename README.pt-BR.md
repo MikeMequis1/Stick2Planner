@@ -5,6 +5,8 @@
 Planner visual offline-first para Android. Agenda, Caixinha e notas Markdown
 ficam no aparelho em SQLite; a sincronização com um servidor próprio é opcional.
 
+Código-fonte: [github.com/MikeMequis1/Stick2Planner](https://github.com/MikeMequis1/Stick2Planner)
+
 ## Download
 
 APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
