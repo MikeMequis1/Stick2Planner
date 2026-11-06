@@ -38,7 +38,8 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 
 - Flutter / Dart, Android SDK.
 - Drift + SQLite (esquema v6, migrações v1 → v6).
-- Servidor de sincronização opcional em Dart/shelf + SQLite, com Docker Compose.
+- Servidor de sincronização opcional em Dart/shelf + SQLite, com imagens Docker
+  prontas: [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Tokens de dispositivo guardados com `flutter_secure_storage`.
 
 ## Principais comandos
@@ -52,19 +53,13 @@ flutter build apk --release --split-per-abi
 flutter build apk --release   # APK universal
 ```
 
-Servidor:
-
-```bash
-cd server
-dart pub get
-dart analyze
-dart test
-docker compose up -d
-```
+O servidor de sincronização fica no repositório separado
+**[stick2server](https://github.com/MikeMequis1/stick2server)**, com Docker
+Compose e imagem `latest`.
 
 Para configuração do servidor, pareamento e deploy, consulte
-[`server/README.pt-BR.md`](server/README.pt-BR.md) e
-[`docs/SINCRONIZACAO.pt-BR.md`](docs/SINCRONIZACAO.pt-BR.md).
+[`docs/SINCRONIZACAO.pt-BR.md`](docs/SINCRONIZACAO.pt-BR.md) e o
+[README do stick2server](https://github.com/MikeMequis1/stick2server#readme).
 
 ## Documentação
 
@@ -72,7 +67,8 @@ Para configuração do servidor, pareamento e deploy, consulte
 - [docs/DECISOES.pt-BR.md](docs/DECISOES.pt-BR.md) — arquitetura e decisões técnicas.
 - [docs/QUALIDADE.pt-BR.md](docs/QUALIDADE.pt-BR.md) — matriz de validação e limitações.
 - [docs/SINCRONIZACAO.pt-BR.md](docs/SINCRONIZACAO.pt-BR.md) — conexão, pareamento e sync.
-- [server/README.pt-BR.md](server/README.pt-BR.md) — servidor de sync, API e deploy.
+- [stick2server](https://github.com/MikeMequis1/stick2server) — servidor de sync,
+  API e deploy.
 - [docs/validacao/](docs/validacao/) — evidências visuais no aparelho.
 
 ## Requisitos

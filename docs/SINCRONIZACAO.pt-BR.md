@@ -21,7 +21,7 @@ Três credenciais são diferentes:
 O servidor **não cria** o `ADMIN_TOKEN` sozinho: ele lê a variável do ambiente.
 O processo é:
 
-1. Gere um token forte no diretório `server/`:
+1. Gere um token forte no repositório stick2server:
    ```bash
    dart run bin/server token
    # alternativa: openssl rand -hex 32

@@ -1352,5 +1352,18 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Testes de domínio cobrem expansão diária/semanal/mensal/anual e teste de widget
   cobre o fluxo semanal no editor.
 
+## Servidor de sync movido para stick2server (2026-11-06)
+
+- Código, Dockerfile, Compose, testes e documentação do servidor agora ficam no
+  repositório público
+  [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
+- O GitHub Actions publica a imagem no GHCR como
+  `ghcr.io/mikemequis1/stick2server:latest` (multiarch amd64/arm64), além de tags
+  de versão e commit.
+- O Compose desse repositório baixa a imagem `latest` por padrão; o
+  `docker-compose.build.yml` continua disponível para build local.
+- O diretório `server/` foi removido deste repositório e os links foram
+  atualizados para o novo repositório.
+
 
 

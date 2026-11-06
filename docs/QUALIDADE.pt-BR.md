@@ -109,7 +109,7 @@ flutter analyze
 flutter test
 flutter build apk --release --split-per-abi
 
-cd server
+cd stick2server
 dart analyze
 dart test
 ```

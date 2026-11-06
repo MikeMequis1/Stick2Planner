@@ -1356,3 +1356,16 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - The event details sheet shows a repeat summary chip.
 - Added domain tests for daily/weekly/monthly/yearly expansion and a widget test
   for the weekly editor flow.
+
+## Sync server moved to stick2server (2026-11-06)
+
+- Server source, Dockerfile, Compose files, tests and documentation now live in
+  the public [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server)
+  repository.
+- GitHub Actions publishes the image to GHCR as
+  `ghcr.io/mikemequis1/stick2server:latest` (multi-arch amd64/arm64), plus
+  version and commit tags.
+- The Compose file in that repository pulls the `latest` image by default;
+  `docker-compose.build.yml` remains available for local builds.
+- The `server/` directory was removed from this app repository and links were
+  updated to the new repository.

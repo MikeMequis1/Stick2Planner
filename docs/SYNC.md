@@ -22,7 +22,7 @@ Three credentials are different:
 The server **does not create** the `ADMIN_TOKEN` on its own: it reads the
 variable from the environment. The process is:
 
-1. Generate a strong token in the `server/` directory:
+1. Generate a strong token in the stick2server repository:
    ```bash
    dart run bin/server token
    # alternative: openssl rand -hex 32

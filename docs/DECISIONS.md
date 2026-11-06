@@ -428,7 +428,7 @@ remains as future interoperability; there is no public account nor multiuser.
 
 ### Possible self-hosted synchronization service
 
-Implemented as an independent Dart package in `server/` (shelf + SQLite), with no
+Implemented in the separate [stick2server](https://github.com/MikeMequis1/stick2server) repository (shelf + SQLite), with no
 Flutter dependency:
 
 - opaque entities with a monotonic `rev` per item, change log with `seq` and
@@ -471,7 +471,7 @@ Flutter dependency:
 
 ### Scope
 
-Implemented: self-hosted server in `server/`, pairing by QR/code, individual
+Implemented: self-hosted server in the [stick2server](https://github.com/MikeMequis1/stick2server) repository, pairing by QR/code, individual
 revocable tokens, manual/automatic sync, administrative web page in
 Portuguese/English and JSON backup. Still out of scope: public account,
 multiuser and CalDAV/iCalendar.

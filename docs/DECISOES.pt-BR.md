@@ -426,7 +426,7 @@ continua como interoperabilidade futura; não há conta pública nem multiusuár
 
 ### Possível serviço próprio de sincronização
 
-Implementado como pacote Dart independente em `server/` (shelf + SQLite), sem
+Implementado no repositório separado [stick2server](https://github.com/MikeMequis1/stick2server) (shelf + SQLite), sem
 dependência de Flutter:
 
 - entidades opacas com `rev` monotônica por item, log de mudanças com `seq` e
@@ -469,7 +469,7 @@ dependência de Flutter:
 
 ### Escopo
 
-Implementado: servidor próprio em `server/`, pareamento por QR/código, tokens
+Implementado: servidor próprio no repositório [stick2server](https://github.com/MikeMequis1/stick2server), pareamento por QR/código, tokens
 individuais revogáveis, sync manual/automático, página web administrativa em
 português/inglês e backup JSON. Continua fora do escopo: conta pública,
 multiusuário e CalDAV/iCalendar.
