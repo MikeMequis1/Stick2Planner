@@ -1,92 +1,96 @@
-# Stick2Planner — servidor de sincronização
+**English** | [Português (Brasil)](README.pt-BR.md)
 
-Serviço pequeno em Dart/shelf, sem Flutter. Armazena blobs opacos por entidade,
-com revisão por item, idempotência por `changeId` e cursor global de mudanças.
+# Stick2Planner — sync server
 
-Fluxo de conexão/pareamento/sync do app: `../docs/SINCRONIZACAO.md`.
+Small Dart/shelf service, without Flutter. Stores opaque blobs per entity,
+with per-item revision, idempotency by `changeId`, and a global change cursor.
+
+App connection/pairing/sync flow: `../docs/SYNC.md`.
 
 ## Endpoints
 
-| Método | Rota | Auth | Uso |
+| Method | Route | Auth | Use |
 | --- | --- | --- | --- |
-| GET | `/v1/health` | — | saúde/versão/serverId |
-| POST | `/v1/sync` | token do dispositivo | push + pull em uma chamada |
-| GET | `/v1/sync/stats` | token do dispositivo | contagens de dados ativos |
-| GET | `/v1/sync/snapshot` | token do dispositivo | snapshot completo (manter remoto) |
-| POST | `/v1/sync/replace` | token do dispositivo | substitui conjunto (manter local) |
-| POST | `/v1/pair` | token de pareamento | troca por token do dispositivo |
-| POST | `/v1/admin/pairing-tokens` | token admin | cria token de pareamento (TTL) |
-| GET | `/v1/admin/devices` | token admin | lista dispositivos |
-| POST | `/v1/admin/devices/<id>/revoke` | token admin | revoga dispositivo |
+| GET | `/v1/health` | — | health/version/serverId |
+| POST | `/v1/sync` | device token | push + pull in one call |
+| GET | `/v1/sync/stats` | device token | active data counts |
+| GET | `/v1/sync/snapshot` | device token | full snapshot (keep remote) |
+| POST | `/v1/sync/replace` | device token | replaces the set (keep local) |
+| POST | `/v1/pair` | pairing token | exchanged for a device token |
+| POST | `/v1/admin/pairing-tokens` | admin token | creates a pairing token (TTL) |
+| GET | `/v1/admin/devices` | admin token | lists devices |
+| POST | `/v1/admin/devices/<id>/revoke` | admin token | revokes a device |
 
-Push aplica apenas com `baseRev` igual à revisão atual; divergência devolve
-`conflicts` com a versão do servidor. Reenvio do mesmo `changeId` devolve o ack
-anterior. Pull retorna mudanças após `since` com o estado atual da entidade.
+Push applies only when `baseRev` equals the current revision; divergence returns
+`conflicts` with the server version. Resending the same `changeId` returns the
+previous ack. Pull returns changes after `since` with the entity's current state.
 
-`/v1/sync/stats` e `/v1/sync/snapshot` alimentam a conferência local × remota do
-app. `/v1/sync/replace` substitui o conjunto remoto pelo snapshot local: o que
-não existir no envio vira tombstone e o histórico é preservado como auditoria.
+`/v1/sync/stats` and `/v1/sync/snapshot` feed the app's local × remote check.
+`/v1/sync/replace` replaces the remote set with the local snapshot: whatever
+does not exist in the upload becomes a tombstone, and history is preserved as an
+audit trail.
 
-## Variáveis
+## Variables
 
-| Variável | Padrão | Descrição |
+| Variable | Default | Description |
 | --- | --- | --- |
-| `PORT` | `8090` | porta HTTP |
-| `DB_PATH` | `data/planner-server.sqlite` | arquivo SQLite |
-| `ADMIN_TOKEN` | — | obrigatório para servir/parear |
-| `PUBLIC_URL` | — | URL exibida no pareamento |
+| `PORT` | `8090` | HTTP port |
+| `DB_PATH` | `data/planner-server.sqlite` | SQLite file |
+| `ADMIN_TOKEN` | — | required to serve/pair |
+| `PUBLIC_URL` | — | URL shown during pairing |
 
-### Gerar o ADMIN_TOKEN
+### Generating the ADMIN_TOKEN
 
-O servidor lê `ADMIN_TOKEN` do ambiente; ele não é criado automaticamente ao
-subir o container. Gere um valor forte e grave no `.env` antes de iniciar:
+The server reads `ADMIN_TOKEN` from the environment; it is not created
+automatically when the container starts. Generate a strong value and write it to
+`.env` before starting:
 
 ```bash
-# No diretório server/
+# In the server/ directory
 dart run bin/server token
-# ou: openssl rand -hex 32
+# or: openssl rand -hex 32
 ```
 
-Copie a saída para `ADMIN_TOKEN=` no `.env` e recrie o serviço:
+Copy the output to `ADMIN_TOKEN=` in `.env` and recreate the service:
 
 ```bash
 docker compose up -d --force-recreate
 ```
 
-Para consultar o valor atual (no host, com acesso ao `.env`):
+To look up the current value (on the host, with access to `.env`):
 
 ```bash
 grep '^ADMIN_TOKEN=' .env
 ```
 
-Esse token é a senha administrativa da página web e dos endpoints
-`/v1/admin/*`; o app pareado usa tokens de dispositivo separados.
+This token is the administrative password for the web page and the
+`/v1/admin/*` endpoints; the paired app uses separate device tokens.
 
 ## Docker Compose
 
 ```bash
 cp .env.example .env
-# edite ADMIN_TOKEN e PUBLIC_URL
+# edit ADMIN_TOKEN and PUBLIC_URL
 docker compose build
 docker compose up -d
 docker compose ps
 curl -fsS http://127.0.0.1:8090/v1/health
 ```
 
-O volume nomeado `planner-data` guarda o SQLite. Backup:
+The named volume `planner-data` holds the SQLite database. Backup:
 
 ```bash
 docker run --rm -v stick2planner_planner-data:/data -v "$PWD/backups:/backup" \
   debian:bookworm-slim sh -c 'apt-get update -qq && apt-get install -y -qq sqlite3 >/dev/null && sqlite3 /data/planner-server.sqlite ".backup /backup/planner-$(date +%F).sqlite"'
 ```
 
-## Pareamento
+## Pairing
 
 ```bash
 docker compose exec api /app/bin/server pair 300
 ```
 
-Saída (uma vez, com TTL):
+Output (once, with TTL):
 
 ```json
 {
@@ -97,17 +101,17 @@ Saída (uma vez, com TTL):
 }
 ```
 
-Esse JSON é o conteúdo do QR de pareamento. O app troca o token em `/v1/pair`
-e recebe um token individual, guardado apenas no armazenamento seguro.
+This JSON is the content of the pairing QR code. The app exchanges the token at
+`/v1/pair` and receives an individual token, stored only in secure storage.
 
-## Dispositivos
+## Devices
 
 ```bash
 docker compose exec api /app/bin/server devices
 docker compose exec api /app/bin/server revoke <deviceId>
 ```
 
-## Testes
+## Tests
 
 ```bash
 dart pub get
@@ -115,46 +119,48 @@ dart analyze
 dart test
 ```
 
-## Página web de pareamento
+## Pairing web page
 
-Abra `https://planner.<tailnet>.ts.net/` (ou o endereço usado para o serviço) no
-navegador e informe o `ADMIN_TOKEN` para entrar. A página mostra:
+Open `https://planner.<tailnet>.ts.net/` (or the address used for the service) in
+the browser and enter the `ADMIN_TOKEN` to sign in. The page shows:
 
-- QR Code de pareamento **renovado automaticamente** enquanto estiver aberta
-  (TTL de 5 min, renovação em 4,5 min);
-- código textual equivalente para colar no app;
-- dispositivos pareados, último acesso e botões de **renomear** e revogar;
-- alternância **Português/English** no cliente, sem recarregar; a escolha fica
-  em `localStorage` e também traduz contagem do QR, estados e ações;
-- botão de sair (sessão em memória, cookie `HttpOnly`/`SameSite=Strict`).
+- pairing QR Code **automatically renewed** while it is open
+  (5 min TTL, renewal at 4.5 min);
+- equivalent text code to paste into the app;
+- paired devices, last access, and **rename** and revoke buttons;
+- **Português/English** toggle on the client, without reloading; the choice is
+  stored in `localStorage` and also translates the QR countdown, states, and
+  actions;
+- sign-out button (in-memory session, `HttpOnly`/`SameSite=Strict` cookie).
 
-O CLI continua disponível para automação:
+The CLI remains available for automation:
 
 ```bash
 docker compose exec api /app/bin/server pair 300
 ```
 
-A página e as APIs `/api/pairing`, `/api/devices` exigem sessão administrativa;
-sem cookie, retornam a tela de login/401. Não exponha a página fora da
-LAN/Tailnet.
+The page and the `/api/pairing`, `/api/devices` APIs require an administrative
+session; without a cookie, they return the login screen/401. Do not expose the
+page outside the LAN/Tailnet.
 
-## Exposição opcional
+## Optional exposure
 
-O serviço pode ficar na LAN ou ser exposto por VPN/Tailscale ou proxy reverso
-com TLS. Nesse caso:
+The service can stay on the LAN or be exposed through a VPN/Tailscale or a
+reverse proxy with TLS. In that case:
 
-- use `PUBLIC_URL` com a URL externa para que o QR de pareamento carregue o
-  endereço correto;
-- encaminhe o proxy para a porta `8090`;
-- mantenha autenticação/TLS no proxy e não publique a porta diretamente na
-  internet;
-- configure labels/regras do proxy no ambiente de deploy, fora deste repositório.
+- use `PUBLIC_URL` with the external URL so the pairing QR code carries the
+  correct address;
+- forward the proxy to port `8090`;
+- keep authentication/TLS on the proxy and do not publish the port directly to
+  the internet;
+- configure the proxy labels/rules in the deployment environment, outside this
+  repository.
 
-## Segurança
+## Security
 
-- Tokens são guardados como SHA-256; comparação em tempo constante.
-- Tokens de pareamento são de uso único e expiram.
-- Corpo limitado a 8 MB, payload a 1 MB e lote a 500 mudanças.
-- Sem logs de token ou payload.
-- Exposição esperada: LAN ou Tailscale, porta 8090; sem publicar na internet.
-- `data/` e `.env` são ignorados pelo git.
+- Tokens are stored as SHA-256; comparison in constant time.
+- Pairing tokens are single-use and expire.
+- Body limited to 8 MB, payload to 1 MB, and batch to 500 changes.
+- No token or payload logs.
+- Expected exposure: LAN or Tailscale, port 8090; not published to the internet.
+- `data/` and `.env` are ignored by git.

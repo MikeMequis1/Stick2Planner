@@ -1153,6 +1153,27 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       ).withConverter<DateOnly?>($PostItsTable.$converterendDaten);
+  @override
+  late final GeneratedColumnWithTypeConverter<EventRecurrence, String>
+  recurrence = GeneratedColumn<String>(
+    'recurrence',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  ).withConverter<EventRecurrence>($PostItsTable.$converterrecurrence);
+  static const VerificationMeta _recurrenceIntervalMeta =
+      const VerificationMeta('recurrenceInterval');
+  @override
+  late final GeneratedColumn<int> recurrenceInterval = GeneratedColumn<int>(
+    'recurrence_interval',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -1222,6 +1243,8 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     sourceNoteId,
     startDate,
     endDate,
+    recurrence,
+    recurrenceInterval,
     sortOrder,
     lastRolloverAt,
     createdAt,
@@ -1289,6 +1312,15 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         sourceNoteId.isAcceptableOrUnknown(
           data['source_note_id']!,
           _sourceNoteIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('recurrence_interval')) {
+      context.handle(
+        _recurrenceIntervalMeta,
+        recurrenceInterval.isAcceptableOrUnknown(
+          data['recurrence_interval']!,
+          _recurrenceIntervalMeta,
         ),
       );
     }
@@ -1390,6 +1422,16 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
           data['${effectivePrefix}end_date'],
         ),
       ),
+      recurrence: $PostItsTable.$converterrecurrence.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}recurrence'],
+        )!,
+      ),
+      recurrenceInterval: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recurrence_interval'],
+      )!,
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -1430,6 +1472,10 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
       const DateOnlyConverter();
   static TypeConverter<DateOnly?, String?> $converterendDaten =
       NullAwareTypeConverter.wrap($converterendDate);
+  static JsonTypeConverter2<EventRecurrence, String, String>
+  $converterrecurrence = const EnumNameConverter<EventRecurrence>(
+    EventRecurrence.values,
+  );
 }
 
 class PostItRow extends DataClass implements Insertable<PostItRow> {
@@ -1444,6 +1490,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
   final String? sourceNoteId;
   final DateOnly? startDate;
   final DateOnly? endDate;
+  final EventRecurrence recurrence;
+  final int recurrenceInterval;
   final int sortOrder;
   final int? lastRolloverAt;
   final int createdAt;
@@ -1461,6 +1509,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     this.sourceNoteId,
     this.startDate,
     this.endDate,
+    required this.recurrence,
+    required this.recurrenceInterval,
     required this.sortOrder,
     this.lastRolloverAt,
     required this.createdAt,
@@ -1503,6 +1553,12 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
         $PostItsTable.$converterendDaten.toSql(endDate),
       );
     }
+    {
+      map['recurrence'] = Variable<String>(
+        $PostItsTable.$converterrecurrence.toSql(recurrence),
+      );
+    }
+    map['recurrence_interval'] = Variable<int>(recurrenceInterval);
     map['sort_order'] = Variable<int>(sortOrder);
     if (!nullToAbsent || lastRolloverAt != null) {
       map['last_rollover_at'] = Variable<int>(lastRolloverAt);
@@ -1540,6 +1596,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       endDate: endDate == null && nullToAbsent
           ? const Value.absent()
           : Value(endDate),
+      recurrence: Value(recurrence),
+      recurrenceInterval: Value(recurrenceInterval),
       sortOrder: Value(sortOrder),
       lastRolloverAt: lastRolloverAt == null && nullToAbsent
           ? const Value.absent()
@@ -1573,6 +1631,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       sourceNoteId: serializer.fromJson<String?>(json['sourceNoteId']),
       startDate: serializer.fromJson<DateOnly?>(json['startDate']),
       endDate: serializer.fromJson<DateOnly?>(json['endDate']),
+      recurrence: $PostItsTable.$converterrecurrence.fromJson(
+        serializer.fromJson<String>(json['recurrence']),
+      ),
+      recurrenceInterval: serializer.fromJson<int>(json['recurrenceInterval']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       lastRolloverAt: serializer.fromJson<int?>(json['lastRolloverAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -1599,6 +1661,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       'sourceNoteId': serializer.toJson<String?>(sourceNoteId),
       'startDate': serializer.toJson<DateOnly?>(startDate),
       'endDate': serializer.toJson<DateOnly?>(endDate),
+      'recurrence': serializer.toJson<String>(
+        $PostItsTable.$converterrecurrence.toJson(recurrence),
+      ),
+      'recurrenceInterval': serializer.toJson<int>(recurrenceInterval),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'lastRolloverAt': serializer.toJson<int?>(lastRolloverAt),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -1619,6 +1685,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     Value<String?> sourceNoteId = const Value.absent(),
     Value<DateOnly?> startDate = const Value.absent(),
     Value<DateOnly?> endDate = const Value.absent(),
+    EventRecurrence? recurrence,
+    int? recurrenceInterval,
     int? sortOrder,
     Value<int?> lastRolloverAt = const Value.absent(),
     int? createdAt,
@@ -1636,6 +1704,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     sourceNoteId: sourceNoteId.present ? sourceNoteId.value : this.sourceNoteId,
     startDate: startDate.present ? startDate.value : this.startDate,
     endDate: endDate.present ? endDate.value : this.endDate,
+    recurrence: recurrence ?? this.recurrence,
+    recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
     sortOrder: sortOrder ?? this.sortOrder,
     lastRolloverAt: lastRolloverAt.present
         ? lastRolloverAt.value
@@ -1663,6 +1733,12 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           : this.sourceNoteId,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      recurrence: data.recurrence.present
+          ? data.recurrence.value
+          : this.recurrence,
+      recurrenceInterval: data.recurrenceInterval.present
+          ? data.recurrenceInterval.value
+          : this.recurrenceInterval,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       lastRolloverAt: data.lastRolloverAt.present
           ? data.lastRolloverAt.value
@@ -1687,6 +1763,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           ..write('sourceNoteId: $sourceNoteId, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
+          ..write('recurrence: $recurrence, ')
+          ..write('recurrenceInterval: $recurrenceInterval, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('lastRolloverAt: $lastRolloverAt, ')
           ..write('createdAt: $createdAt, ')
@@ -1709,6 +1787,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     sourceNoteId,
     startDate,
     endDate,
+    recurrence,
+    recurrenceInterval,
     sortOrder,
     lastRolloverAt,
     createdAt,
@@ -1730,6 +1810,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           other.sourceNoteId == this.sourceNoteId &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
+          other.recurrence == this.recurrence &&
+          other.recurrenceInterval == this.recurrenceInterval &&
           other.sortOrder == this.sortOrder &&
           other.lastRolloverAt == this.lastRolloverAt &&
           other.createdAt == this.createdAt &&
@@ -1749,6 +1831,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
   final Value<String?> sourceNoteId;
   final Value<DateOnly?> startDate;
   final Value<DateOnly?> endDate;
+  final Value<EventRecurrence> recurrence;
+  final Value<int> recurrenceInterval;
   final Value<int> sortOrder;
   final Value<int?> lastRolloverAt;
   final Value<int> createdAt;
@@ -1767,6 +1851,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.sourceNoteId = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
+    this.recurrence = const Value.absent(),
+    this.recurrenceInterval = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.lastRolloverAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1786,6 +1872,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.sourceNoteId = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
+    this.recurrence = const Value.absent(),
+    this.recurrenceInterval = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.lastRolloverAt = const Value.absent(),
     required int createdAt,
@@ -1810,6 +1898,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Expression<String>? sourceNoteId,
     Expression<String>? startDate,
     Expression<String>? endDate,
+    Expression<String>? recurrence,
+    Expression<int>? recurrenceInterval,
     Expression<int>? sortOrder,
     Expression<int>? lastRolloverAt,
     Expression<int>? createdAt,
@@ -1829,6 +1919,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       if (sourceNoteId != null) 'source_note_id': sourceNoteId,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
+      if (recurrence != null) 'recurrence': recurrence,
+      if (recurrenceInterval != null) 'recurrence_interval': recurrenceInterval,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (lastRolloverAt != null) 'last_rollover_at': lastRolloverAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -1850,6 +1942,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Value<String?>? sourceNoteId,
     Value<DateOnly?>? startDate,
     Value<DateOnly?>? endDate,
+    Value<EventRecurrence>? recurrence,
+    Value<int>? recurrenceInterval,
     Value<int>? sortOrder,
     Value<int?>? lastRolloverAt,
     Value<int>? createdAt,
@@ -1869,6 +1963,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       sourceNoteId: sourceNoteId ?? this.sourceNoteId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      recurrence: recurrence ?? this.recurrence,
+      recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
       sortOrder: sortOrder ?? this.sortOrder,
       lastRolloverAt: lastRolloverAt ?? this.lastRolloverAt,
       createdAt: createdAt ?? this.createdAt,
@@ -1922,6 +2018,14 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
         $PostItsTable.$converterendDaten.toSql(endDate.value),
       );
     }
+    if (recurrence.present) {
+      map['recurrence'] = Variable<String>(
+        $PostItsTable.$converterrecurrence.toSql(recurrence.value),
+      );
+    }
+    if (recurrenceInterval.present) {
+      map['recurrence_interval'] = Variable<int>(recurrenceInterval.value);
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -1957,6 +2061,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
           ..write('sourceNoteId: $sourceNoteId, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
+          ..write('recurrence: $recurrence, ')
+          ..write('recurrenceInterval: $recurrenceInterval, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('lastRolloverAt: $lastRolloverAt, ')
           ..write('createdAt: $createdAt, ')
@@ -4413,6 +4519,8 @@ typedef $$PostItsTableCreateCompanionBuilder = PostItsCompanion Function({
   Value<String?> sourceNoteId,
   Value<DateOnly?> startDate,
   Value<DateOnly?> endDate,
+  Value<EventRecurrence> recurrence,
+  Value<int> recurrenceInterval,
   Value<int> sortOrder,
   Value<int?> lastRolloverAt,
   required int createdAt,
@@ -4432,6 +4540,8 @@ typedef $$PostItsTableUpdateCompanionBuilder = PostItsCompanion Function({
   Value<String?> sourceNoteId,
   Value<DateOnly?> startDate,
   Value<DateOnly?> endDate,
+  Value<EventRecurrence> recurrence,
+  Value<int> recurrenceInterval,
   Value<int> sortOrder,
   Value<int?> lastRolloverAt,
   Value<int> createdAt,
@@ -4546,6 +4656,17 @@ class $$PostItsTableFilterComposer
         column: $table.endDate,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnWithTypeConverterFilters<EventRecurrence, EventRecurrence, String>
+  get recurrence => $composableBuilder(
+    column: $table.recurrence,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get recurrenceInterval => $composableBuilder(
+    column: $table.recurrenceInterval,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
@@ -4680,6 +4801,16 @@ class $$PostItsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get recurrence => $composableBuilder(
+    column: $table.recurrence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get recurrenceInterval => $composableBuilder(
+    column: $table.recurrenceInterval,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -4773,6 +4904,17 @@ class $$PostItsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<DateOnly?, String> get endDate =>
       $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<EventRecurrence, String> get recurrence =>
+      $composableBuilder(
+        column: $table.recurrence,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<int> get recurrenceInterval => $composableBuilder(
+    column: $table.recurrenceInterval,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
@@ -4880,6 +5022,8 @@ class $$PostItsTableTableManager
                 Value<String?> sourceNoteId = const Value.absent(),
                 Value<DateOnly?> startDate = const Value.absent(),
                 Value<DateOnly?> endDate = const Value.absent(),
+                Value<EventRecurrence> recurrence = const Value.absent(),
+                Value<int> recurrenceInterval = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> lastRolloverAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -4898,6 +5042,8 @@ class $$PostItsTableTableManager
                 sourceNoteId: sourceNoteId,
                 startDate: startDate,
                 endDate: endDate,
+                recurrence: recurrence,
+                recurrenceInterval: recurrenceInterval,
                 sortOrder: sortOrder,
                 lastRolloverAt: lastRolloverAt,
                 createdAt: createdAt,
@@ -4918,6 +5064,8 @@ class $$PostItsTableTableManager
                 Value<String?> sourceNoteId = const Value.absent(),
                 Value<DateOnly?> startDate = const Value.absent(),
                 Value<DateOnly?> endDate = const Value.absent(),
+                Value<EventRecurrence> recurrence = const Value.absent(),
+                Value<int> recurrenceInterval = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> lastRolloverAt = const Value.absent(),
                 required int createdAt,
@@ -4936,6 +5084,8 @@ class $$PostItsTableTableManager
                 sourceNoteId: sourceNoteId,
                 startDate: startDate,
                 endDate: endDate,
+                recurrence: recurrence,
+                recurrenceInterval: recurrenceInterval,
                 sortOrder: sortOrder,
                 lastRolloverAt: lastRolloverAt,
                 createdAt: createdAt,

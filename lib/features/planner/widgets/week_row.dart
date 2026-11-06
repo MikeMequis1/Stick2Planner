@@ -307,8 +307,9 @@ class _WeekRowState extends State<WeekRow> {
     required double barGap,
   }) {
     final postIt = segment.postIt;
+    final recurring = postIt.isRecurringEvent;
     final activeResize = _resize;
-    final resizing = activeResize?.postIt.id == postIt.id;
+    final resizing = !recurring && activeResize?.postIt.id == postIt.id;
     final resizingThisEdge =
         resizing &&
         (activeResize!.isStart
@@ -331,7 +332,11 @@ class _WeekRowState extends State<WeekRow> {
 
     final bar = EventBar(
       key: ValueKey(
-        'event-bar-${postIt.id}-${widget.week.start.toIso8601String()}',
+        postIt.isRecurringEvent
+            ? 'event-bar-${postIt.id}-'
+                  '${postIt.startDate?.toIso8601String() ?? ''}-'
+                  '${widget.week.start.toIso8601String()}'
+            : 'event-bar-${postIt.id}-${widget.week.start.toIso8601String()}',
       ),
       postIt: postIt,
       isFocused: widget.focusedPostItId == postIt.id,
@@ -358,6 +363,7 @@ class _WeekRowState extends State<WeekRow> {
             curve: Curves.easeOutCubic,
             child: LongPressDraggable<PostItDragData>(
               data: PostItDragData(postIt),
+              maxSimultaneousDrags: recurring ? 0 : null,
               delay: const Duration(milliseconds: 200),
               onDragStarted: () => widget.onEventDragActive?.call(true),
               onDragEnd: (_) => widget.onEventDragActive?.call(false),
@@ -397,11 +403,16 @@ class _WeekRowState extends State<WeekRow> {
               child: bar,
             ),
           ),
-          if (!segment.continuesBefore)
+          if (!recurring && !segment.continuesBefore)
             Align(
               alignment: Alignment.centerLeft,
               child: _ResizeHandle(
-                key: Key('event-resize-start-${postIt.id}'),
+                key: Key(
+                  recurring
+                      ? 'event-resize-start-${postIt.id}-'
+                            '${postIt.startDate?.toIso8601String() ?? ''}'
+                      : 'event-resize-start-${postIt.id}',
+                ),
                 tooltip: AppStrings.resizeStart,
                 isStart: true,
                 compact: widget.compact,
@@ -412,11 +423,16 @@ class _WeekRowState extends State<WeekRow> {
                 onCancel: _cancelResize,
               ),
             ),
-          if (!segment.continuesAfter)
+          if (!recurring && !segment.continuesAfter)
             Align(
               alignment: Alignment.centerRight,
               child: _ResizeHandle(
-                key: Key('event-resize-end-${postIt.id}'),
+                key: Key(
+                  recurring
+                      ? 'event-resize-end-${postIt.id}-'
+                            '${postIt.startDate?.toIso8601String() ?? ''}'
+                      : 'event-resize-end-${postIt.id}',
+                ),
                 tooltip: AppStrings.resizeEnd,
                 isStart: false,
                 compact: widget.compact,

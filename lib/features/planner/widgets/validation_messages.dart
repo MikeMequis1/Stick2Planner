@@ -16,5 +16,9 @@ String postItValidationMessage(PostItValidationError error) {
       AppStrings.errorIntervalOnTask,
     PostItValidationError.highlightRequiresEvent =>
       AppStrings.errorHighlightEvent,
+    PostItValidationError.recurrenceRequiresEvent =>
+      AppStrings.errorRecurrenceEvent,
+    PostItValidationError.invalidRecurrenceInterval =>
+      AppStrings.errorRecurrenceInterval,
   };
 }

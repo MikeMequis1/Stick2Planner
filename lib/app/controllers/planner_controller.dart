@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/clock.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/calendar_period.dart';
+import '../../domain/calendar/event_recurrence.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
@@ -62,8 +63,7 @@ final class PlannerController extends ChangeNotifier {
     if (_initialized) return;
     try {
       final settings = await _settingsRepository.loadAll();
-      _selectedDate =
-          _parseDate(settings[SettingsKeys.selectedDate]) ?? today;
+      _selectedDate = _parseDate(settings[SettingsKeys.selectedDate]) ?? today;
       _portraitMode = _parseMode(
         settings[SettingsKeys.portraitMode],
         AgendaViewMode.day,
@@ -132,18 +132,12 @@ final class PlannerController extends ChangeNotifier {
     await setMode(modes[nextIndex], orientation);
   }
 
-  Future<void> setMode(
-    AgendaViewMode mode,
-    Orientation orientation,
-  ) async {
+  Future<void> setMode(AgendaViewMode mode, Orientation orientation) async {
     if (orientation == Orientation.landscape) {
       if (_landscapeMode == mode) return;
       _landscapeMode = mode;
       notifyListeners();
-      await _settingsRepository.write(
-        SettingsKeys.landscapeMode,
-        mode.name,
-      );
+      await _settingsRepository.write(SettingsKeys.landscapeMode, mode.name);
     } else {
       if (_portraitMode == mode) return;
       _portraitMode = mode;
@@ -152,10 +146,11 @@ final class PlannerController extends ChangeNotifier {
     }
   }
 
-  /// Post-its ativos que cobrem [date] (eventos multi-dia aparecem em cada dia).
+  /// Post-its ativos que cobrem [date] (eventos multi-dia e recorrências).
   List<PostIt> postItsOn(DateOnly date) {
+    final occurrences = expandEventOccurrences(_postIts, from: date, to: date);
     return [
-      for (final postIt in _postIts)
+      for (final postIt in occurrences)
         if (_coversDate(postIt, date)) postIt,
     ];
   }
@@ -185,10 +180,7 @@ final class PlannerController extends ChangeNotifier {
   /// Hook do ciclo de vida (`AppLifecycleState.resumed`).
   Future<void> handleAppResumed() => ensureRecurringRollover();
 
-  Future<void> setPostItStatus(
-    PostIt postIt,
-    PostItStatus status,
-  ) {
+  Future<void> setPostItStatus(PostIt postIt, PostItStatus status) {
     return _exclusive(() async {
       await _applyRecurringRollover();
       final current = _findCurrent(postIt.id);
@@ -199,10 +191,7 @@ final class PlannerController extends ChangeNotifier {
       if (current.isRecurring && status == PostItStatus.active) {
         final start = current.startDate;
         if (start == null || start.isBefore(today)) {
-          updated = updated.copyWith(
-            startDate: today,
-            lastRolloverAt: now,
-          );
+          updated = updated.copyWith(startDate: today, lastRolloverAt: now);
         }
       }
 
@@ -251,10 +240,7 @@ final class PlannerController extends ChangeNotifier {
       final current = _findCurrent(postIt.id);
       if (current == null || current.noteId == null) return;
       final now = _clock.now().toUtc();
-      final updated = current.copyWith(
-        noteId: null,
-        updatedAt: now,
-      );
+      final updated = current.copyWith(noteId: null, updatedAt: now);
       await _postItRepository.save(
         updated,
         history: _history(
@@ -290,6 +276,8 @@ final class PlannerController extends ChangeNotifier {
     String? details,
     DateOnly? startDate,
     DateOnly? endDate,
+    EventRecurrence recurrence = EventRecurrence.none,
+    int recurrenceInterval = 1,
     String? noteId,
     String? noteExcerpt,
     String? sourceNoteId,
@@ -300,6 +288,9 @@ final class PlannerController extends ChangeNotifier {
       final resolvedStart = type == PostItType.recurringTodo
           ? _initialRecurringDate(startDate)
           : startDate;
+      final effectiveRecurrence = type == PostItType.event
+          ? recurrence
+          : EventRecurrence.none;
       final postIt = PostIt(
         id: const Uuid().v4(),
         title: title.trim(),
@@ -312,6 +303,11 @@ final class PlannerController extends ChangeNotifier {
         sourceNoteId: noteId == null ? sourceNoteId : null,
         startDate: resolvedStart,
         endDate: _normalizeEndDate(type, resolvedStart, endDate),
+        recurrence: effectiveRecurrence,
+        recurrenceInterval: _normalizeRecurrenceInterval(
+          effectiveRecurrence,
+          recurrenceInterval,
+        ),
         sortOrder: _nextOrderFor(resolvedStart),
         lastRolloverAt: type == PostItType.recurringTodo ? now : null,
         createdAt: now,
@@ -336,6 +332,8 @@ final class PlannerController extends ChangeNotifier {
     String? details,
     DateOnly? startDate,
     DateOnly? endDate,
+    EventRecurrence recurrence = EventRecurrence.none,
+    int recurrenceInterval = 1,
   }) {
     return _exclusive(() async {
       await _applyRecurringRollover();
@@ -344,6 +342,9 @@ final class PlannerController extends ChangeNotifier {
       final effectiveStart = current.isRecurring
           ? current.startDate
           : startDate;
+      final effectiveRecurrence = effectiveType == PostItType.event
+          ? recurrence
+          : EventRecurrence.none;
       final dateChanged =
           current.startDate?.toIso8601String() !=
           effectiveStart?.toIso8601String();
@@ -351,17 +352,16 @@ final class PlannerController extends ChangeNotifier {
       final updated = current.copyWith(
         title: title.trim(),
         type: effectiveType,
-        isHighlight:
-            effectiveType == PostItType.event ? isHighlight : false,
+        isHighlight: effectiveType == PostItType.event ? isHighlight : false,
         details: _normalizeDetails(details),
         startDate: effectiveStart,
-        endDate: _normalizeEndDate(
-          effectiveType,
-          effectiveStart,
-          endDate,
+        endDate: _normalizeEndDate(effectiveType, effectiveStart, endDate),
+        recurrence: effectiveRecurrence,
+        recurrenceInterval: _normalizeRecurrenceInterval(
+          effectiveRecurrence,
+          recurrenceInterval,
         ),
-        sortOrder:
-            dateChanged && effectiveType != PostItType.event
+        sortOrder: dateChanged && effectiveType != PostItType.event
             ? _nextOrderFor(effectiveStart)
             : current.sortOrder,
         updatedAt: now,
@@ -399,17 +399,10 @@ final class PlannerController extends ChangeNotifier {
   Future<void> restorePostIt(PostIt postIt) {
     return _exclusive(() async {
       final now = _clock.now().toUtc();
-      final restored = postIt.copyWith(
-        deletedAt: null,
-        updatedAt: now,
-      );
+      final restored = postIt.copyWith(deletedAt: null, updatedAt: now);
       await _postItRepository.save(
         restored,
-        history: _history(
-          restored.id,
-          PostItHistoryAction.restored,
-          now,
-        ),
+        history: _history(restored.id, PostItHistoryAction.restored, now),
       );
       await _reload();
     });
@@ -461,9 +454,9 @@ final class PlannerController extends ChangeNotifier {
       if (current.isEvent) {
         updates.add(moved);
       } else {
-        final targetItems = _sortedDayItems(
-          target,
-        ).where((item) => item.id != current.id).toList();
+        final targetItems = _sortedDayItems(target)
+            .where((item) => item.id != current.id)
+            .toList();
         final insertion = (targetIndex ?? targetItems.length).clamp(
           0,
           targetItems.length,
@@ -472,9 +465,9 @@ final class PlannerController extends ChangeNotifier {
         updates.addAll(_reindex(targetItems, now));
 
         if (sourceDate != null && !sourceDate.isSameDay(target)) {
-          final sourceItems = _sortedDayItems(
-            sourceDate,
-          ).where((item) => item.id != current.id).toList();
+          final sourceItems = _sortedDayItems(sourceDate)
+              .where((item) => item.id != current.id)
+              .toList();
           updates.addAll(_reindex(sourceItems, now));
         }
       }
@@ -506,9 +499,7 @@ final class PlannerController extends ChangeNotifier {
       if (!current.isEvent) {
         throw ArgumentError('Somente eventos podem ser redimensionados.');
       }
-      final normalizedEnd = endDate.isBefore(startDate)
-          ? startDate
-          : endDate;
+      final normalizedEnd = endDate.isBefore(startDate) ? startDate : endDate;
       final updated = current.copyWith(
         startDate: startDate,
         endDate: normalizedEnd.isSameDay(startDate) ? null : normalizedEnd,
@@ -544,9 +535,7 @@ final class PlannerController extends ChangeNotifier {
     return _exclusive(() async {
       final current = _findCurrent(postIt.id);
       final date = current?.startDate;
-      if (current == null ||
-          current.isEvent ||
-          date == null) {
+      if (current == null || current.isEvent || date == null) {
         return;
       }
 
@@ -581,9 +570,7 @@ final class PlannerController extends ChangeNotifier {
       reorderPostIt(postIt, _indexInDay(postIt) + 1);
 
   bool canMovePostItUp(PostIt postIt) =>
-      !postIt.isEvent &&
-      postIt.startDate != null &&
-      _indexInDay(postIt) > 0;
+      !postIt.isEvent && postIt.startDate != null && _indexInDay(postIt) > 0;
 
   bool canMovePostItDown(PostIt postIt) {
     if (postIt.isEvent || postIt.startDate == null) return false;
@@ -611,10 +598,7 @@ final class PlannerController extends ChangeNotifier {
     );
     if (!plan.hasChanges) return;
 
-    await _postItRepository.saveBatch(
-      plan.updates,
-      history: plan.history,
-    );
+    await _postItRepository.saveBatch(plan.updates, history: plan.history);
     _postIts = await _postItRepository.loadAll();
   }
 
@@ -661,9 +645,7 @@ final class PlannerController extends ChangeNotifier {
   int _indexInDay(PostIt postIt) {
     final date = postIt.startDate;
     if (date == null) return -1;
-    return _sortedDayItems(
-      date,
-    ).indexWhere((item) => item.id == postIt.id);
+    return _sortedDayItems(date).indexWhere((item) => item.id == postIt.id);
   }
 
   int _nextOrderFor(DateOnly? date) {
@@ -719,6 +701,19 @@ final class PlannerController extends ChangeNotifier {
     return endDate.isSameDay(startDate) ? null : endDate;
   }
 
+  static int _normalizeRecurrenceInterval(
+    EventRecurrence recurrence,
+    int value,
+  ) {
+    return switch (recurrence) {
+      EventRecurrence.none ||
+      EventRecurrence.daily ||
+      EventRecurrence.yearly => 1,
+      EventRecurrence.weekly => value.clamp(1, 52),
+      EventRecurrence.monthly => value.clamp(1, 24),
+    };
+  }
+
   static String? _normalizeDetails(String? details) {
     final trimmed = details?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
@@ -763,8 +758,6 @@ final class PlannerController extends ChangeNotifier {
     }
   }
 
-  static AgendaViewMode _parseMode(
-    String? value,
-    AgendaViewMode fallback,
-  ) => AgendaViewModeX.fromStorage(value) ?? fallback;
+  static AgendaViewMode _parseMode(String? value, AgendaViewMode fallback) =>
+      AgendaViewModeX.fromStorage(value) ?? fallback;
 }

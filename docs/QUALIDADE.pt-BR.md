@@ -1,3 +1,5 @@
+[English](QUALITY.md) | **Português (Brasil)**
+
 # Qualidade e entrega
 
 Checklist do MVP local do Stick2Planner e das rodadas pós-MVP (sync opcional,
@@ -8,11 +10,11 @@ backup, página web e ajustes de celular).
 - Agenda visual: períodos, eventos contínuos, criação, edição, arraste,
   reordenação, redimensionamento, estados, recorrência e janela ancorada de
   4 dias.
-- Caixinha: filtros, busca, tarefas sem data e acesso aos detalhes.
+- Repetição de eventos: diária, a cada N semanas, a cada N meses e anual.\n- Caixinha: filtros, busca, tarefas sem data e acesso aos detalhes.
 - Notas: texto Markdown, listas, snapshots e vínculos com post-its.
 - Navegação: post-it vinculado/snapshot → Agenda → detalhe existente; Caixinha
   com “Abrir na Agenda” para post-its datados.
-- Persistência local: drift/SQLite, transações, migrações v1 → v5 e tombstones.
+- Persistência local: drift/SQLite, transações, migrações v1 → v6 e tombstones.
 - Configurações: tema, idioma Português/English, quatro paletas com gradiente,
   animações, wakelock, dicas, conexão/sync e atalho para a tela Sobre.
 - Sobre: versão instalada lida do pacote, descrição e links do GitHub.
@@ -72,7 +74,7 @@ backup, página web e ajustes de celular).
 ## Limitações conhecidas
 
 - CalDAV/iCalendar e Radicale não estão implementados; a interoperabilidade
-  planejada está em `docs/DECISOES.md`.
+  planejada está em `docs/DECISOES.pt-BR.md`.
 - A sincronização exige um servidor próprio configurado e rede; não há conta
   pública nem multiusuário. Sem servidor, o app continua local.
 - Quando local e remoto divergem, o sync automático pausa em “Revisão
@@ -115,6 +117,6 @@ dart test
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 246 testes aprovados.
+- `flutter test`: 252 testes aprovados.
 - `dart analyze` / `dart test` no servidor: sem issues; 15 testes aprovados.
 - `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

@@ -56,6 +56,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   late bool _isHighlight;
   late DateOnly? _startDate;
   DateOnly? _endDate;
+  late EventRecurrence _recurrence;
+  late int _recurrenceInterval;
   bool _saving = false;
   List<String> _errors = const [];
 
@@ -73,10 +75,10 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     _detailsController = TextEditingController(text: existing?.details ?? '');
     _type = existing?.type ?? widget.initialType;
     _isHighlight = existing?.isHighlight ?? false;
-    _startDate = existing == null
-        ? widget.initialDate
-        : existing.startDate;
+    _startDate = existing == null ? widget.initialDate : existing.startDate;
     _endDate = existing?.endDate;
+    _recurrence = existing?.recurrence ?? EventRecurrence.none;
+    _recurrenceInterval = existing?.recurrenceInterval ?? 1;
   }
 
   @override
@@ -103,6 +105,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       } else {
         _endDate = null;
         _isHighlight = false;
+        _recurrence = EventRecurrence.none;
+        _recurrenceInterval = 1;
         if (type == PostItType.recurringTodo) {
           _startDate = null;
         } else {
@@ -153,6 +157,98 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     });
   }
 
+  Widget _recurrenceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        DropdownButtonFormField<EventRecurrence>(
+          key: const Key('editor-recurrence'),
+          initialValue: _recurrence,
+          decoration: InputDecoration(
+            labelText: AppStrings.eventRepeat,
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: EventRecurrence.none,
+              child: Text(AppStrings.repeatNone),
+            ),
+            DropdownMenuItem(
+              value: EventRecurrence.daily,
+              child: Text(AppStrings.repeatDaily),
+            ),
+            DropdownMenuItem(
+              value: EventRecurrence.weekly,
+              child: Text(AppStrings.repeatWeekly),
+            ),
+            DropdownMenuItem(
+              value: EventRecurrence.monthly,
+              child: Text(AppStrings.repeatMonthly),
+            ),
+            DropdownMenuItem(
+              value: EventRecurrence.yearly,
+              child: Text(AppStrings.repeatYearly),
+            ),
+          ],
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              _recurrence = value;
+              if (value == EventRecurrence.weekly) {
+                _recurrenceInterval = _recurrenceInterval.clamp(1, 12);
+              } else if (value == EventRecurrence.monthly) {
+                _recurrenceInterval = _recurrenceInterval.clamp(1, 24);
+              } else {
+                _recurrenceInterval = 1;
+              }
+            });
+          },
+        ),
+        if (_recurrence == EventRecurrence.weekly) ...[
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            key: const Key('editor-recurrence-weeks'),
+            initialValue: _recurrenceInterval.clamp(1, 12),
+            decoration: InputDecoration(
+              labelText: AppStrings.repeatEveryWeeks,
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (var value = 1; value <= 12; value++)
+                DropdownMenuItem(value: value, child: Text('$value')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _recurrenceInterval = value);
+              }
+            },
+          ),
+        ],
+        if (_recurrence == EventRecurrence.monthly) ...[
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            key: const Key('editor-recurrence-months'),
+            initialValue: _recurrenceInterval.clamp(1, 24),
+            decoration: InputDecoration(
+              labelText: AppStrings.repeatEveryMonths,
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (var value = 1; value <= 24; value++)
+                DropdownMenuItem(value: value, child: Text('$value')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _recurrenceInterval = value);
+              }
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _save() async {
     setState(() {
       _saving = true;
@@ -175,6 +271,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           details: details,
           startDate: startDate,
           endDate: endDate,
+          recurrence: _isEvent ? _recurrence : EventRecurrence.none,
+          recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
         );
       } else {
         await widget.controller.updatePostIt(
@@ -185,6 +283,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           details: details,
           startDate: startDate,
           endDate: endDate,
+          recurrence: _isEvent ? _recurrence : EventRecurrence.none,
+          recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
         );
       }
 
@@ -209,16 +309,13 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final availableHeight =
-        MediaQuery.sizeOf(context).height - bottomInset;
+    final availableHeight = MediaQuery.sizeOf(context).height - bottomInset;
 
     return AnimatedPadding(
       duration: Duration(milliseconds: 150),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: availableHeight * 0.95,
-        ),
+        constraints: BoxConstraints(maxHeight: availableHeight * 0.95),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: Column(
@@ -288,9 +385,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
               if (!_isRecurringType) ...[
                 SizedBox(height: 8),
                 Text(
-                  _isEvent
-                      ? AppStrings.fieldStartDate
-                      : AppStrings.fieldDate,
+                  _isEvent ? AppStrings.fieldStartDate : AppStrings.fieldDate,
                   style: theme.textTheme.labelMedium,
                 ),
                 SizedBox(height: 4),
@@ -301,9 +396,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     value: _startDate == null,
                     onChanged: (withoutDate) {
                       setState(() {
-                        _startDate = withoutDate
-                            ? null
-                            : (widget.initialDate);
+                        _startDate = withoutDate ? null : (widget.initialDate);
                       });
                     },
                   ),
@@ -329,9 +422,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                       '${AppStrings.highlightSymbol} ${AppStrings.highlightType}',
                     ),
                     value: _isHighlight,
-                    onChanged: (value) =>
-                        setState(() => _isHighlight = value),
+                    onChanged: (value) => setState(() => _isHighlight = value),
                   ),
+                  _recurrenceSection(),
                 ],
               ] else ...[
                 SizedBox(height: 8),
@@ -342,10 +435,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.repeat,
-                          color: theme.colorScheme.primary,
-                        ),
+                        Icon(Icons.repeat, color: theme.colorScheme.primary),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -396,9 +486,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 label: Text(AppStrings.save),
               ),
               TextButton(
-                onPressed: _saving
-                    ? null
-                    : () => Navigator.of(context).pop(),
+                onPressed: _saving ? null : () => Navigator.of(context).pop(),
                 child: Text(AppStrings.cancel),
               ),
             ],

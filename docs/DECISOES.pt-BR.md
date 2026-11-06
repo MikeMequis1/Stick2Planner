@@ -1,3 +1,5 @@
+[English](DECISIONS.md) | **Português (Brasil)**
+
 # Decisões técnicas
 
 Registro das decisões aprovadas e das restrições que valem para as próximas
@@ -45,8 +47,8 @@ etapas. Cada item: contexto, decisão, consequência.
 
 - Uma tabela `post_its` com `type` (`task`, `event`, `recurringTodo`),
   `status` (`active`, `done`, `cancelled`), `isHighlight` (símbolo `+`),
-  `details`, `noteId` + `noteExcerpt`, `startDate`/`endDate`, `sortOrder`,
-  `createdAt`/`updatedAt`, `deletedAt`.
+  `details`, `noteId` + `noteExcerpt`, `startDate`/`endDate`, `recurrence` +
+  `recurrenceInterval`, `sortOrder`, `createdAt`/`updatedAt`, `deletedAt`.
 - Tarefa simples e detalhada compartilham o mesmo tipo: `details` preenchido
   caracteriza a detalhada. Eventos exigem data; intervalo e `+` são
   normalizados/validados apenas para eventos.
@@ -105,6 +107,9 @@ etapas. Cada item: contexto, decisão, consequência.
   inteiro; arrastar as alças altera apenas a extremidade correspondente.
 
 ## TO-DO recorrente
+
+- Rótulo na interface: **Pendência**. O tipo interno continua `recurringTodo`;
+  mudou apenas o nome exibido.
 
 - Uma única linha; nunca gera cópias. Pendente e com data nula/atrasada →
   `startDate = hoje local`. Recálculo é absoluto e idempotente; executar várias
@@ -264,6 +269,20 @@ etapas. Cada item: contexto, decisão, consequência.
   preferência de visualização.
 - Muitos post-its: limite por célula + indicador "+N" abrindo o dia.
 
+## Repetição de eventos (esquema v6)
+
+- Eventos podem repetir diariamente, a cada N semanas, a cada N meses ou
+  anualmente. `recurrence` e `recurrenceInterval` ficam no post-it; tarefas e
+  pendências nunca carregam repetição.
+- Ocorrências são cópias virtuais geradas para o período visível, mantendo o ID
+  da série e a duração. O evento base é a primeira ocorrência.
+- Ocorrências mensais/anuais usam aritmética de calendário com clamp do dia
+  (31 jan → 28/29 fev; 29 fev → 28 fev em anos não bissextos).
+- Arrastar e redimensionar ficam desabilitados nas ocorrências geradas para não
+  mover a âncora da série; tocar abre a série e o editor altera a regra.
+- O esquema v6 migra de v1–v5; payloads/backups antigos sem os campos assumem
+  `none`/`1`.
+
 ## Localização
 
 - **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`
@@ -308,7 +327,7 @@ etapas. Cada item: contexto, decisão, consequência.
   `RepaintBoundary`; animações podem ser desligadas em Configurações.
 - **Dados:** SQLite compacto (~80 KB para 17 post-its, 3 notas e 58 registros de
   histórico). Histórico é mantido por auditoria, não por duplicação de eventos.
-- README enxuto; detalhes históricos ficam em `docs/PROGRESSO.md`.
+- README enxuto; detalhes históricos ficam em `docs/PROGRESSO.pt-BR.md`.
 
 ## Ambiente de validação
 
@@ -473,7 +492,7 @@ multiusuário e CalDAV/iCalendar.
 - **Offline:** o app abre e opera sem servidor; `INTERNET` e
   `ACCESS_NETWORK_STATE` existem apenas para a sincronização opcional. Os dados
   permanecem em SQLite local.
-- **Entrega:** `docs/QUALIDADE.md` concentra matriz de validação, limitações e
+- **Entrega:** `docs/QUALIDADE.pt-BR.md` concentra matriz de validação, limitações e
   critérios finais.
 
 ## Pendente de decisão

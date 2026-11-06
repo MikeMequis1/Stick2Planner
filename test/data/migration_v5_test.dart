@@ -68,7 +68,7 @@ INSERT INTO post_it_history_entries VALUES ('h1', 'p1', 'created', NULL, 'x', 10
 
 void main() {
   test(
-    'migra v4 para v5 preservando dados e criando tabelas de sync',
+    'migra v4 para v6 preservando dados e criando tabelas de sync',
     () async {
       final directory = await Directory.systemTemp.createTemp('s2p_migrate_');
       addTearDown(() => directory.delete(recursive: true));
@@ -84,7 +84,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 5);
+      expect(db.schemaVersion, 6);
 
       final notes = await db.select(db.notes).get();
       final postIts = await db.select(db.postIts).get();
@@ -104,7 +104,7 @@ void main() {
     },
   );
 
-  test('banco novo já nasce com o esquema v5', () async {
+  test('banco novo já nasce com o esquema v6', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 

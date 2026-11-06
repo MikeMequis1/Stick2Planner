@@ -19,15 +19,15 @@ PostIt postItFromRow(PostItRow row) => PostIt(
   sourceNoteId: row.sourceNoteId,
   startDate: row.startDate,
   endDate: row.endDate,
+  recurrence: row.recurrence,
+  recurrenceInterval: row.recurrenceInterval,
   sortOrder: row.sortOrder,
   lastRolloverAt: row.lastRolloverAt == null
       ? null
       : dateTimeFromStorage(row.lastRolloverAt!),
   createdAt: dateTimeFromStorage(row.createdAt),
   updatedAt: dateTimeFromStorage(row.updatedAt),
-  deletedAt: row.deletedAt == null
-      ? null
-      : dateTimeFromStorage(row.deletedAt!),
+  deletedAt: row.deletedAt == null ? null : dateTimeFromStorage(row.deletedAt!),
 );
 
 PostItsCompanion postItToCompanion(PostIt postIt) => PostItsCompanion(
@@ -42,6 +42,8 @@ PostItsCompanion postItToCompanion(PostIt postIt) => PostItsCompanion(
   sourceNoteId: Value(postIt.sourceNoteId),
   startDate: Value<DateOnly?>(postIt.startDate),
   endDate: Value<DateOnly?>(postIt.endDate),
+  recurrence: Value(postIt.recurrence),
+  recurrenceInterval: Value(postIt.recurrenceInterval),
   sortOrder: Value(postIt.sortOrder),
   lastRolloverAt: Value(
     postIt.lastRolloverAt == null
@@ -93,9 +95,7 @@ Note noteFromRows(NoteRow row, List<NoteLineRow> lineRows) => Note(
   markdown: row.markdown,
   createdAt: dateTimeFromStorage(row.createdAt),
   updatedAt: dateTimeFromStorage(row.updatedAt),
-  deletedAt: row.deletedAt == null
-      ? null
-      : dateTimeFromStorage(row.deletedAt!),
+  deletedAt: row.deletedAt == null ? null : dateTimeFromStorage(row.deletedAt!),
 );
 
 NotesCompanion noteToCompanion(Note note) => NotesCompanion(

@@ -66,6 +66,10 @@ class PostIts extends Table {
   TextColumn get startDate =>
       text().map(const DateOnlyConverter()).nullable()();
   TextColumn get endDate => text().map(const DateOnlyConverter()).nullable()();
+  TextColumn get recurrence =>
+      textEnum<EventRecurrence>().withDefault(const Constant('none'))();
+  IntColumn get recurrenceInterval =>
+      integer().withDefault(const Constant(1))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get lastRolloverAt => integer().nullable()();
   IntColumn get createdAt => integer()();

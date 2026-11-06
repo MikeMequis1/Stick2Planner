@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,14 +80,26 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(syncRowStates);
         await migrator.createTable(syncStates);
       }
+      if (from < 6) {
+        if (!await _hasColumn('post_its', 'recurrence')) {
+          await migrator.addColumn(postIts, postIts.recurrence);
+        }
+        if (!await _hasColumn('post_its', 'recurrence_interval')) {
+          await migrator.addColumn(postIts, postIts.recurrenceInterval);
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
 
-  /// Conexão em arquivo dentro do diretório de dados do aplicativo.
-  ///
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return rows.any((row) => row.data['name'] == column);
+  }
+
+  /// Conexão em arquivo dentro do diretório de dados do aplicativo.  ///
   /// O caminho depende de `path_provider`, por isso é resolvido de forma
   /// preguiçosa; testes injetam um executor próprio.
   static QueryExecutor openConnection({String fileName = 'planner.sqlite'}) {

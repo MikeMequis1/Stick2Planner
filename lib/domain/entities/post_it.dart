@@ -3,6 +3,9 @@ import '../../core/date_only.dart';
 /// Natureza do post-it.
 enum PostItType { task, event, recurringTodo }
 
+/// Repetição de um evento.
+enum EventRecurrence { none, daily, weekly, monthly, yearly }
+
 /// Situação do post-it. Concluir ou cancelar nunca apaga o registro.
 enum PostItStatus { active, done, cancelled }
 
@@ -22,6 +25,8 @@ final class PostIt {
     this.sourceNoteId,
     this.startDate,
     this.endDate,
+    this.recurrence = EventRecurrence.none,
+    this.recurrenceInterval = 1,
     this.sortOrder = 0,
     this.lastRolloverAt,
     this.deletedAt,
@@ -52,6 +57,12 @@ final class PostIt {
   /// Último dia, apenas para eventos com duração maior que um dia.
   final DateOnly? endDate;
 
+  /// Repetição do evento; `none` para tarefas e eventos únicos.
+  final EventRecurrence recurrence;
+
+  /// Intervalo em semanas ou meses conforme [recurrence].
+  final int recurrenceInterval;
+
   /// Ordem visual dentro do dia.
   final int sortOrder;
 
@@ -67,6 +78,13 @@ final class PostIt {
   bool get isEvent => type == PostItType.event;
 
   bool get isRecurring => type == PostItType.recurringTodo;
+
+  bool get hasRecurrence => recurrence != EventRecurrence.none;
+
+  bool get isRecurringEvent => isEvent && hasRecurrence;
+
+  int get safeRecurrenceInterval =>
+      recurrenceInterval < 1 ? 1 : recurrenceInterval;
 
   DateOnly? get effectiveEndDate => endDate ?? startDate;
 
@@ -99,6 +117,8 @@ final class PostIt {
     Object? sourceNoteId = _unset,
     Object? startDate = _unset,
     Object? endDate = _unset,
+    EventRecurrence? recurrence,
+    int? recurrenceInterval,
     int? sortOrder,
     Object? lastRolloverAt = _unset,
     DateTime? createdAt,
@@ -111,9 +131,7 @@ final class PostIt {
       type: type ?? this.type,
       status: status ?? this.status,
       isHighlight: isHighlight ?? this.isHighlight,
-      details: identical(details, _unset)
-          ? this.details
-          : details as String?,
+      details: identical(details, _unset) ? this.details : details as String?,
       noteId: identical(noteId, _unset) ? this.noteId : noteId as String?,
       noteExcerpt: identical(noteExcerpt, _unset)
           ? this.noteExcerpt
@@ -125,6 +143,8 @@ final class PostIt {
           ? this.startDate
           : startDate as DateOnly?,
       endDate: identical(endDate, _unset) ? this.endDate : endDate as DateOnly?,
+      recurrence: recurrence ?? this.recurrence,
+      recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
       sortOrder: sortOrder ?? this.sortOrder,
       lastRolloverAt: identical(lastRolloverAt, _unset)
           ? this.lastRolloverAt

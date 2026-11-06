@@ -162,7 +162,9 @@ Future<void> showPostItDetailsSheet(
         try {
           await action();
           if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-          if (context.mounted) _showMessage(context, AppStrings.reorderedMessage);
+          if (context.mounted) {
+            _showMessage(context, AppStrings.reorderedMessage);
+          }
         } on Object {
           if (context.mounted) _showMessage(context, AppStrings.errorReorder);
         }
@@ -182,7 +184,8 @@ Future<void> showPostItDetailsSheet(
         }
       }
 
-      Future<void> delete() async {        final confirmed = await showDialog<bool>(
+      Future<void> delete() async {
+        final confirmed = await showDialog<bool>(
           context: sheetContext,
           builder: (dialogContext) => AlertDialog(
             title: Text(AppStrings.deleting),
@@ -245,10 +248,7 @@ Future<void> showPostItDetailsSheet(
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      postItIcon(postIt),
-                      color: theme.colorScheme.primary,
-                    ),
+                    Icon(postItIcon(postIt), color: theme.colorScheme.primary),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -292,6 +292,11 @@ Future<void> showPostItDetailsSheet(
                                     '${DateFormats.shortDate(postIt.startDate!)}'
                               : AppStrings.advancesDaily,
                         ),
+                      ),
+                    if (postIt.isRecurringEvent)
+                      Chip(
+                        avatar: Icon(Icons.event_repeat, size: 18),
+                        label: Text(eventRecurrenceLabel(postIt)),
                       ),
                   ],
                 ),
@@ -355,8 +360,7 @@ Future<void> showPostItDetailsSheet(
                     ),
                   ),
                 ],
-                if (postIt.isRecurring &&
-                    planner.isPostponed(postIt)) ...[
+                if (postIt.isRecurring && planner.isPostponed(postIt)) ...[
                   SizedBox(height: 8),
                   _InfoRow(
                     icon: Icons.schedule,
@@ -364,10 +368,7 @@ Future<void> showPostItDetailsSheet(
                   ),
                 ],
                 SizedBox(height: 20),
-                Text(
-                  AppStrings.actions,
-                  style: theme.textTheme.labelLarge,
-                ),
+                Text(AppStrings.actions, style: theme.textTheme.labelLarge),
                 SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -376,16 +377,14 @@ Future<void> showPostItDetailsSheet(
                     if (postIt.status == PostItStatus.active)
                       FilledButton.tonalIcon(
                         key: Key('details-complete'),
-                        onPressed: () =>
-                            setStatus(PostItStatus.done),
+                        onPressed: () => setStatus(PostItStatus.done),
                         icon: Icon(Icons.check),
                         label: Text(AppStrings.statusDoneAction),
                       )
                     else
                       FilledButton.tonalIcon(
                         key: Key('details-reopen'),
-                        onPressed: () =>
-                            setStatus(PostItStatus.active),
+                        onPressed: () => setStatus(PostItStatus.active),
                         icon: Icon(Icons.undo),
                         label: Text(AppStrings.statusReopenAction),
                       ),
@@ -395,8 +394,7 @@ Future<void> showPostItDetailsSheet(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: theme.colorScheme.error,
                         ),
-                        onPressed: () =>
-                            setStatus(PostItStatus.cancelled),
+                        onPressed: () => setStatus(PostItStatus.cancelled),
                         icon: Icon(Icons.close),
                         label: Text(AppStrings.statusCancelAction),
                       ),
@@ -505,9 +503,7 @@ Future<DateOnly?> _pickDate(
 
 void _showMessage(BuildContext context, String message) {
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
 class _InfoRow extends StatelessWidget {
@@ -525,10 +521,22 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
         SizedBox(width: 8),
-        Expanded(
-          child: Text(text, style: theme.textTheme.bodyMedium),
-        ),
+        Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
       ],
     );
   }
+}
+
+String eventRecurrenceLabel(PostIt postIt) {
+  return switch (postIt.recurrence) {
+    EventRecurrence.daily => AppStrings.repeatSummaryDaily,
+    EventRecurrence.weekly => AppStrings.repeatSummaryWeekly(
+      postIt.recurrenceInterval,
+    ),
+    EventRecurrence.monthly => AppStrings.repeatSummaryMonthly(
+      postIt.recurrenceInterval,
+    ),
+    EventRecurrence.yearly => AppStrings.repeatSummaryYearly,
+    EventRecurrence.none => AppStrings.repeatNone,
+  };
 }

@@ -1,3 +1,5 @@
+[English](PROGRESS.md) | **Português (Brasil)**
+
 # Progresso das etapas
 
 ## Etapa 0 — Preparação (concluída em 2026-10-31)
@@ -17,7 +19,7 @@
 - Nome de exibição Android alterado para **Planner**.
 - Testes: smoke da tela inicial; gravação/leitura em memória; persistência em
   arquivo entre abertura, fechamento e reabertura do banco.
-- Documentação: `README.md`, `docs/DECISOES.md`, este arquivo.
+- Documentação: `README.md`, `docs/DECISOES.pt-BR.md`, este arquivo.
 
 ### Comandos executados
 
@@ -53,7 +55,7 @@ flutter build apk --debug
 - `test/widget_test.dart` (removido)
 - `android/app/src/main/AndroidManifest.xml`
 - `windows/flutter/generated_plugins.cmake` (regenerado)
-- `README.md`, `docs/DECISOES.md`, `docs/PROGRESSO.md`
+- `README.md`, `docs/DECISOES.pt-BR.md`, `docs/PROGRESSO.pt-BR.md`
 
 ### Limitações e pendências
 
@@ -130,7 +132,7 @@ flutter build apk --debug
 - `lib/features/`: shell, planner, inbox, notes, shared
 - `test/`: `core/`, `domain/`, `data/db/`, `app/`, `helpers/`
 - `android/app/build.gradle.kts`, `MainActivity.kt`, `windows/runner/main.cpp`
-- `README.md`, `docs/DECISOES.md`, `docs/PROGRESSO.md`
+- `README.md`, `docs/DECISOES.pt-BR.md`, `docs/PROGRESSO.pt-BR.md`
 
 ### Limitações e pendências
 
@@ -862,7 +864,7 @@ final `Etapa 6 — qualidade e entrega`.
   declarava `INTERNET`. A partir da Etapa 5 a permissão existe apenas para o
   sync opcional; o teste foi atualizado (sem foreground service nem isenção de
   bateria).
-- Documento `docs/QUALIDADE.md` consolida matriz de validação, acessibilidade,
+- Documento `docs/QUALIDADE.pt-BR.md` consolida matriz de validação, acessibilidade,
   offline, consistência e limitações conhecidas.
 
 ### Testes e resultados
@@ -1166,7 +1168,7 @@ Arquivos: `data/db/tables.dart`, `app_database.dart`, `data/sync/*`,
 - Configurações de sync agora explicam a ordem (“1) testar, 2) parear, 3)
   sincronizar”), mostram “Pareado · N pendentes” e deixam claro que testar não
   pareia e que sincronizar/automático só habilitam após o pareamento.
-- Fluxo completo documentado em `docs/SINCRONIZACAO.md`.
+- Fluxo completo documentado em `docs/SINCRONIZACAO.pt-BR.md`.
 
 ## Refinamentos de navegação e sync (2026-11-05)
 
@@ -1258,8 +1260,8 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 
 ### Documentação
 
-- README, `docs/DECISOES.md`, `docs/QUALIDADE.md`, `docs/SINCRONIZACAO.md` e
-  `server/README.md` revisados para refletir sync, backup, página web, Sobre,
+- README, `docs/DECISOES.pt-BR.md`, `docs/QUALIDADE.pt-BR.md`, `docs/SINCRONIZACAO.pt-BR.md` e
+  `server/README.pt-BR.md` revisados para refletir sync, backup, página web, Sobre,
   layout de celular e estado atual.
 - Removidas afirmações desatualizadas (“sem sincronização”, “Sobre sem
   sincronização nesta versão”, “INTERNET ausente”, “etapa futura não iniciada”).
@@ -1295,14 +1297,14 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 
 - Novo comando `dart run bin/server token` gera um valor aleatório para o
   `ADMIN_TOKEN` (alternativa: `openssl rand -hex 32`).
-- `docs/SINCRONIZACAO.md` documenta o processo completo: gerar, gravar no
+- `docs/SINCRONIZACAO.pt-BR.md` documenta o processo completo: gerar, gravar no
   `.env`, recriar o container e consultar o valor.
 - Removidas da documentação referências à configuração pessoal: domínio público,
   IPs da LAN/Tailnet, host, diretório de deploy e nomes de dispositivos. Ficaram
   apenas placeholders genéricos.
 - `server/.env.example` e o exemplo de pareamento usam endereço genérico;
   `docker-compose.yml` não carrega mais labels específicas do proxy/Tailscale.
-- `server/README.md` explica a diferença entre `ADMIN_TOKEN` e token de
+- `server/README.pt-BR.md` explica a diferença entre `ADMIN_TOKEN` e token de
   dispositivo e a exposição opcional por LAN/VPN/proxy.
 
 ### Página web
@@ -1314,7 +1316,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 ### Validação
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **246 testes aprovados**.
+- `flutter test`: **252 testes aprovados**.
 - `dart analyze` / `dart test` no servidor: sem issues; **15 testes aprovados**.
 - Servidor reconstruído e `GET /v1/health` respondendo; release instalado no
   celular.
@@ -1331,7 +1333,24 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   notas/post-its zera as contagens exibidas. O JSON continua guardando os
   tombstones e o histórico; backups antigos com contagens legadas continuam
   aceitos.
-- `flutter test`: **246 testes aprovados**; servidor: **15 testes aprovados**.
+- `flutter test`: **252 testes aprovados**; servidor: **15 testes aprovados**.
+
+## Repetição de eventos e rótulo Pendência (2026-11-05)
+
+- O terceiro tipo do editor agora se chama **Pendência**; o identificador interno
+  `recurringTodo` e o avanço diário continuam iguais.
+- Eventos ganharam opção de repetição: diária, semanal (a cada N semanas),
+  mensal (a cada N meses) e anual. As ocorrências preservam a duração do evento
+  e são expandidas apenas para o período visível da agenda.
+- Ocorrências compartilham o ID da série; tocar abre a série para edição.
+  Arrastar e redimensionar ficam desabilitados nas ocorrências geradas para não
+  mover a âncora da série por acidente.
+- Esquema v6 adiciona `recurrence` e `recurrence_interval` em `post_its`, com
+  migração de v1–v5. Payloads de sync e backups JSON carregam os campos;
+  payloads/backups antigos assumem sem repetição.
+- O detalhe do evento mostra um chip com o resumo da repetição.
+- Testes de domínio cobrem expansão diária/semanal/mensal/anual e teste de widget
+  cobre o fluxo semanal no editor.
 
 
 

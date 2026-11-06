@@ -10,6 +10,8 @@ enum PostItValidationError {
   taskHasInterval,
   recurringHasInterval,
   highlightRequiresEvent,
+  recurrenceRequiresEvent,
+  invalidRecurrenceInterval,
 }
 
 final class PostItValidationException implements Exception {
@@ -41,6 +43,12 @@ final class ValidatePostIt {
     }
     if (end != null && start == null) {
       errors.add(PostItValidationError.endDateRequiresStart);
+    }
+    if (postIt.hasRecurrence && !postIt.isEvent) {
+      errors.add(PostItValidationError.recurrenceRequiresEvent);
+    }
+    if (postIt.hasRecurrence && postIt.recurrenceInterval < 1) {
+      errors.add(PostItValidationError.invalidRecurrenceInterval);
     }
 
     if (postIt.isEvent) {

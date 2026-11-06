@@ -48,6 +48,50 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('evento pode repetir semanalmente', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(360, 780),
+    );
+
+    await openEditor(tester);
+    await tester.enterText(
+      find.byKey(const Key('editor-title')),
+      'Reunião',
+    );
+    await tester.tap(find.text(AppStrings.eventType));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('editor-recurrence')));
+    await tester.tap(find.byKey(const Key('editor-recurrence')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.repeatWeekly).last);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-recurrence-weeks')), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('editor-recurrence-weeks')),
+    );
+    await tester.tap(find.byKey(const Key('editor-recurrence-weeks')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pumpAndSettle();
+
+    final event = dependencies.planner.postIts.single;
+    expect(event.type, PostItType.event);
+    expect(event.recurrence, EventRecurrence.weekly);
+    expect(event.recurrenceInterval, 2);
+    expect(
+      dependencies.planner
+          .postItsOn(DateOnly(2026, 11, 18))
+          .map((postIt) => postIt.id),
+      contains(event.id),
+    );
+  });
+
   testWidgets('cria tarefa detalhada pelo formulário', (tester) async {
     final dependencies = await pumpPlanner(tester);
 

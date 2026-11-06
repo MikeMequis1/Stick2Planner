@@ -7,6 +7,7 @@ import '../../app/controllers/planner_controller.dart';
 import '../../core/date_only.dart';
 import '../../domain/calendar/agenda_view_mode.dart';
 import '../../domain/calendar/calendar_period.dart';
+import '../../domain/calendar/event_recurrence.dart';
 import '../../domain/entities/post_it.dart';
 import 'widgets/calendar_grid.dart';
 import 'widgets/calendar_labels.dart';
@@ -61,6 +62,11 @@ class _AgendaPageState extends State<AgendaPage> {
 
     final mode = planner.modeFor(orientation);
     final period = _periodFor(planner, mode);
+    final visiblePostIts = expandEventOccurrences(
+      planner.postIts,
+      from: period.start,
+      to: period.end,
+    );
 
     final size = MediaQuery.sizeOf(context);
     final compactWidth = size.width < 600;
@@ -174,7 +180,7 @@ class _AgendaPageState extends State<AgendaPage> {
                           focusedPostItId: AppScope.of(context)
                               .navigation
                               .focusedPostItId,
-                          postIts: planner.postIts,
+                          postIts: visiblePostIts,
                           today: planner.today,
                           selectedDate: planner.selectedDate,
                           onDaySelected: planner.selectDate,

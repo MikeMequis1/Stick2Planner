@@ -156,6 +156,10 @@ final class BackupService {
               sourceNoteId: _nullableString(entry, 'sourceNoteId'),
               startDate: _nullableDate(entry, 'startDate'),
               endDate: _nullableDate(entry, 'endDate'),
+              recurrence: _eventRecurrence(
+                _nullableString(entry, 'recurrence'),
+              ),
+              recurrenceInterval: _optionalInt(entry, 'recurrenceInterval', 1),
               sortOrder: _int(entry, 'sortOrder'),
               lastRolloverAt: _nullableTimestamp(entry, 'lastRolloverAt'),
               createdAt: _timestamp(entry, 'createdAt'),
@@ -312,6 +316,8 @@ final class BackupService {
     'sourceNoteId': row.sourceNoteId,
     'startDate': row.startDate?.toIso8601String(),
     'endDate': row.endDate?.toIso8601String(),
+    'recurrence': row.recurrence.name,
+    'recurrenceInterval': row.recurrenceInterval,
     'sortOrder': row.sortOrder,
     'lastRolloverAt': _isoOrNull(row.lastRolloverAt),
     'createdAt': _iso(row.createdAt),
@@ -481,6 +487,19 @@ final class BackupService {
       BackupErrorCode.invalidData,
       'estado de post-it $name',
     );
+  }
+
+  static EventRecurrence _eventRecurrence(String? name) {
+    if (name == null) return EventRecurrence.none;
+    for (final value in EventRecurrence.values) {
+      if (value.name == name) return value;
+    }
+    return EventRecurrence.none;
+  }
+
+  static int _optionalInt(Map<String, Object?> row, String key, int fallback) {
+    final value = row[key];
+    return value is int ? value : fallback;
   }
 
   static PostItHistoryAction _historyAction(String name) {

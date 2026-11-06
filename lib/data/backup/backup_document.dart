@@ -9,7 +9,7 @@ const backupFormatName = 'stick2planner-backup';
 const backupFormatVersion = 1;
 
 /// Versões de esquema local cujos backups podem ser importados.
-const supportedBackupSchemaVersions = <int>{4, 5};
+const supportedBackupSchemaVersions = <int>{4, 5, 6};
 
 /// Falhas previstas ao ler, validar ou aplicar um backup.
 enum BackupErrorCode {
@@ -339,6 +339,20 @@ final class BackupDocument {
             'postIts.$key inválido',
           );
         }
+      }
+      final recurrence = row['recurrence'];
+      if (recurrence != null && recurrence is! String) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'postIts.recurrence inválido',
+        );
+      }
+      final recurrenceInterval = row['recurrenceInterval'];
+      if (recurrenceInterval != null && recurrenceInterval is! int) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'postIts.recurrenceInterval inválido',
+        );
       }
       final noteId = row['noteId'];
       if (noteId != null) {

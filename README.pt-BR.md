@@ -1,9 +1,9 @@
+[English](README.md) | **Português (Brasil)**
+
 # Stick2Planner
 
 Planner visual offline-first para Android. Agenda, Caixinha e notas Markdown
 ficam no aparelho em SQLite; a sincronização com um servidor próprio é opcional.
-
-**English:** [README.md](README.md)
 
 ## Download
 
@@ -17,6 +17,8 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 
 - **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos multi-dia; arraste,
   redimensionamento, reordenação e criação rápida; janela de 4 dias ancorada.
+- **Repetição de eventos:** diária, a cada N semanas, a cada N meses ou anual;
+  as ocorrências mantêm a duração do evento.
 - **Caixinha:** busca, filtros por estado, ordenação e post-its sem data.
 - **Notas:** renderização Markdown, checklists, seleção de linhas, snapshots e
   vínculos vivos entre notas e post-its.
@@ -35,7 +37,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 ## Stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (esquema v5, migrações v1 → v5).
+- Drift + SQLite (esquema v6, migrações v1 → v6).
 - Servidor de sincronização opcional em Dart/shelf + SQLite, com Docker Compose.
 - Tokens de dispositivo guardados com `flutter_secure_storage`.
 
@@ -61,16 +63,16 @@ docker compose up -d
 ```
 
 Para configuração do servidor, pareamento e deploy, consulte
-[`server/README.md`](server/README.md) e
-[`docs/SINCRONIZACAO.md`](docs/SINCRONIZACAO.md).
+[`server/README.pt-BR.md`](server/README.pt-BR.md) e
+[`docs/SINCRONIZACAO.pt-BR.md`](docs/SINCRONIZACAO.pt-BR.md).
 
 ## Documentação
 
-- [docs/PROGRESSO.md](docs/PROGRESSO.md) — histórico de desenvolvimento.
-- [docs/DECISOES.md](docs/DECISOES.md) — arquitetura e decisões técnicas.
-- [docs/QUALIDADE.md](docs/QUALIDADE.md) — matriz de validação e limitações.
-- [docs/SINCRONIZACAO.md](docs/SINCRONIZACAO.md) — conexão, pareamento e sync.
-- [server/README.md](server/README.md) — servidor de sync, API e deploy.
+- [docs/PROGRESSO.pt-BR.md](docs/PROGRESSO.pt-BR.md) — histórico de desenvolvimento.
+- [docs/DECISOES.pt-BR.md](docs/DECISOES.pt-BR.md) — arquitetura e decisões técnicas.
+- [docs/QUALIDADE.pt-BR.md](docs/QUALIDADE.pt-BR.md) — matriz de validação e limitações.
+- [docs/SINCRONIZACAO.pt-BR.md](docs/SINCRONIZACAO.pt-BR.md) — conexão, pareamento e sync.
+- [server/README.pt-BR.md](server/README.pt-BR.md) — servidor de sync, API e deploy.
 - [docs/validacao/](docs/validacao/) — evidências visuais no aparelho.
 
 ## Requisitos

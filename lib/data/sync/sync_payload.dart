@@ -20,6 +20,8 @@ Map<String, Object?> postItPayload(PostIt postIt) => {
   'sourceNoteId': postIt.sourceNoteId,
   'startDate': postIt.startDate?.toIso8601String(),
   'endDate': postIt.endDate?.toIso8601String(),
+  'recurrence': postIt.recurrence.name,
+  'recurrenceInterval': postIt.recurrenceInterval,
   'sortOrder': postIt.sortOrder,
   'lastRolloverAt': postIt.lastRolloverAt?.toUtc().toIso8601String(),
   'createdAt': postIt.createdAt.toUtc().toIso8601String(),
@@ -39,6 +41,12 @@ PostIt postItFromPayload(Map<String, Object?> payload) => PostIt(
   sourceNoteId: _optionalText(payload, 'sourceNoteId'),
   startDate: _optionalDate(payload, 'startDate'),
   endDate: _optionalDate(payload, 'endDate'),
+  recurrence: _optionalEnum(
+    EventRecurrence.values,
+    payload['recurrence'],
+    EventRecurrence.none,
+  ),
+  recurrenceInterval: _optionalInteger(payload, 'recurrenceInterval', 1),
   sortOrder: _integer(payload, 'sortOrder'),
   lastRolloverAt: _optionalTime(payload, 'lastRolloverAt'),
   createdAt: _time(payload, 'createdAt'),
@@ -163,4 +171,18 @@ T _enum<T extends Enum>(List<T> values, String name) {
     if (value.name == name) return value;
   }
   throw FormatException('valor enum inválido: $name');
+}
+
+T _optionalEnum<T extends Enum>(List<T> values, Object? raw, T fallback) {
+  if (raw is! String) return fallback;
+  for (final value in values) {
+    if (value.name == raw) return value;
+  }
+  return fallback;
+}
+
+int _optionalInteger(Map<String, Object?> payload, String key, int fallback) {
+  final value = payload[key];
+  if (value is int) return value;
+  return fallback;
 }

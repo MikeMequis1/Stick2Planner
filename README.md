@@ -1,9 +1,9 @@
+**English** | [Português (Brasil)](README.pt-BR.md)
+
 # Stick2Planner
 
 Offline-first visual planner for Android. Calendar, inbox and Markdown notes stay
 on the device in SQLite; synchronization with your own server is optional.
-
-**Português:** [README-PTBR.md](README-PTBR.md)
 
 ## Download
 
@@ -17,6 +17,8 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 
 - **Calendar:** day, 4-day, week, 2-week and month views; multi-day events;
   drag, resize, reorder and quick create; anchored 4-day window.
+- **Event recurrence:** daily, every N weeks, every N months or yearly;
+  occurrences keep the event duration.
 - **Inbox:** search, status filters, sorting and undated post-its.
 - **Notes:** Markdown rendering, checklists, line selection, snapshots and live
   links between notes and post-its.
@@ -35,7 +37,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (schema v5, migrations v1 → v5).
+- Drift + SQLite (schema v6, migrations v1 → v6).
 - Optional sync server in Dart/shelf + SQLite, with Docker Compose support.
 - Secure device tokens stored with `flutter_secure_storage`.
 
@@ -62,14 +64,14 @@ docker compose up -d
 
 For server configuration, pairing and deployment details, see
 [`server/README.md`](server/README.md) and
-[`docs/SINCRONIZACAO.md`](docs/SINCRONIZACAO.md).
+[`docs/SYNC.md`](docs/SYNC.md).
 
 ## Documentation
 
-- [docs/PROGRESSO.md](docs/PROGRESSO.md) — development history.
-- [docs/DECISOES.md](docs/DECISOES.md) — architecture and technical decisions.
-- [docs/QUALIDADE.md](docs/QUALIDADE.md) — validation matrix and limitations.
-- [docs/SINCRONIZACAO.md](docs/SINCRONIZACAO.md) — connection, pairing and sync.
+- [docs/PROGRESS.md](docs/PROGRESS.md) — development history.
+- [docs/DECISIONS.md](docs/DECISIONS.md) — architecture and technical decisions.
+- [docs/QUALITY.md](docs/QUALITY.md) — validation matrix and limitations.
+- [docs/SYNC.md](docs/SYNC.md) — connection, pairing and sync.
 - [server/README.md](server/README.md) — sync server, API and deployment.
 - [docs/validacao/](docs/validacao/) — device validation screenshots.
 

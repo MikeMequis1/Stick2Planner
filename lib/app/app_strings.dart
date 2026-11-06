@@ -457,7 +457,27 @@ abstract final class AppStrings {
   static String get viewModeWeek => _t('Semana', 'Week');
   static String get viewModeTwoWeeks => _t('2 semanas', '2 weeks');
   static String get viewModeMonth => _t('Mês', 'Month');
-  static String get recurringShort => _t('Recorrente', 'Recurring');
+  static String get recurringShort => _t('Pendência', 'Pending');
+  static String get eventRepeat => _t('Repetir evento', 'Repeat event');
+  static String get repeatNone => _t('Não repetir', 'Does not repeat');
+  static String get repeatDaily => _t('Diário', 'Daily');
+  static String get repeatWeekly => _t('Semanal', 'Weekly');
+  static String get repeatMonthly => _t('Mensal', 'Monthly');
+  static String get repeatYearly => _t('Anual', 'Yearly');
+  static String get repeatEveryWeeks =>
+      _t('A cada quantas semanas', 'Every how many weeks');
+  static String get repeatEveryMonths =>
+      _t('A cada quantos meses', 'Every how many months');
+  static String get repeatSummaryDaily =>
+      _t('Repete diariamente', 'Repeats daily');
+  static String repeatSummaryWeekly(int count) => count == 1
+      ? _t('Repete toda semana', 'Repeats every week')
+      : _t('Repete a cada $count semanas', 'Repeats every $count weeks');
+  static String repeatSummaryMonthly(int count) => count == 1
+      ? _t('Repete todo mês', 'Repeats every month')
+      : _t('Repete a cada $count meses', 'Repeats every $count months');
+  static String get repeatSummaryYearly =>
+      _t('Repete anualmente', 'Repeats yearly');
   static String get recurringHelp => _t(
     'Aparece hoje e avança sozinho para o próximo dia enquanto estiver pendente, até ser concluído ou cancelado.',
     'Appears today and advances to the next day while pending, until completed or cancelled.',
@@ -482,7 +502,7 @@ abstract final class AppStrings {
 
   static String get taskType => _t('Tarefa', 'Task');
   static String get eventType => _t('Evento', 'Event');
-  static String get recurringType => _t('TO-DO recorrente', 'Recurring TO-DO');
+  static String get recurringType => _t('Pendência', 'Pending');
   static String get highlightType => _t('Evento marcante', 'Highlighted event');
   static String get eventSymbol => '✮';
   static String get highlightSymbol => '+';
@@ -571,6 +591,12 @@ abstract final class AppStrings {
   static String get errorHighlightEvent => _t(
     'O símbolo + só pode ser usado em eventos.',
     'The + symbol can only be used on events.',
+  );
+  static String get errorRecurrenceEvent =>
+      _t('Somente eventos podem se repetir.', 'Only events can repeat.');
+  static String get errorRecurrenceInterval => _t(
+    'Informe um intervalo de repetição válido.',
+    'Enter a valid repeat interval.',
   );
   static String get errorSave => _t(
     'Não foi possível salvar. Verifique os dados e tente novamente.',

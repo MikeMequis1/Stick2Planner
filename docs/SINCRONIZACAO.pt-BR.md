@@ -1,3 +1,5 @@
+[English](SYNC.md) | **Português (Brasil)**
+
 # Conexão e sincronização
 
 ## Visão geral
@@ -172,6 +174,13 @@ rolada até a seção de sincronização:
 Falhas não bloqueiam a interface: a fila local permanece e o erro aparece no
 status. Se a conferência exigir escolha, o sync automático fica suspenso até o
 usuário decidir.
+
+## Repetição de eventos
+
+- Payloads de post-it carregam `recurrence` e `recurrenceInterval`.
+- O servidor armazena os campos de forma opaca; as ocorrências são geradas no
+  aparelho para o período visível e não viram registros separados.
+- Payloads antigos sem os campos assumem sem repetição e intervalo 1.
 
 ## Notas e vínculos
 
