@@ -1408,12 +1408,17 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   atuais; sem nenhuma tag criada, um SnackBar orienta a criar uma antes e leva ao
   gerenciador.
 - Os tons de tag não repetem mais a cor sólida: as variantes suaves usam um
-  destaque mais claro, deixando as seis opções do seletor visivelmente diferentes.
-  Os círculos ficam centralizados e com espaçamento uniforme.
+  destaque mais claro, deixando as opções visivelmente diferentes. Os círculos
+  ficam centralizados e com espaçamento uniforme.
+- Os tons de tag foram reduzidos para cinco (Destaque, Secundária, Terciária,
+  Destaque suave e Secundária suave). O esquema v8 migra qualquer tag
+  `tertiarySoft` para `tertiary`, preservando a matiz; backups de v4–v8 seguem
+  aceitos.
 - O ícone do tipo Tarefa agora é uma caixa marcada (☑) e os chips de tipo do
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
-- `flutter test`: **272 testes aprovados**; servidor: **16 testes aprovados**.
+- `flutter test`: **273 testes aprovados**; servidor: **16 testes aprovados**.
+  Versão **0.3.0+5** preparada para publicação.
 
 
 

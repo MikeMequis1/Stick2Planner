@@ -141,7 +141,9 @@ Map<String, Object?> tagPayload(Tag tag) => {
 Tag tagFromPayload(Map<String, Object?> payload) => Tag(
   id: _text(payload, 'id'),
   name: _text(payload, 'name'),
-  tone: _optionalEnum(TagTone.values, payload['tone'], TagTone.primary),
+  tone: payload['tone'] == 'tertiarySoft'
+      ? TagTone.tertiary
+      : _optionalEnum(TagTone.values, payload['tone'], TagTone.primary),
   createdAt: _time(payload, 'createdAt'),
   updatedAt: _time(payload, 'updatedAt'),
   deletedAt: _optionalTime(payload, 'deletedAt'),

@@ -17,7 +17,7 @@ void main() {
     );
     final home = await dependencies.tags.create(
       name: 'Casa',
-      tone: TagTone.tertiarySoft,
+      tone: TagTone.secondarySoft,
     );
     expect(dependencies.tags.tags, hasLength(2));
 
@@ -55,13 +55,15 @@ void main() {
     final document = await dependencies.backup.buildExport();
 
     expect(document.data['tags'], hasLength(1));
-    final postIt =
-        (document.data['postIts'] as List).cast<Map<String, Object?>>().single;
+    final postIt = (document.data['postIts'] as List)
+        .cast<Map<String, Object?>>()
+        .single;
     expect(postIt['timeMinutes'], 855);
     expect(postIt['tagIds'], [tag.id]);
   });
 
-  test('horário e tags são preservados ao editar e mover', () async {    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
+  test('horário e tags são preservados ao editar e mover', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
     await dependencies.initialize();
     addTearDown(dependencies.dispose);
     final tag = await dependencies.tags.create(

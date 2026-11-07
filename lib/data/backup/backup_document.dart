@@ -9,7 +9,7 @@ const backupFormatName = 'stick2planner-backup';
 const backupFormatVersion = 1;
 
 /// Versões de esquema local cujos backups podem ser importados.
-const supportedBackupSchemaVersions = <int>{4, 5, 6, 7};
+const supportedBackupSchemaVersions = <int>{4, 5, 6, 7, 8};
 
 /// Falhas previstas ao ler, validar ou aplicar um backup.
 enum BackupErrorCode {

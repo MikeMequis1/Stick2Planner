@@ -13,7 +13,7 @@ sync, backup, web page and phone adjustments).
 - Notes: Markdown text, lists, snapshots and links to post-its.
 - Navigation: linked/snapshot post-it → Schedule → existing detail; Inbox with
   "Open in Schedule" for dated post-its.
-- Local persistence: drift/SQLite, transactions, migrations v1 → v7 and tombstones.
+- Local persistence: drift/SQLite, transactions, migrations v1 → v8 and tombstones.
 - Settings: theme, Portuguese/English language, six palettes with gradient,
   animations, wakelock, tips, connection/sync and shortcut to the About screen.
 - About: installed version read from the package, description and GitHub links.
@@ -117,6 +117,6 @@ dart test
 ## Result
 
 - `flutter analyze`: no issues.
-- `flutter test`: 272 tests passed.
+- `flutter test`: 273 tests passed.
 - `dart analyze` / `dart test` in the server: no issues; 16 tests passed.
 - `flutter build apk --release --split-per-abi`: passed and installed on the phone.

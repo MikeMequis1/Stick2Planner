@@ -273,8 +273,6 @@ abstract final class AppStrings {
   static String get tagTonePrimarySoft => _t('Destaque suave', 'Soft accent');
   static String get tagToneSecondarySoft =>
       _t('Secundária suave', 'Soft secondary');
-  static String get tagToneTertiarySoft =>
-      _t('Terciária suave', 'Soft tertiary');
   static String get tagDeleteTitle => _t('Excluir tag?', 'Delete tag?');
   static String get tagDeleteBody => _t(
     'A tag será removida dos eventos e tarefas, mas os itens não serão excluídos.',

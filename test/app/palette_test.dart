@@ -81,6 +81,7 @@ void main() {
   });
 
   test('tons de tag têm cores distintas no seletor', () {
+    expect(TagTone.values, hasLength(5));
     for (final palette in AppPalette.values) {
       for (final theme in [AppTheme.light(palette), AppTheme.dark(palette)]) {
         final scheme = theme.colorScheme;

@@ -1410,9 +1410,13 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   current tags; without any tags, a SnackBar asks to create one first and links to
   the tag manager.
 - Tag tone swatches no longer repeat the solid color: soft variants use a lighter
-  accent, so all six selector options are visibly different. The swatches are
-  centered with uniform spacing.
+  accent, so all options are visually different. The swatches are centered with
+  uniform spacing.
+- Tag tones were reduced to five (Primary, Secondary, Tertiary, Soft primary and
+  Soft secondary). Schema v8 migrates any stored `tertiarySoft` tag to
+  `tertiary`, keeping the original hue; backups from v4–v8 remain accepted.
 - The task type icon is now a checked box (☑) and the editor type chips no longer
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **272 tests passing**; server: **16 tests passing**.
+- `flutter test`: **273 tests passing**; server: **16 tests passing**. Version
+  **0.3.0+5** prepared for release.

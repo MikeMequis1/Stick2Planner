@@ -135,25 +135,28 @@ void main() {
     );
   });
 
-  test('contagens ignoram itens apagados, mas o backup preserva tombstones', () async {
-    final db = openDb();
-    await seed(db);
-    final dir = await tempDir();
-    final postIts = DriftPostItRepository(db);
-    final notes = DriftNoteRepository(db);
+  test(
+    'contagens ignoram itens apagados, mas o backup preserva tombstones',
+    () async {
+      final db = openDb();
+      await seed(db);
+      final dir = await tempDir();
+      final postIts = DriftPostItRepository(db);
+      final notes = DriftNoteRepository(db);
 
-    await postIts.softDelete(id: 'p1', deletedAt: exportedAt);
-    await notes.softDelete(id: 'n1', deletedAt: exportedAt);
+      await postIts.softDelete(id: 'p1', deletedAt: exportedAt);
+      await notes.softDelete(id: 'n1', deletedAt: exportedAt);
 
-    final document = await serviceFor(db, dir).buildExport();
+      final document = await serviceFor(db, dir).buildExport();
 
-    expect(document.counts.postIts, 0);
-    expect(document.counts.notes, 0);
-    expect(document.counts.noteLines, 0);
-    expect(document.counts.history, 0);
-    expect(document.data['postIts'], hasLength(2));
-    expect(document.data['notes'], hasLength(1));
-  });
+      expect(document.counts.postIts, 0);
+      expect(document.counts.notes, 0);
+      expect(document.counts.noteLines, 0);
+      expect(document.counts.history, 0);
+      expect(document.data['postIts'], hasLength(2));
+      expect(document.data['notes'], hasLength(1));
+    },
+  );
 
   test('ida e volta reconstrói o mesmo estado', () async {
     final source = openDb();
@@ -217,7 +220,7 @@ void main() {
     );
 
     root['formatVersion'] = 1;
-    root['schemaVersion'] = 8;
+    root['schemaVersion'] = 9;
     expect(
       () => BackupDocument.parse(jsonEncode(root)),
       throwsA(

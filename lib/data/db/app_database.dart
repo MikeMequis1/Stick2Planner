@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -99,6 +99,14 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable('tags')) {
           await migrator.createTable(tags);
+        }
+      }
+      if (from < 8) {
+        if (await _hasTable('tags')) {
+          // O tom terciário suave deixou de existir; preserva a matiz original.
+          await customStatement(
+            "UPDATE tags SET tone = 'tertiary' WHERE tone = 'tertiarySoft'",
+          );
         }
       }
     },

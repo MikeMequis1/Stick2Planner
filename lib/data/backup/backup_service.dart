@@ -551,6 +551,7 @@ final class BackupService {
   }
 
   static TagTone _tagTone(String name) {
+    if (name == 'tertiarySoft') return TagTone.tertiary;
     for (final value in TagTone.values) {
       if (value.name == name) return value;
     }

@@ -317,6 +317,8 @@ etapas. Cada item: contexto, decisão, consequência.
   resultados.
 - Segurar um item na Caixinha abre um seletor de tags; é uma atualização
   focada (`setPostItTags`) que preserva todos os demais campos.
+- Os tons de tag ficam limitados a cinco; o esquema v8 converte tags legadas
+  `tertiarySoft` para `tertiary`, preservando a matiz em vez de descartar a tag.
 
 ## Localização
 

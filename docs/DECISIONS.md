@@ -316,6 +316,8 @@ stages. Each item: context, decision, consequence.
   empty states for no tags, no tag matches and no search results.
 - Long-pressing an Inbox row opens a tag selector; it is a focused update
   (`setPostItTags`) that keeps every other field untouched.
+- Tag tones are limited to five; schema v8 rewrites legacy `tertiarySoft` tags to
+  `tertiary`, keeping the hue instead of dropping the tag.
 
 ## Localization
 

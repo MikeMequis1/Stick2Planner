@@ -47,7 +47,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (schema v7, migrations v1 → v7).
+- Drift + SQLite (schema v8, migrations v1 → v8).
 - Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:
   [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Secure device tokens stored with `flutter_secure_storage`.

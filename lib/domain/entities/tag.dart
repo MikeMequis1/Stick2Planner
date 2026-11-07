@@ -1,12 +1,5 @@
 /// Paleta de identificação de uma tag, derivada do `ColorScheme` ativo.
-enum TagTone {
-  primary,
-  secondary,
-  tertiary,
-  primarySoft,
-  secondarySoft,
-  tertiarySoft,
-}
+enum TagTone { primary, secondary, tertiary, primarySoft, secondarySoft }
 
 /// Tag compartilhada por eventos e tarefas.
 final class Tag {

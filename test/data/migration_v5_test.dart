@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:stick2planner/data/db/app_database.dart';
+import 'package:stick2planner/domain/entities/tag.dart';
 
 const _v4Schema = '''
 CREATE TABLE app_settings (
@@ -68,7 +69,7 @@ INSERT INTO post_it_history_entries VALUES ('h1', 'p1', 'created', NULL, 'x', 10
 
 void main() {
   test(
-    'migra v4 para v7 preservando dados e criando tabelas de sync',
+    'migra v4 para v8 preservando dados e criando tabelas de sync',
     () async {
       final directory = await Directory.systemTemp.createTemp('s2p_migrate_');
       addTearDown(() => directory.delete(recursive: true));
@@ -84,7 +85,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 7);
+      expect(db.schemaVersion, 8);
 
       final notes = await db.select(db.notes).get();
       final postIts = await db.select(db.postIts).get();
@@ -104,7 +105,7 @@ void main() {
     },
   );
 
-  test('banco novo já nasce com o esquema v7', () async {
+  test('banco novo já nasce com o esquema v8', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
@@ -112,5 +113,37 @@ void main() {
         .into(db.syncStates)
         .insert(SyncStatesCompanion.insert(key: 'device_id', value: 'x'));
     expect(await db.select(db.syncStates).get(), hasLength(1));
+  });
+
+  test('migra tom de tag removido para a matiz terciária', () async {
+    final directory = await Directory.systemTemp.createTemp('s2p_tag_tone_');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}planner.sqlite',
+    );
+
+    final raw = sqlite.sqlite3.open(file.path);
+    raw.execute('''
+      CREATE TABLE tags (
+        id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        tone TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        deleted_at INTEGER,
+        PRIMARY KEY (id)
+      );
+      INSERT INTO tags VALUES (
+        't1', 'Antiga', 'tertiarySoft', 1000, 1000, NULL
+      );
+      PRAGMA user_version = 7;
+    ''');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+
+    final tags = await db.select(db.tags).get();
+    expect(tags.single.tone, TagTone.tertiary);
   });
 }

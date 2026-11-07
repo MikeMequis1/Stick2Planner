@@ -9,7 +9,6 @@ String tagToneLabel(TagTone tone) => switch (tone) {
   TagTone.tertiary => AppStrings.tagToneTertiary,
   TagTone.primarySoft => AppStrings.tagTonePrimarySoft,
   TagTone.secondarySoft => AppStrings.tagToneSecondarySoft,
-  TagTone.tertiarySoft => AppStrings.tagToneTertiarySoft,
 };
 
 ({Color background, Color foreground, Color accent}) tagToneColors(
@@ -19,17 +18,14 @@ String tagToneLabel(TagTone tone) => switch (tone) {
   final base = switch (tone) {
     TagTone.primary || TagTone.primarySoft => scheme.primary,
     TagTone.secondary || TagTone.secondarySoft => scheme.secondary,
-    TagTone.tertiary || TagTone.tertiarySoft => scheme.tertiary,
+    TagTone.tertiary => scheme.tertiary,
   };
   final container = switch (tone) {
     TagTone.primary || TagTone.primarySoft => scheme.primaryContainer,
     TagTone.secondary || TagTone.secondarySoft => scheme.secondaryContainer,
-    TagTone.tertiary || TagTone.tertiarySoft => scheme.tertiaryContainer,
+    TagTone.tertiary => scheme.tertiaryContainer,
   };
-  final soft =
-      tone == TagTone.primarySoft ||
-      tone == TagTone.secondarySoft ||
-      tone == TagTone.tertiarySoft;
+  final soft = tone == TagTone.primarySoft || tone == TagTone.secondarySoft;
   if (!soft) {
     return (
       background: container,
