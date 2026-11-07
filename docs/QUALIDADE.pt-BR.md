@@ -15,7 +15,7 @@ backup, página web e ajustes de celular).
 - Navegação: post-it vinculado/snapshot → Agenda → detalhe existente; Caixinha
   com “Abrir na Agenda” para post-its datados.
 - Persistência local: drift/SQLite, transações, migrações v1 → v7 e tombstones.
-- Configurações: tema, idioma Português/English, quatro paletas com gradiente,
+- Configurações: tema, idioma Português/English, oito paletas com gradiente,
   animações, wakelock, dicas, conexão/sync e atalho para a tela Sobre.
 - Sobre: versão instalada lida do pacote, descrição e links do GitHub.
 - Backup: JSON versionado com checksum canônico, validação de versão/esquema,
@@ -117,6 +117,6 @@ dart test
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 264 testes aprovados.
+- `flutter test`: 268 testes aprovados.
 - `dart analyze` / `dart test` no servidor: sem issues; 16 testes aprovados.
 - `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

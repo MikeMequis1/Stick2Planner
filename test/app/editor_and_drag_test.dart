@@ -49,16 +49,10 @@ void main() {
   }
 
   testWidgets('evento pode repetir semanalmente', (tester) async {
-    final dependencies = await pumpPlanner(
-      tester,
-      size: const Size(360, 780),
-    );
+    final dependencies = await pumpPlanner(tester, size: const Size(360, 780));
 
     await openEditor(tester);
-    await tester.enterText(
-      find.byKey(const Key('editor-title')),
-      'Reunião',
-    );
+    await tester.enterText(find.byKey(const Key('editor-title')), 'Reunião');
     await tester.tap(find.text(AppStrings.eventType));
     await tester.pumpAndSettle();
 
@@ -118,6 +112,34 @@ void main() {
     expect(find.text('Comprar pão'), findsOneWidget);
   });
 
+  testWidgets('descrição acompanha o tipo e o estado Feito', (tester) async {
+    await pumpPlanner(tester, size: const Size(360, 780));
+
+    String description() => tester
+        .widget<Text>(find.byKey(const Key('editor-type-description-text')))
+        .data!;
+
+    await openEditor(tester);
+    expect(description(), AppStrings.taskTypeHelp);
+
+    await tester.tap(find.byKey(const Key('editor-type-event')));
+    await tester.pumpAndSettle();
+    expect(description(), AppStrings.eventTypeHelp);
+    expect(find.text('Feito'), findsWidgets);
+
+    await tester.ensureVisible(find.text(AppStrings.fieldHighlight));
+    await tester.tap(find.text(AppStrings.fieldHighlight));
+    await tester.pumpAndSettle();
+    expect(description(), AppStrings.doneInfo);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('editor-type-recurringTodo')),
+    );
+    await tester.tap(find.byKey(const Key('editor-type-recurringTodo')));
+    await tester.pumpAndSettle();
+    expect(description(), AppStrings.recurringHelp);
+  });
+
   testWidgets('cria evento marcante com intervalo', (tester) async {
     final dependencies = await pumpPlanner(tester);
 
@@ -128,8 +150,10 @@ void main() {
     );
     await tester.tap(find.text(AppStrings.eventType));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(AppStrings.fieldHighlight));
     await tester.tap(find.text(AppStrings.fieldHighlight));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('editor-save')));
     await tester.tap(find.byKey(const Key('editor-save')));
     await tester.pumpAndSettle();
 

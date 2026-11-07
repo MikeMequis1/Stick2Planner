@@ -354,6 +354,53 @@ void main() {
     expect(find.byKey(const Key('day-preview')), findsNothing);
   });
 
+  testWidgets('prévia por toque longo inclui eventos e horário', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Consulta',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+          timeMinutes: 14 * 60 + 30,
+        ),
+        buildPostIt(
+          id: 't1',
+          title: 'Enviar e-mail',
+          startDate: DateOnly(2026, 11, 5),
+        ),
+      ],
+    );
+
+    final day = find.byKey(const Key('day-2026-11-05'));
+    final gesture = await tester.startGesture(tester.getCenter(day));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final preview = find.byKey(const Key('day-preview'));
+    expect(preview, findsOneWidget);
+    expect(
+      find.descendant(of: preview, matching: find.text('Consulta')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: preview, matching: find.text('Enviar e-mail')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: preview, matching: find.text('Evento · 14:30')),
+      findsOneWidget,
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-preview')), findsNothing);
+  });
+
   testWidgets('prévia acompanha o dedo sobre outros dias visíveis', (
     tester,
   ) async {

@@ -301,6 +301,16 @@ stages. Each item: context, decision, consequence.
 - Schema v7 migrates v1–v6; old payloads/backups default to no time, no tags and
   no recurrence.
 
+## Type descriptions and day preview
+
+- The editor shows one shared description card for the selected post-it type,
+  styled like the former Pending help card; Feat reuses the positive-moments text.
+- The long-press preview reuses the existing overlay/registry and resolves items
+  with `itemsCoveringDate`, so events join tasks with the same row format. Event
+  rows keep the type label and optional time.
+- New palettes are additive enum values; the persisted setting remains the palette
+  name, so existing selections are unaffected.
+
 ## Localization
 
 - **App:** Portuguese (BR) and English, persisted in `app_settings`. `AppStrings`
@@ -338,8 +348,8 @@ stages. Each item: context, decision, consequence.
 - **Language:** Portuguese (BR) and English, persisted in `app_settings`.
   `AppStrings` resolves texts at runtime; `DateFormats.locale` chooses the
   date patterns. No external service and no app restart.
-- **Palettes:** four gradients (Green, Ocean, Sunset, Lavender) combined
-  with light/dark; the seed color still comes from Material 3.
+- **Palettes:** eight gradients (Green, Ocean, Sunset, Lavender, Rose, Teal, Sand,
+  Graphite) combined with light/dark; the seed color still comes from Material 3.
 - **Performance:** the split release build is the reference. Debug loads runtime and
   symbols (~188 MB); arm64 release ~21 MB. Main grid in
   `RepaintBoundary`; animations can be turned off in Settings.

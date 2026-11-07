@@ -26,7 +26,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
   evento, sem substituir datas nem timestamps internos.
 - **Tags:** tags compartilhadas entre eventos e tarefas, com cores da paleta,
   gerenciamento, filtro múltiplo na Caixinha e suporte a sync/backup.
-- **Done/feito:** eventos positivos usam ícone de lápis e uma explicação curta;
+- **Feito:** eventos positivos usam ícone de lápis e uma explicação curta;
   eventos são concluídos automaticamente após a data final e tarefas podem ser
   concluídas pelo ícone junto ao título nos detalhes.
 - **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
@@ -40,7 +40,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
   antes de aplicar.
 - **Backup:** exportação JSON versionada com checksum, importação transacional e
   snapshots automáticos.
-- **Configurações:** tema claro/escuro/sistema, quatro paletas, português/inglês,
+- **Configurações:** tema claro/escuro/sistema, oito paletas, português/inglês,
   animações, manter tela ligada e dicas de gestos.
 - **Página web administrativa:** QR de pareamento ao vivo, renomear/revogar
   dispositivos e interface português/inglês, servida pelo servidor opcional.

@@ -162,6 +162,14 @@ List<PostIt> singleDayItemsOn(List<PostIt> postIts, DateOnly date) {
   ];
 }
 
+/// Todos os itens que cobrem [date], inclusive eventos (para prévias).
+List<PostIt> itemsCoveringDate(List<PostIt> postIts, DateOnly date) {
+  return [
+    for (final postIt in postIts)
+      if (_covers(postIt, date)) postIt,
+  ];
+}
+
 bool _covers(PostIt postIt, DateOnly date) {
   final start = postIt.startDate;
   if (start == null) return false;

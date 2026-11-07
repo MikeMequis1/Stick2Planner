@@ -1388,5 +1388,21 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - O ícone junto ao título dos detalhes alterna concluída/reabrir imediatamente.
 - `flutter test`: **264 testes aprovados**; servidor: **16 testes aprovados**.
 
+## Paleta, descrições de tipo e prévia de eventos (2026-11-06)
+
+- `AppPalette` agora oferece oito tons: os originais Verde, Oceano, Pôr do sol e
+  Lavanda, mais Rosa, Verde-água, Areia e Grafite. Cada um mantém gradiente claro/
+  escuro de três paradas e deriva as cores dos componentes do Material 3, sem
+  alterar dados nem cores já atribuídas aos itens.
+- A seleção de tipo passa a ter um card único de descrição abaixo dos chips.
+  Descrições de Tarefa, Evento, Pendência e Feito seguem o padrão do antigo card
+  de Pendência e acompanham o tipo selecionado; Feito reutiliza o texto de
+  acontecimentos positivos.
+- A prévia por toque longo resolve os itens com `itemsCoveringDate`, exibindo
+  tarefas e eventos nas mesmas linhas, com tipo e horário opcional. O gesto, os
+  filtros e os IDs permanecem iguais.
+- O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
+- `flutter test`: **268 testes aprovados**; servidor: **16 testes aprovados**.
+
 
 

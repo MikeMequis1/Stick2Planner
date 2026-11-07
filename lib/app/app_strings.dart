@@ -224,6 +224,10 @@ abstract final class AppStrings {
   static String get paletteOcean => _t('Oceano', 'Ocean');
   static String get paletteSunset => _t('Pôr do sol', 'Sunset');
   static String get paletteLavender => _t('Lavanda', 'Lavender');
+  static String get paletteRose => _t('Rosa', 'Rose');
+  static String get paletteTeal => _t('Verde-água', 'Teal');
+  static String get paletteSand => _t('Areia', 'Sand');
+  static String get paletteGraphite => _t('Grafite', 'Graphite');
   static String get settingsPaletteHelp => _t(
     'Gradiente de fundo e cor de destaque do aplicativo.',
     'App background gradient and accent color.',
@@ -529,6 +533,14 @@ abstract final class AppStrings {
     'Aparece hoje e avança sozinho para o próximo dia enquanto estiver pendente, até ser concluído ou cancelado.',
     'Appears today and advances to the next day while pending, until completed or cancelled.',
   );
+  static String get taskTypeHelp => _t(
+    'Registre algo para fazer, com ou sem data, e acompanhe até concluir.',
+    'Record something to do, with or without a date, and track it until done.',
+  );
+  static String get eventTypeHelp => _t(
+    'Compromisso ou acontecimento programado para uma data ou período específico.',
+    'An appointment or event scheduled for a specific date or range.',
+  );
   static String get postponed => _t('Adiado', 'Postponed');
   static String get advancesDaily => _t('Avança diariamente', 'Advances daily');
   static String get postponedUntil => _t('Adiado até', 'Postponed until');
@@ -550,7 +562,7 @@ abstract final class AppStrings {
   static String get taskType => _t('Tarefa', 'Task');
   static String get eventType => _t('Evento', 'Event');
   static String get recurringType => _t('Pendência', 'Pending');
-  static String get highlightType => _t('Done/feito', 'Done/feito');
+  static String get highlightType => _t('Feito', 'Feat');
   static String get eventSymbol => '✮';
   static String get doneInfo => _t(
     'Use para registrar acontecimentos positivos, pequenas conquistas ou coisas boas que aconteceram no seu dia. :)',
@@ -586,7 +598,7 @@ abstract final class AppStrings {
   static String get fieldNoDate => _t('Sem data', 'Undated');
   static String get fieldStartDate => _t('Início', 'Start');
   static String get fieldEndDate => _t('Fim', 'End');
-  static String get fieldHighlight => _t('Done/feito', 'Done/feito');
+  static String get fieldHighlight => _t('Feito', 'Feat');
   static String get save => _t('Salvar', 'Save');
   static String get cancel => _t('Cancelar', 'Cancel');
   static String get edit => _t('Editar', 'Edit');
@@ -638,8 +650,8 @@ abstract final class AppStrings {
     'Only events can span multiple days.',
   );
   static String get errorHighlightEvent => _t(
-    'Done/feito só pode ser usado em eventos.',
-    'Done/feito can only be used on events.',
+    'Feito só pode ser usado em eventos.',
+    'Feat can only be used on events.',
   );
   static String get errorRecurrenceEvent =>
       _t('Somente eventos podem se repetir.', 'Only events can repeat.');

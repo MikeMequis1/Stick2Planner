@@ -196,6 +196,40 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     );
   }
 
+  /// Card único de descrição do tipo, no mesmo padrão do antigo card de
+  /// Pendência. Ele acompanha a seleção de tipo e o estado Feito.
+  Widget _typeDescriptionCard(ThemeData theme) {
+    final highlighted = _isHighlight && _isEvent;
+    final description = highlighted
+        ? AppStrings.doneInfo
+        : postItTypeDescription(_type);
+    final icon = highlighted ? Icons.edit_outlined : postItTypeIcon(_type);
+    return Card(
+      key: const Key('editor-type-description'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                description,
+                key: const Key('editor-type-description-text'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _recurrenceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -455,6 +489,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   children: [
                     for (final type in PostItType.values)
                       ChoiceChip(
+                        key: Key('editor-type-${type.name}'),
                         avatar: Icon(postItTypeIcon(type), size: 18),
                         label: Text(switch (type) {
                           PostItType.task => AppStrings.taskType,
@@ -466,6 +501,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                       ),
                   ],
                 ),
+              SizedBox(height: 8),
+              _typeDescriptionCard(theme),
               SizedBox(height: 16),
               TextField(
                 key: Key('editor-title'),
@@ -580,29 +617,6 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   ),
                   _recurrenceSection(),
                 ],
-              ] else ...[
-                SizedBox(height: 8),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.repeat, color: theme.colorScheme.primary),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            AppStrings.recurringHelp,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
               if (_errors.isNotEmpty) ...[
                 SizedBox(height: 8),

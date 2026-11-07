@@ -292,7 +292,7 @@ class _DayTapRegionState extends State<_DayTapRegion> {
   void _handleLongPressStart(LongPressStartDetails details) {
     _resetTapCount();
     HapticFeedback.selectionClick();
-    _showPreview(widget.date, widget.items);
+    _showPreview(widget.date, widget.itemsFor(widget.date));
   }
 
   void _handleLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
@@ -435,15 +435,31 @@ class _DayPreviewCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          postIt.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            decoration: postIt.status == PostItStatus.active
-                                ? null
-                                : TextDecoration.lineThrough,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              postIt.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                decoration: postIt.status == PostItStatus.active
+                                    ? null
+                                    : TextDecoration.lineThrough,
+                              ),
+                            ),
+                            Text(
+                              postIt.timeMinutes == null
+                                  ? postItTypeLabel(postIt)
+                                  : '${postItTypeLabel(postIt)} · '
+                                        '${DateFormats.clockTime(postIt.timeMinutes!)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

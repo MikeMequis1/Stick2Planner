@@ -26,7 +26,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
   replacing event dates or internal timestamps.
 - **Tags:** shared tags for events and tasks, with palette-based colors, tag
   management, multi-tag filtering in the Inbox and sync/backup support.
-- **Done/feito:** positive-moment events use a pencil icon and a short contextual
+- **Feat:** positive-moment events use a pencil icon and a short contextual
   explanation. Completed events are marked done automatically after their end
   date; tasks can be completed from the details title icon.
 - **Inbox:** search, status filters, tag filters, sorting and undated post-its.
@@ -39,7 +39,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
   applying changes.
 - **Backup:** versioned JSON export with checksum, transactional import and
   automatic snapshots.
-- **Settings:** light/dark/system theme, four color palettes, Portuguese/English,
+- **Settings:** light/dark/system theme, eight color palettes, Portuguese/English,
   animations, screen wake lock and gesture hints.
 - **Admin web page:** live pairing QR, device rename/revoke and Portuguese/English
   UI, served by the optional sync server.

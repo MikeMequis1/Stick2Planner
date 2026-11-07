@@ -13,13 +13,19 @@ String postItTypeLabel(PostIt postIt) {
   };
 }
 
+String postItTypeDescription(PostItType type) => switch (type) {
+  PostItType.task => AppStrings.taskTypeHelp,
+  PostItType.event => AppStrings.eventTypeHelp,
+  PostItType.recurringTodo => AppStrings.recurringHelp,
+};
+
 String postItStatusLabel(PostItStatus status) => switch (status) {
   PostItStatus.active => AppStrings.active,
   PostItStatus.done => AppStrings.done,
   PostItStatus.cancelled => AppStrings.cancelled,
 };
 
-/// Símbolo literal do tipo; Done/feito usa apenas o ícone de lápis.
+/// Símbolo literal do tipo; Feito usa apenas o ícone de lápis.
 String postItSymbol(PostIt postIt) {
   if (postIt.isHighlight) return '';
   if (postIt.isEvent) return AppStrings.eventSymbol;

@@ -281,7 +281,7 @@ class _WeekRowState extends State<WeekRow> {
                                   onQuickCreateTask: widget.onQuickCreateTask,
                                   onQuickCreateEvent: widget.onQuickCreateEvent,
                                   itemsFor: (date) =>
-                                      singleDayItemsOn(widget.postIts, date),
+                                      itemsCoveringDate(widget.postIts, date),
                                   focusedPostItId: widget.focusedPostItId,
                                 ),
                               ),
