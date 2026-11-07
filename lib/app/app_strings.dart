@@ -337,6 +337,7 @@ abstract final class AppStrings {
   static String get syncCountNotes => _t('Notas', 'Notes');
   static String get syncCountEvents => _t('Eventos', 'Events');
   static String get syncCountTasks => _t('Tarefas', 'Tasks');
+  static String get syncCountTags => _t('Tags', 'Tags');
   static String get syncCountHistory => _t('Histórico', 'History');
   static String get syncKeepLocal => _t('Manter local', 'Keep local');
   static String get syncKeepRemote => _t('Manter remoto', 'Keep remote');

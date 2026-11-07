@@ -133,17 +133,19 @@ Before any sync (manual, automatic, or via the cloud), the app queries
 - notes;
 - events;
 - tasks;
-- history.
+- history;
+- tags.
 
-If both sides have data and the post-its/notes/events/tasks counts are
+If both sides have data and the post-its/notes/events/tasks/tags counts are
 different, the operation is interrupted when this is the first sync or when
 there are no pending local changes in the outbox. The screen shows the
 comparison. Choose:
 
-- **Keep local:** sends notes, post-its, and events from this device; the server
-  starts reflecting this set and removes what does not exist here (history is
-  preserved as an audit trail);
-- **Keep remote:** replaces the local content with the server's set;
+- **Keep local:** sends notes, post-its, tags and events from this device; the
+  server starts reflecting this set and removes what does not exist here
+  (history is preserved as an audit trail);
+- **Keep remote:** replaces the local content with the server's set, including
+  tags;
 - **Cancel:** changes neither side.
 
 When there are pending local changes, normal sync continues: the difference is
@@ -185,6 +187,18 @@ suspended until the user decides.
 - Post-its also carry optional `timeMinutes` and `tagIds`; tag definitions use the
   `tag` sync entity. Older payloads default to no time and no tags.
 
+## Tags
+
+- Tags are a first-class sync entity (`tag`): id, name, tone, timestamps and
+  tombstone travel in the payload.
+- Post-its carry `tagIds`; a shared tag can be referenced by several events and
+  tasks. Pull applies tags before notes/post-its so associations find the tag.
+- Creating or editing a tag records its own outbox row. Deleting a tag sends a
+  tombstone; receiving it removes the tag from local post-its without deleting
+  them.
+- Tags count in the local/remote review and in keep-local/keep-remote
+  replacement, together with post-its and notes.
+
 ## Notes and links
 
 - A **note is an atomic unit**: title, type, Markdown, lines/checklists, IDs,
@@ -193,7 +207,8 @@ suspended until the user decides.
   independent snapshot.
 - Deleting a note creates a tombstone; linked post-its are unlinked locally and
   synchronized as their own changes.
-- Application order on pull: **notes → post-its → history** (respects FKs).
+- Application order on pull: **tags → notes → post-its → history** (respects FKs
+  and tag references).
 - Conflict: the highest `updatedAt` wins. The losing version is preserved as
   `[Conflict] <title>`; for notes, the lines receive new IDs.
 - Identical content does not create a copy; a server tombstone with local

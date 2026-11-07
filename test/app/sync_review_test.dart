@@ -47,7 +47,8 @@ final class ReviewTransport implements SyncTransport {
     return SyncReplaceResult(
       revs: {
         for (var index = 0; index < entities.length; index++)
-          '${entities[index].entity}\u0000${entities[index].entityId}': index + 1,
+          '${entities[index].entity}\u0000${entities[index].entityId}':
+              index + 1,
       },
       cursor: 100,
     );
@@ -155,6 +156,23 @@ void main() {
         remote: SyncCounts(postIts: 6),
         hasLocalChanges: true,
         hasSyncedBefore: false,
+      ).requiresChoice,
+      isTrue,
+    );
+  });
+
+  test('diferença apenas de tags exige revisão', () {
+    expect(const SyncCounts(tags: 1).isEmpty, isFalse);
+    expect(
+      const SyncCounts(tags: 1).hasSameUserData(const SyncCounts(tags: 2)),
+      isFalse,
+    );
+    expect(
+      const SyncPreflight(
+        local: SyncCounts(tags: 1),
+        remote: SyncCounts(tags: 2),
+        hasLocalChanges: false,
+        hasSyncedBefore: true,
       ).requiresChoice,
       isTrue,
     );

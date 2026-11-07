@@ -622,6 +622,7 @@ class _SyncCountsTable extends StatelessWidget {
         preflight.local.tasks,
         preflight.remote.tasks,
       ),
+      (AppStrings.syncCountTags, preflight.local.tags, preflight.remote.tags),
       (
         AppStrings.syncCountHistory,
         preflight.local.history,

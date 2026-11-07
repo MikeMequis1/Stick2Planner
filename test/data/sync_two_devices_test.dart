@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/data/repositories/drift_tag_repository.dart';
 import 'package:stick2planner/data/sync/sync_engine.dart';
 import 'package:stick2planner/data/sync/sync_models.dart';
 import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/tag.dart';
 
 /// Servidor mínimo em memória, com a mesma semântica de rev/conflito.
 final class MemorySyncServer {
@@ -276,5 +278,67 @@ void main() {
 
     await engineB.run();
     expect((await repoB.loadAll()).single.title, 'A-novo');
+  });
+
+  test('tag e associação chegam ao outro dispositivo', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftPostItRepository(dbA);
+    final repoB = DriftPostItRepository(dbB);
+    final tagsA = DriftTagRepository(dbA);
+    final tagsB = DriftTagRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+
+    final tag = Tag(
+      id: 'tag1',
+      name: 'Trabalho',
+      tone: TagTone.primary,
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    await tagsA.save(tag);
+    await repoA.save(basePostIt().copyWith(tagIds: [tag.id]));
+
+    await engineA.run();
+    expect(await tagsB.loadAll(), isEmpty);
+
+    await engineB.run();
+    final onB = (await tagsB.loadAll()).single;
+    expect(onB.name, 'Trabalho');
+    expect(onB.tone, TagTone.primary);
+    expect((await repoB.loadAll()).single.tagIds, [tag.id]);
+
+    await tagsA.save(
+      tag.copyWith(
+        name: 'Trabalho novo',
+        tone: TagTone.secondarySoft,
+        updatedAt: t0.add(const Duration(minutes: 1)),
+      ),
+    );
+    await engineA.run();
+    await engineB.run();
+    expect((await tagsB.loadAll()).single.name, 'Trabalho novo');
+    expect((await tagsB.loadAll()).single.tone, TagTone.secondarySoft);
+
+    await tagsA.softDelete(
+      id: tag.id,
+      deletedAt: t0.add(const Duration(minutes: 2)),
+    );
+    await engineA.run();
+    await engineB.run();
+    expect(await tagsB.loadAll(), isEmpty);
+    expect((await repoB.loadAll()).single.tagIds, isEmpty);
   });
 }

@@ -139,6 +139,7 @@ final class SyncEngine {
         await _db.delete(_db.postIts).go();
         await _db.delete(_db.noteLines).go();
         await _db.delete(_db.notes).go();
+        await _db.delete(_db.tags).go();
         await _state.setCursor(0);
 
         for (final change in _sortedSnapshotEntities(snapshot.entities)) {

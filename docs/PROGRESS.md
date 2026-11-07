@@ -1415,8 +1415,10 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Tag tones were reduced to five (Primary, Secondary, Tertiary, Soft primary and
   Soft secondary). Schema v8 migrates any stored `tertiarySoft` tag to
   `tertiary`, keeping the original hue; backups from v4–v8 remain accepted.
+- Sync review counts now include tags on both sides, tag-only differences require
+  confirmation, and **Keep remote** clears local tags before applying the remote
+  snapshot. Tags travel as a first-class entity with tombstones and `tagIds`.
 - The task type icon is now a checked box (☑) and the editor type chips no longer
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **273 tests passing**; server: **16 tests passing**. Version
-  **0.3.0+5** prepared for release.
+- `flutter test`: **275 tests passing**; server: **16 tests passing**.

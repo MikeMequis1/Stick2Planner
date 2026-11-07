@@ -32,12 +32,16 @@ final class SyncDatasetService {
     }
     final historyCount =
         (await _db.select(_db.postItHistoryEntries).get()).length;
+    final tagCount = (await (_db.select(
+      _db.tags,
+    )..where((table) => table.deletedAt.isNull())).get()).length;
     return SyncCounts(
       postIts: postItRows.length,
       notes: noteCount,
       events: events,
       tasks: tasks,
       history: historyCount,
+      tags: tagCount,
     );
   }
 

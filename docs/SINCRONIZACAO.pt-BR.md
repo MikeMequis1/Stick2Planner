@@ -132,17 +132,19 @@ Antes de qualquer sync (manual, automático ou pela nuvem), o app consulta
 - notas;
 - eventos;
 - tarefas;
-- histórico.
+- histórico;
+- tags.
 
-Se os dois lados têm dados e as contagens de post-its/notas/eventos/tarefas são
-diferentes, a operação é interrompida quando este é o primeiro sync ou quando
-não há alterações locais pendentes na outbox. A tela mostra a comparação.
+Se os dois lados têm dados e as contagens de post-its/notas/eventos/tarefas/tags
+são diferentes, a operação é interrompida quando este é o primeiro sync ou
+quando não há alterações locais pendentes na outbox. A tela mostra a comparação.
 Escolha:
 
-- **Manter local:** envia notas, post-its e eventos deste aparelho; o servidor
-  passa a refletir este conjunto e remove o que não existe aqui (o histórico é
-  preservado como auditoria);
-- **Manter remoto:** substitui o conteúdo local pelo conjunto do servidor;
+- **Manter local:** envia notas, post-its, tags e eventos deste aparelho; o
+  servidor passa a refletir este conjunto e remove o que não existe aqui (o
+  histórico é preservado como auditoria);
+- **Manter remoto:** substitui o conteúdo local pelo conjunto do servidor,
+  incluindo as tags;
 - **Cancelar:** não altera nenhum dos lados.
 
 Quando há alterações locais pendentes, o sync normal continua: a diferença é
@@ -184,6 +186,18 @@ usuário decidir.
 - Post-its também carregam `timeMinutes` opcional e `tagIds`; definições de tag
   usam a entidade `tag`. Payloads antigos assumem sem horário e sem tags.
 
+## Tags
+
+- Tags são uma entidade de sync própria (`tag`): id, nome, tom, timestamps e
+  tombstone viajam no payload.
+- Post-its carregam `tagIds`; uma tag compartilhada pode ser referenciada por
+  vários eventos e tarefas. O pull aplica tags antes de notas/post-its para que as
+  associações encontrem a tag.
+- Criar ou editar uma tag grava sua própria linha na outbox. Excluir envia um
+  tombstone; ao recebê-lo, o app remove a tag dos post-its locais sem apagá-los.
+- Tags entram na conferência local/remota e na substituição manter local/manter
+  remoto, junto com post-its e notas.
+
 ## Notas e vínculos
 
 - A **nota é uma unidade atômica**: título, tipo, Markdown, linhas/checklists,
@@ -192,7 +206,8 @@ usuário decidir.
   continuam como snapshot independente.
 - Excluir uma nota gera tombstone; os post-its vinculados são desvinculados
   localmente e sincronizados como alterações próprias.
-- Ordem de aplicação no pull: **notas → post-its → histórico** (respeita FKs).
+- Ordem de aplicação no pull: **tags → notas → post-its → histórico** (respeita
+  FKs e referências de tag).
 - Conflito: vence o maior `updatedAt`. A versão perdedora é preservada como
   `[Conflito] <título>`; no caso de nota, as linhas recebem novos IDs.
 - Conteúdo idêntico não gera cópia; tombstone do servidor com conteúdo local

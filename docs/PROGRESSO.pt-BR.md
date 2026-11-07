@@ -1414,11 +1414,13 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Destaque suave e Secundária suave). O esquema v8 migra qualquer tag
   `tertiarySoft` para `tertiary`, preservando a matiz; backups de v4–v8 seguem
   aceitos.
+- A conferência de sync agora conta tags dos dois lados, diferenças apenas de tag
+  exigem confirmação e **Manter remoto** limpa as tags locais antes de aplicar o
+  snapshot. Tags viajam como entidade própria, com tombstones e `tagIds`.
 - O ícone do tipo Tarefa agora é uma caixa marcada (☑) e os chips de tipo do
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
-- `flutter test`: **273 testes aprovados**; servidor: **16 testes aprovados**.
-  Versão **0.3.0+5** preparada para publicação.
+- `flutter test`: **275 testes aprovados**; servidor: **16 testes aprovados**.
 
 
 
