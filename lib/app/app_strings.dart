@@ -292,6 +292,15 @@ abstract final class AppStrings {
     'Limpe o filtro ou selecione outras tags para ver mais itens.',
     'Clear the filter or select other tags to see more items.',
   );
+  static String get tagSelectTitle => _t('Selecionar tags', 'Select tags');
+  static String get tagSelectHelp => _t(
+    'Toque para associar ou remover tags deste item.',
+    'Tap to add or remove tags from this item.',
+  );
+  static String get tagCreateFirst => _t(
+    'Crie uma tag antes de associar.',
+    'Create a tag before assigning one.',
+  );
   static String get tagNone => _t('Sem tags', 'No tags');
   static String get tagManage => _t('Gerenciar tags', 'Manage tags');
   static String get tagDeleted => _t('Tag excluída.', 'Tag deleted.');

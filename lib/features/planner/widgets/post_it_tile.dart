@@ -12,6 +12,7 @@ class PostItTile extends StatefulWidget {
     required this.postIt,
     required this.compact,
     this.onTap,
+    this.onLongPress,
     this.isPostponed = false,
     this.isFocused = false,
   });
@@ -19,6 +20,7 @@ class PostItTile extends StatefulWidget {
   final PostIt postIt;
   final bool compact;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   /// TO-DO recorrente adiado manualmente (usa ícone/rótulo, não só cor).
   final bool isPostponed;
@@ -70,6 +72,7 @@ class _PostItTileState extends State<PostItTile> {
           child: InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
             onTapDown: (_) => _setPressed(true),
             onTapUp: (_) => _setPressed(false),
             onTapCancel: () => _setPressed(false),

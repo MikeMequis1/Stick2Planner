@@ -243,8 +243,10 @@ class _TagDialogState extends State<_TagDialog> {
             ),
             const SizedBox(height: 8),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: [
                 for (final tone in TagTone.values)
                   _toneSwatch(

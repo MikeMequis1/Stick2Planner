@@ -314,6 +314,8 @@ stages. Each item: context, decision, consequence.
   swatches visually distinct from their solid counterparts.
 - The Inbox keeps the tag selection at the top, with a manage/new-tag button and
   empty states for no tags, no tag matches and no search results.
+- Long-pressing an Inbox row opens a tag selector; it is a focused update
+  (`setPostItTags`) that keeps every other field untouched.
 
 ## Localization
 

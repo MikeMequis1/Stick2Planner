@@ -5,6 +5,7 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../core/date_formatting.dart';
 import '../../domain/entities/post_it.dart';
+import '../../domain/entities/tag.dart';
 import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
@@ -121,6 +122,45 @@ class _InboxPageState extends State<InboxPage> {
       final available = AppScope.of(context).tags.byIdMap.keys.toSet();
       _selectedTagIds.removeWhere((id) => !available.contains(id));
     });
+  }
+
+  Future<void> _openTagSelector(
+    BuildContext context,
+    PlannerController planner,
+    PostIt postIt,
+  ) async {
+    final available = AppScope.of(context).tags.tags;
+    if (available.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tagCreateFirst),
+          action: SnackBarAction(
+            label: AppStrings.tagNew,
+            onPressed: _openTags,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<List<String>>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) =>
+          _TagSelectorSheet(postIt: postIt, tags: available),
+    );
+    if (selected == null || !context.mounted) return;
+    try {
+      await planner.setPostItTags(postIt, selected);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AppStrings.tagSaved)));
+    } on Object {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AppStrings.errorSave)));
+    }
   }
 
   @override
@@ -307,6 +347,8 @@ class _InboxPageState extends State<InboxPage> {
                             postIt: postIt,
                             planner: planner,
                             onTap: () => _openDetails(context, planner, postIt),
+                            onLongPress: () =>
+                                _openTagSelector(context, planner, postIt),
                             onStatus: (status) =>
                                 _setStatus(context, planner, postIt, status),
                             onOpenAgenda: () => openPostItDetailsById(
@@ -338,6 +380,7 @@ class _InboxRow extends StatelessWidget {
     required this.postIt,
     required this.planner,
     required this.onTap,
+    required this.onLongPress,
     required this.onStatus,
     required this.onOpenAgenda,
   });
@@ -345,6 +388,7 @@ class _InboxRow extends StatelessWidget {
   final PostIt postIt;
   final PlannerController planner;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final ValueChanged<PostItStatus> onStatus;
   final VoidCallback onOpenAgenda;
 
@@ -368,6 +412,7 @@ class _InboxRow extends StatelessWidget {
                   compact: false,
                   isPostponed: isPostponed,
                   onTap: onTap,
+                  onLongPress: onLongPress,
                 ),
               ),
             ),
@@ -456,6 +501,98 @@ class _InboxRow extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _TagSelectorSheet extends StatefulWidget {
+  const _TagSelectorSheet({required this.postIt, required this.tags});
+
+  final PostIt postIt;
+  final List<Tag> tags;
+
+  @override
+  State<_TagSelectorSheet> createState() => _TagSelectorSheetState();
+}
+
+class _TagSelectorSheetState extends State<_TagSelectorSheet> {
+  late final Set<String> _selected = {
+    for (final tag in widget.tags)
+      if (widget.postIt.tagIds.contains(tag.id)) tag.id,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(AppStrings.tagSelectTitle, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              widget.postIt.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              AppStrings.tagSelectHelp,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Wrap(
+                  key: const Key('inbox-tag-selector'),
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final tag in widget.tags)
+                      TagChip(
+                        key: Key('inbox-tag-select-${tag.id}'),
+                        tag: tag,
+                        selected: _selected.contains(tag.id),
+                        onTap: () => setState(() {
+                          if (!_selected.remove(tag.id)) {
+                            _selected.add(tag.id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(AppStrings.cancel),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: const Key('inbox-tag-save'),
+                  onPressed: () => Navigator.of(context).pop([
+                    for (final tag in widget.tags)
+                      if (_selected.contains(tag.id)) tag.id,
+                  ]),
+                  child: Text(AppStrings.save),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

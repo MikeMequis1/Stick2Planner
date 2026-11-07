@@ -1404,12 +1404,16 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - A Caixinha mostra a seleção de tags no topo, um botão **Nova tag/Gerenciar
   tags** e mensagens específicas para ausência de tags, filtro sem resultados ou
   busca sem resultados.
+- Segurar um item na Caixinha abre uma folha de seleção que preserva as tags
+  atuais; sem nenhuma tag criada, um SnackBar orienta a criar uma antes e leva ao
+  gerenciador.
 - Os tons de tag não repetem mais a cor sólida: as variantes suaves usam um
   destaque mais claro, deixando as seis opções do seletor visivelmente diferentes.
+  Os círculos ficam centralizados e com espaçamento uniforme.
 - O ícone do tipo Tarefa agora é uma caixa marcada (☑) e os chips de tipo do
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
-- `flutter test`: **270 testes aprovados**; servidor: **16 testes aprovados**.
+- `flutter test`: **272 testes aprovados**; servidor: **16 testes aprovados**.
 
 
 

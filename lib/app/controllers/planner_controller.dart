@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 // Parâmetros nomeados não podem usar campos privados como initializing formals.
@@ -252,6 +253,22 @@ final class PlannerController extends ChangeNotifier {
           fromValue: current.noteId,
         ),
       );
+      await _reload();
+    });
+  }
+
+  /// Atualiza somente as tags associadas, preservando os demais campos.
+  Future<void> setPostItTags(PostIt postIt, List<String> tagIds) {
+    return _exclusive(() async {
+      await _applyDailyMaintenance();
+      final current = _findCurrent(postIt.id) ?? postIt;
+      final normalized = _normalizeTagIds(tagIds);
+      if (listEquals(current.tagIds, normalized)) return;
+      final updated = current.copyWith(
+        tagIds: normalized,
+        updatedAt: _clock.now().toUtc(),
+      );
+      await _postItRepository.save(updated);
       await _reload();
     });
   }

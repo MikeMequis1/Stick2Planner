@@ -1406,9 +1406,13 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   filters and item IDs are unchanged.
 - The Inbox shows the tag selection at the top, a **New tag/Manage tags** button,
   and a dedicated empty message for no tags, no tag matches or no search results.
+- Long-pressing an Inbox row opens a tag selector sheet that preserves the item's
+  current tags; without any tags, a SnackBar asks to create one first and links to
+  the tag manager.
 - Tag tone swatches no longer repeat the solid color: soft variants use a lighter
-  accent, so all six selector options are visibly different.
+  accent, so all six selector options are visibly different. The swatches are
+  centered with uniform spacing.
 - The task type icon is now a checked box (☑) and the editor type chips no longer
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **270 tests passing**; server: **16 tests passing**.
+- `flutter test`: **272 tests passing**; server: **16 tests passing**.

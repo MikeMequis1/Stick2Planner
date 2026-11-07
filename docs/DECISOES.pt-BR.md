@@ -315,6 +315,8 @@ etapas. Cada item: contexto, decisão, consequência.
 - A Caixinha mantém a seleção de tags no topo, com botão de gerenciar/nova tag e
   estados vazios para ausência de tags, filtro sem resultados e busca sem
   resultados.
+- Segurar um item na Caixinha abre um seletor de tags; é uma atualização
+  focada (`setPostItTags`) que preserva todos os demais campos.
 
 ## Localização
 

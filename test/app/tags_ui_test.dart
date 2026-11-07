@@ -37,6 +37,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('tags-add')));
     await tester.pumpAndSettle();
+    final swatchWrap = tester.widget<Wrap>(
+      find.ancestor(
+        of: find.byKey(const Key('tag-tone-primary')),
+        matching: find.byType(Wrap),
+      ),
+    );
+    expect(swatchWrap.alignment, WrapAlignment.center);
+    expect(swatchWrap.spacing, 12);
     await tester.enterText(find.byKey(const Key('tag-name')), 'Estudo');
     await tester.tap(find.byKey(const Key('tag-tone-tertiary')));
     await tester.pumpAndSettle();
@@ -144,5 +152,79 @@ void main() {
     expect(find.text('A'), findsOneWidget);
     expect(find.text('B'), findsOneWidget);
     expect(find.text('C'), findsOneWidget);
+  });
+
+  testWidgets('toque longo na Caixinha associa tags ao item', (tester) async {
+    tester.view.physicalSize = const Size(500, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    final work = await dependencies.tags.create(
+      name: 'Trabalho',
+      tone: TagTone.primary,
+    );
+    final task = await dependencies.planner.createPostIt(
+      title: 'Comprar pão',
+      type: PostItType.task,
+      startDate: DateOnly(2026, 11, 6),
+    );
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.inbox),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(Key('inbox-postit-${task.id}')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('inbox-tag-selector')), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('inbox-tag-select-${work.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('inbox-tag-save')));
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.postItById(task.id)!.tagIds, [work.id]);
+  });
+
+  testWidgets('toque longo sem tags orienta criar uma tag', (tester) async {
+    tester.view.physicalSize = const Size(500, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    final task = await dependencies.planner.createPostIt(
+      title: 'Sem tag',
+      type: PostItType.task,
+      startDate: DateOnly(2026, 11, 6),
+    );
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.inbox),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(Key('inbox-postit-${task.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('inbox-tag-selector')), findsNothing);
+    expect(find.text(AppStrings.tagCreateFirst), findsOneWidget);
   });
 }
