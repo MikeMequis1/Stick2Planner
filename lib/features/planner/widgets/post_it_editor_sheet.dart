@@ -497,6 +497,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                           PostItType.recurringTodo => AppStrings.recurringShort,
                         }),
                         selected: _type == type,
+                        showCheckmark: false,
                         onSelected: (_) => _changeType(type),
                       ),
                   ],

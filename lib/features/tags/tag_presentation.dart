@@ -30,12 +30,19 @@ String tagToneLabel(TagTone tone) => switch (tone) {
       tone == TagTone.primarySoft ||
       tone == TagTone.secondarySoft ||
       tone == TagTone.tertiarySoft;
+  if (!soft) {
+    return (
+      background: container,
+      foreground: scheme.onSurfaceVariant,
+      accent: base,
+    );
+  }
+  // As variantes suaves precisam ser visivelmente diferentes do tom sólido:
+  // antes o ponto de cor era idêntico e as opções pareciam repetidas.
   return (
-    background: soft
-        ? Color.alphaBlend(container.withValues(alpha: 0.45), scheme.surface)
-        : container,
-    foreground: soft ? scheme.onSurface : scheme.onSurfaceVariant,
-    accent: base,
+    background: Color.alphaBlend(base.withValues(alpha: 0.14), scheme.surface),
+    foreground: scheme.onSurface,
+    accent: Color.alphaBlend(base.withValues(alpha: 0.62), scheme.surface),
   );
 }
 

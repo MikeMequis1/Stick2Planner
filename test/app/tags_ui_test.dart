@@ -48,7 +48,38 @@ void main() {
     expect(find.text('Estudo'), findsOneWidget);
   });
 
-  testWidgets('Caixinha filtra por uma ou mais tags e limpa', (tester) async {    tester.view.physicalSize = const Size(500, 900);
+  testWidgets('Caixinha vazia mostra atalho para criar tags', (tester) async {
+    tester.view.physicalSize = const Size(500, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text(AppStrings.inbox),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.tagFilterEmpty), findsOneWidget);
+    expect(find.text(AppStrings.emptyInbox), findsOneWidget);
+    expect(find.text(AppStrings.inboxPlaceholderBody), findsOneWidget);
+    expect(find.text(AppStrings.tagNew), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('inbox-manage-tags')));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.tagsTitle), findsOneWidget);
+  });
+
+  testWidgets('Caixinha filtra por uma ou mais tags e limpa', (tester) async {
+    tester.view.physicalSize = const Size(500, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

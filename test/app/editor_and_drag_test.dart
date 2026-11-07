@@ -121,6 +121,12 @@ void main() {
 
     await openEditor(tester);
     expect(description(), AppStrings.taskTypeHelp);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.byKey(const Key('editor-type-task')))
+          .showCheckmark,
+      isFalse,
+    );
 
     await tester.tap(find.byKey(const Key('editor-type-event')));
     await tester.pumpAndSettle();

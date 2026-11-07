@@ -39,11 +39,9 @@ abstract final class AppStrings {
     'The day grid, post-its and drag gestures arrive in the next stage. The date and preferences are already persisted.',
   );
 
-  static String get inboxPlaceholderTitle =>
-      _t('Caixinha em construção', 'Inbox under construction');
   static String get inboxPlaceholderBody => _t(
-    'Filtros por estado, busca e tarefas sem data chegam na Etapa 4.',
-    'Status filters, search and undated tasks arrive in Stage 4.',
+    'Crie um post-it na agenda ou aqui e use tags para organizar seus itens.',
+    'Create a post-it in the calendar or here and use tags to organize your items.',
   );
 
   static String get notesEmptyMessage => _t(
@@ -206,6 +204,10 @@ abstract final class AppStrings {
   static String get sortTitle => _t('Título', 'Title');
   static String get noResults =>
       _t('Nenhum post-it encontrado.', 'No post-it found.');
+  static String get noResultsBody => _t(
+    'Tente outro título, detalhe ou nota.',
+    'Try another title, detail or note.',
+  );
   static String get editInInbox => _t('Editar', 'Edit');
   static String get statusMenu => _t('Ações de estado', 'Status actions');
 
@@ -225,8 +227,6 @@ abstract final class AppStrings {
   static String get paletteSunset => _t('Pôr do sol', 'Sunset');
   static String get paletteLavender => _t('Lavanda', 'Lavender');
   static String get paletteRose => _t('Rosa', 'Rose');
-  static String get paletteTeal => _t('Verde-água', 'Teal');
-  static String get paletteSand => _t('Areia', 'Sand');
   static String get paletteGraphite => _t('Grafite', 'Graphite');
   static String get settingsPaletteHelp => _t(
     'Gradiente de fundo e cor de destaque do aplicativo.',
@@ -282,6 +282,16 @@ abstract final class AppStrings {
   );
   static String get tagFilter => _t('Filtrar por tags', 'Filter by tags');
   static String get tagFilterClear => _t('Limpar tags', 'Clear tags');
+  static String get tagFilterEmpty => _t(
+    'Nenhuma tag criada ainda. Crie uma para filtrar a Caixinha.',
+    'No tags yet. Create one to filter the Inbox.',
+  );
+  static String get tagFilterNoMatches =>
+      _t('Nenhum item com essas tags.', 'No items with these tags.');
+  static String get tagFilterNoMatchesBody => _t(
+    'Limpe o filtro ou selecione outras tags para ver mais itens.',
+    'Clear the filter or select other tags to see more items.',
+  );
   static String get tagNone => _t('Sem tags', 'No tags');
   static String get tagManage => _t('Gerenciar tags', 'Manage tags');
   static String get tagDeleted => _t('Tag excluída.', 'Tag deleted.');

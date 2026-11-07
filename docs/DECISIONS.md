@@ -310,6 +310,10 @@ stages. Each item: context, decision, consequence.
   rows keep the type label and optional time.
 - New palettes are additive enum values; the persisted setting remains the palette
   name, so existing selections are unaffected.
+- Soft tag tones use a lighter accent over the surface, keeping all six selector
+  swatches visually distinct from their solid counterparts.
+- The Inbox keeps the tag selection at the top, with a manage/new-tag button and
+  empty states for no tags, no tag matches and no search results.
 
 ## Localization
 
@@ -348,8 +352,8 @@ stages. Each item: context, decision, consequence.
 - **Language:** Portuguese (BR) and English, persisted in `app_settings`.
   `AppStrings` resolves texts at runtime; `DateFormats.locale` chooses the
   date patterns. No external service and no app restart.
-- **Palettes:** eight gradients (Green, Ocean, Sunset, Lavender, Rose, Teal, Sand,
-  Graphite) combined with light/dark; the seed color still comes from Material 3.
+- **Palettes:** six gradients (Green, Ocean, Sunset, Lavender, Rose, Graphite)
+  combined with light/dark; the seed color still comes from Material 3.
 - **Performance:** the split release build is the reference. Debug loads runtime and
   symbols (~188 MB); arm64 release ~21 MB. Main grid in
   `RepaintBoundary`; animations can be turned off in Settings.

@@ -40,7 +40,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
   antes de aplicar.
 - **Backup:** exportação JSON versionada com checksum, importação transacional e
   snapshots automáticos.
-- **Configurações:** tema claro/escuro/sistema, oito paletas, português/inglês,
+- **Configurações:** tema claro/escuro/sistema, seis paletas, português/inglês,
   animações, manter tela ligada e dicas de gestos.
 - **Página web administrativa:** QR de pareamento ao vivo, renomear/revogar
   dispositivos e interface português/inglês, servida pelo servidor opcional.

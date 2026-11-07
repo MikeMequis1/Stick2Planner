@@ -251,9 +251,9 @@ etapas. Cada item: contexto, decisão, consequência.
   horizontal folheia com rotação 3D (520 ms) e a mudança vertical de dias usa
   morphing fade + escala (360 ms). Redimensionamento acompanha o dedo em tempo
   real. O post-it destacado usa borda, escala 1,05 e elevação por 4 s.
-- **Configurações:** tela com tema Sistema/Claro/Escuro, oito paletas com
-  gradiente (Verde, Oceano, Pôr do sol, Lavanda, Rosa, Verde-água, Areia e
-  Grafite), animações, manter tela
+- **Configurações:** tela com tema Sistema/Claro/Escuro, seis paletas com
+  gradiente (Verde, Oceano, Pôr do sol, Lavanda, Rosa e Grafite), animações,
+  manter tela
   ligada e dicas da agenda. Preferências ficam em `app_settings`; desligar
   animações zera as transições principais e o folhear/morphing. O acesso à
   sincronização fica em “Conexão e sincronização” e “Sobre o aplicativo” abre
@@ -310,6 +310,11 @@ etapas. Cada item: contexto, decisão, consequência.
   As linhas de evento mantêm o rótulo do tipo e o horário opcional.
 - As novas paletas são valores adicionais do enum; a preferência continua salva
   pelo nome da paleta, então seleções existentes não mudam.
+- Os tons suaves de tag usam um destaque mais claro sobre a superfície, mantendo
+  as seis opções do seletor visivelmente diferentes das sólidas.
+- A Caixinha mantém a seleção de tags no topo, com botão de gerenciar/nova tag e
+  estados vazios para ausência de tags, filtro sem resultados e busca sem
+  resultados.
 
 ## Localização
 
@@ -348,9 +353,9 @@ etapas. Cada item: contexto, decisão, consequência.
 - **Idioma:** Português (BR) e English, persistido em `app_settings`.
   `AppStrings` resolve textos em runtime; `DateFormats.locale` escolhe os
   padrões de data. Sem serviço externo e sem reiniciar o app.
-- **Paletas:** oito gradientes (Verde, Oceano, Pôr do sol, Lavanda, Rosa,
-  Verde-água, Areia, Grafite) combinados com claro/escuro; a cor-semente
-  continua vindo do Material 3.
+- **Paletas:** seis gradientes (Verde, Oceano, Pôr do sol, Lavanda, Rosa e
+  Grafite) combinados com claro/escuro; a cor-semente continua vindo do
+  Material 3.
 - **Desempenho:** build release split é a referência. O debug carrega runtime e
   símbolos (~188 MB); release arm64 ~21 MB. Grade principal em
   `RepaintBoundary`; animações podem ser desligadas em Configurações.

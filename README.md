@@ -39,7 +39,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
   applying changes.
 - **Backup:** versioned JSON export with checksum, transactional import and
   automatic snapshots.
-- **Settings:** light/dark/system theme, eight color palettes, Portuguese/English,
+- **Settings:** light/dark/system theme, six color palettes, Portuguese/English,
   animations, screen wake lock and gesture hints.
 - **Admin web page:** live pairing QR, device rename/revoke and Portuguese/English
   UI, served by the optional sync server.

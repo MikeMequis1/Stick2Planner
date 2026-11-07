@@ -33,7 +33,7 @@ String postItSymbol(PostIt postIt) {
 }
 
 IconData postItTypeIcon(PostItType type) => switch (type) {
-  PostItType.task => Icons.check_box_outline_blank,
+  PostItType.task => Icons.check_box_outlined,
   PostItType.event => Icons.event_outlined,
   PostItType.recurringTodo => Icons.repeat,
 };

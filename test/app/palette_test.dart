@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stick2planner/app/theme/app_palette.dart';
 import 'package:stick2planner/app/theme/app_theme.dart';
+import 'package:stick2planner/domain/entities/tag.dart';
+import 'package:stick2planner/features/tags/tag_presentation.dart';
 
 double _contrast(Color foreground, Color background) {
   final light = foreground.computeLuminance();
@@ -13,7 +15,7 @@ double _contrast(Color foreground, Color background) {
 
 void main() {
   test('paletas oferecem tons variados com rótulos próprios', () {
-    expect(AppPalette.values, hasLength(8));
+    expect(AppPalette.values, hasLength(6));
     expect(
       AppPalette.values.map((palette) => palette.seed.toARGB32()).toSet(),
       hasLength(AppPalette.values.length),
@@ -73,6 +75,23 @@ void main() {
           _contrast(scheme.onTertiaryContainer, scheme.tertiaryContainer),
           greaterThan(4.5),
           reason: reason,
+        );
+      }
+    }
+  });
+
+  test('tons de tag têm cores distintas no seletor', () {
+    for (final palette in AppPalette.values) {
+      for (final theme in [AppTheme.light(palette), AppTheme.dark(palette)]) {
+        final scheme = theme.colorScheme;
+        final accents = {
+          for (final tone in TagTone.values)
+            tagToneColors(tone, scheme).accent.toARGB32(),
+        };
+        expect(
+          accents,
+          hasLength(TagTone.values.length),
+          reason: '${palette.name} ${theme.brightness}',
         );
       }
     }

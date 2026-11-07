@@ -14,7 +14,7 @@ sync, backup, web page and phone adjustments).
 - Navigation: linked/snapshot post-it → Schedule → existing detail; Inbox with
   "Open in Schedule" for dated post-its.
 - Local persistence: drift/SQLite, transactions, migrations v1 → v7 and tombstones.
-- Settings: theme, Portuguese/English language, eight palettes with gradient,
+- Settings: theme, Portuguese/English language, six palettes with gradient,
   animations, wakelock, tips, connection/sync and shortcut to the About screen.
 - About: installed version read from the package, description and GitHub links.
 - Backup: versioned JSON with canonical checksum, version/schema validation,
@@ -117,6 +117,6 @@ dart test
 ## Result
 
 - `flutter analyze`: no issues.
-- `flutter test`: 268 tests passed.
+- `flutter test`: 270 tests passed.
 - `dart analyze` / `dart test` in the server: no issues; 16 tests passed.
 - `flutter build apk --release --split-per-abi`: passed and installed on the phone.

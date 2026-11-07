@@ -180,6 +180,41 @@ class _TagDialogState extends State<_TagDialog> {
     super.dispose();
   }
 
+  Widget _toneSwatch({
+    required TagTone tone,
+    required ColorScheme scheme,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final accent = tagToneColors(tone, scheme).accent;
+    final checkColor = accent.computeLuminance() > 0.5
+        ? Colors.black87
+        : Colors.white;
+    return Tooltip(
+      message: tagToneLabel(tone),
+      child: InkWell(
+        key: Key('tag-tone-${tone.name}'),
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: accent,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected ? scheme.onSurface : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: selected
+              ? Icon(Icons.check, size: 18, color: checkColor)
+              : null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -212,30 +247,11 @@ class _TagDialogState extends State<_TagDialog> {
               runSpacing: 10,
               children: [
                 for (final tone in TagTone.values)
-                  Tooltip(
-                    message: tagToneLabel(tone),
-                    child: InkWell(
-                      key: Key('tag-tone-${tone.name}'),
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: () => setState(() => _tone = tone),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: tagToneColors(tone, scheme).accent,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _tone == tone
-                                ? scheme.onSurface
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: _tone == tone
-                            ? Icon(Icons.check, size: 18, color: scheme.surface)
-                            : null,
-                      ),
-                    ),
+                  _toneSwatch(
+                    tone: tone,
+                    scheme: scheme,
+                    selected: _tone == tone,
+                    onTap: () => setState(() => _tone = tone),
                   ),
               ],
             ),

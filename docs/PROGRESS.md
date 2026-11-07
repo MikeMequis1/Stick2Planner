@@ -1394,15 +1394,21 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 
 ## Palette, type descriptions and event preview (2026-11-06)
 
-- `AppPalette` now offers eight tones: the original Green, Ocean, Sunset and
-  Lavender plus Rose, Teal, Sand and Graphite. Each keeps a three-stop light/dark
-  gradient and derives all component colors from its Material 3 seed, so user
-  data and already-assigned item colors are untouched.
+- `AppPalette` now offers six distinct tones: Green, Ocean, Sunset, Lavender,
+  Rose and Graphite. Each keeps a three-stop light/dark gradient and derives all
+  component colors from its Material 3 seed, so user data and already-assigned
+  item colors are untouched.
 - Type selection shows one shared description card under the chips. Task, Event,
   Pending and Feat descriptions follow the previous Pending card style and update
   with the selected type; Feat reuses the positive-moments help text.
 - The long-press day preview now resolves items through `itemsCoveringDate`, so
   tasks and events share the same rows, type label and optional time. The gesture,
   filters and item IDs are unchanged.
+- The Inbox shows the tag selection at the top, a **New tag/Manage tags** button,
+  and a dedicated empty message for no tags, no tag matches or no search results.
+- Tag tone swatches no longer repeat the solid color: soft variants use a lighter
+  accent, so all six selector options are visibly different.
+- The task type icon is now a checked box (☑) and the editor type chips no longer
+  show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **268 tests passing**; server: **16 tests passing**.
+- `flutter test`: **270 tests passing**; server: **16 tests passing**.

@@ -10,6 +10,7 @@ import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
 import '../shared/empty_state.dart';
 import '../tags/tag_presentation.dart';
+import '../tags/tags_page.dart';
 
 enum _InboxFilter { all, active, done, cancelled, undated }
 
@@ -39,7 +40,10 @@ class _InboxPageState extends State<InboxPage> {
     super.dispose();
   }
 
-  List<PostIt> _visiblePostIts(PlannerController planner) {
+  List<PostIt> _visiblePostIts(
+    PlannerController planner,
+    Set<String> selectedTagIds,
+  ) {
     final query = _query.trim().toLowerCase();
     final items = planner.postIts.where((postIt) {
       final matchesFilter = switch (_filter) {
@@ -50,8 +54,8 @@ class _InboxPageState extends State<InboxPage> {
         _InboxFilter.undated => postIt.startDate == null,
       };
       if (!matchesFilter) return false;
-      if (_selectedTagIds.isNotEmpty &&
-          !postIt.tagIds.any(_selectedTagIds.contains)) {
+      if (selectedTagIds.isNotEmpty &&
+          !postIt.tagIds.any(selectedTagIds.contains)) {
         return false;
       }
       if (query.isEmpty) return true;
@@ -109,6 +113,16 @@ class _InboxPageState extends State<InboxPage> {
     openPostItDetailsById(context, postItId: postIt.id, goToAgenda: false);
   }
 
+  Future<void> _openTags() async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const TagsPage()));
+    if (!mounted) return;
+    setState(() {
+      final available = AppScope.of(context).tags.byIdMap.keys.toSet();
+      _selectedTagIds.removeWhere((id) => !available.contains(id));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final planner = AppScope.of(context).planner;
@@ -121,14 +135,77 @@ class _InboxPageState extends State<InboxPage> {
           return Center(child: CircularProgressIndicator());
         }
 
-        final items = _visiblePostIts(planner);
+        final availableTagIds = tags.byIdMap.keys.toSet();
+        final selectedTagIds = _selectedTagIds.intersection(availableTagIds);
+        final items = _visiblePostIts(planner, selectedTagIds);
         final shortHeight = MediaQuery.sizeOf(context).height < 520;
+        final hasQuery = _query.trim().isNotEmpty;
+        final hasTagFilter = selectedTagIds.isNotEmpty;
 
         return Padding(
           padding: EdgeInsets.fromLTRB(16, shortHeight ? 4 : 8, 16, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      AppStrings.tagFilter,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                  TextButton.icon(
+                    key: const Key('inbox-manage-tags'),
+                    onPressed: _openTags,
+                    icon: Icon(
+                      tags.tags.isEmpty ? Icons.add : Icons.sell_outlined,
+                      size: 18,
+                    ),
+                    label: Text(
+                      tags.tags.isEmpty
+                          ? AppStrings.tagNew
+                          : AppStrings.tagManage,
+                    ),
+                  ),
+                ],
+              ),
+              if (tags.tags.isEmpty)
+                Text(
+                  AppStrings.tagFilterEmpty,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final tag in tags.tags) ...[
+                        TagChip(
+                          key: Key('inbox-tag-filter-${tag.id}'),
+                          tag: tag,
+                          selected: selectedTagIds.contains(tag.id),
+                          onTap: () => setState(() {
+                            if (!_selectedTagIds.remove(tag.id)) {
+                              _selectedTagIds.add(tag.id);
+                            }
+                          }),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      if (hasTagFilter)
+                        ActionChip(
+                          key: const Key('inbox-tag-clear'),
+                          avatar: const Icon(Icons.clear, size: 16),
+                          label: Text(AppStrings.tagFilterClear),
+                          onPressed: () => setState(_selectedTagIds.clear),
+                        ),
+                    ],
+                  ),
+                ),
+              SizedBox(height: shortHeight ? 6 : 10),
               TextField(
                 key: Key('inbox-search'),
                 controller: _searchController,
@@ -168,36 +245,6 @@ class _InboxPageState extends State<InboxPage> {
                   ],
                 ),
               ),
-              if (tags.tags.isNotEmpty) ...[
-                SizedBox(height: shortHeight ? 2 : 4),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final tag in tags.tags) ...[
-                        TagChip(
-                          key: Key('inbox-tag-filter-${tag.id}'),
-                          tag: tag,
-                          selected: _selectedTagIds.contains(tag.id),
-                          onTap: () => setState(() {
-                            if (!_selectedTagIds.remove(tag.id)) {
-                              _selectedTagIds.add(tag.id);
-                            }
-                          }),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      if (_selectedTagIds.isNotEmpty)
-                        ActionChip(
-                          key: const Key('inbox-tag-clear'),
-                          avatar: const Icon(Icons.clear, size: 16),
-                          label: Text(AppStrings.tagFilterClear),
-                          onPressed: () => setState(_selectedTagIds.clear),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
               SizedBox(height: shortHeight ? 2 : 4),
               Row(
                 children: [
@@ -233,11 +280,21 @@ class _InboxPageState extends State<InboxPage> {
               Expanded(
                 child: items.isEmpty
                     ? EmptyState(
-                        icon: Icons.inbox_outlined,
-                        title: _query.isNotEmpty
+                        icon: hasQuery
+                            ? Icons.search_off
+                            : hasTagFilter
+                            ? Icons.sell_outlined
+                            : Icons.inbox_outlined,
+                        title: hasQuery
                             ? AppStrings.noResults
+                            : hasTagFilter
+                            ? AppStrings.tagFilterNoMatches
                             : AppStrings.emptyInbox,
-                        message: AppStrings.inboxPlaceholderBody,
+                        message: hasQuery
+                            ? AppStrings.noResultsBody
+                            : hasTagFilter
+                            ? AppStrings.tagFilterNoMatchesBody
+                            : AppStrings.inboxPlaceholderBody,
                       )
                     : ListView.separated(
                         padding: EdgeInsets.symmetric(vertical: 12),
