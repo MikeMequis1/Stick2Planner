@@ -9,11 +9,11 @@ sync, backup, web page and phone adjustments).
 
 - Visual schedule: periods, continuous events, creation, editing, dragging,
   reordering, resizing, states, recurrence and a 4-day anchored window.
-- Event recurrence: daily, every N weeks, every N months and yearly.\n- Inbox: filters, search, undated tasks and access to details.
+- Event recurrence: daily, every N weeks, every N months and yearly.\n- Event time, shared tags and automatic event completion.\n- Inbox: filters, search, undated tasks and access to details.
 - Notes: Markdown text, lists, snapshots and links to post-its.
 - Navigation: linked/snapshot post-it → Schedule → existing detail; Inbox with
   "Open in Schedule" for dated post-its.
-- Local persistence: drift/SQLite, transactions, migrations v1 → v6 and tombstones.
+- Local persistence: drift/SQLite, transactions, migrations v1 → v7 and tombstones.
 - Settings: theme, Portuguese/English language, four palettes with gradient,
   animations, wakelock, tips, connection/sync and shortcut to the About screen.
 - About: installed version read from the package, description and GitHub links.
@@ -117,6 +117,6 @@ dart test
 ## Result
 
 - `flutter analyze`: no issues.
-- `flutter test`: 252 tests passed.
-- `dart analyze` / `dart test` in the server: no issues; 15 tests passed.
+- `flutter test`: 264 tests passed.
+- `dart analyze` / `dart test` in the server: no issues; 16 tests passed.
 - `flutter build apk --release --split-per-abi`: passed and installed on the phone.

@@ -181,6 +181,8 @@ usuário decidir.
 - O servidor armazena os campos de forma opaca; as ocorrências são geradas no
   aparelho para o período visível e não viram registros separados.
 - Payloads antigos sem os campos assumem sem repetição e intervalo 1.
+- Post-its também carregam `timeMinutes` opcional e `tagIds`; definições de tag
+  usam a entidade `tag`. Payloads antigos assumem sem horário e sem tags.
 
 ## Notas e vínculos
 

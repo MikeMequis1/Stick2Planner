@@ -305,11 +305,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SegmentedButton<PostItType>), findsOneWidget);
-    final taskSelector = tester.widget<SegmentedButton<PostItType>>(
-      find.byType(SegmentedButton<PostItType>),
+    expect(find.byType(ChoiceChip), findsWidgets);
+    ChoiceChip typeChip(String label) => tester.widget<ChoiceChip>(
+      find.ancestor(of: find.text(label), matching: find.byType(ChoiceChip)),
     );
-    expect(taskSelector.selected, {PostItType.task});
+    expect(typeChip(AppStrings.taskType).selected, isTrue);
 
     await tester.tap(find.text(AppStrings.cancel));
     await tester.pumpAndSettle();
@@ -321,11 +321,8 @@ void main() {
     await tester.tap(day);
     await tester.pumpAndSettle();
 
-    expect(find.byType(SegmentedButton<PostItType>), findsOneWidget);
-    final eventSelector = tester.widget<SegmentedButton<PostItType>>(
-      find.byType(SegmentedButton<PostItType>),
-    );
-    expect(eventSelector.selected, {PostItType.event});
+    expect(find.byType(ChoiceChip), findsWidgets);
+    expect(typeChip(AppStrings.eventType).selected, isTrue);
   });
 
   testWidgets('segurar um dia mostra prévia e soltar fecha', (tester) async {
@@ -577,6 +574,34 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('calendar-swipe-area')), findsOneWidget);
     expect(find.byKey(const Key('add-post-it')), findsOneWidget);
+  });
+
+  testWidgets('dias anteriores recebem indicação visual', (tester) async {
+    await pumpPlanner(tester, size: const Size(1280, 800));
+
+    expect(find.byKey(const Key('day-past-2026-11-02')), findsOneWidget);
+    expect(find.byKey(const Key('day-past-2026-11-03')), findsOneWidget);
+    expect(find.byKey(const Key('day-past-2026-11-04')), findsNothing);
+    expect(find.byKey(const Key('day-past-2026-11-05')), findsNothing);
+  });
+
+  testWidgets('horário do evento aparece na barra', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'timed',
+          title: 'Reunião',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 5),
+          timeMinutes: 9 * 60 + 30,
+        ),
+      ],
+    );
+
+    expect(find.text('09:30'), findsWidgets);
   });
 
   testWidgets('celular em retrato não estoura', (tester) async {

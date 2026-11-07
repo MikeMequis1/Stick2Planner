@@ -9,6 +9,7 @@ import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
 import '../shared/empty_state.dart';
+import '../tags/tag_presentation.dart';
 
 enum _InboxFilter { all, active, done, cancelled, undated }
 
@@ -30,6 +31,7 @@ class _InboxPageState extends State<InboxPage> {
   _InboxFilter _filter = _InboxFilter.all;
   _InboxSort _sort = _InboxSort.date;
   String _query = '';
+  final Set<String> _selectedTagIds = {};
 
   @override
   void dispose() {
@@ -48,6 +50,10 @@ class _InboxPageState extends State<InboxPage> {
         _InboxFilter.undated => postIt.startDate == null,
       };
       if (!matchesFilter) return false;
+      if (_selectedTagIds.isNotEmpty &&
+          !postIt.tagIds.any(_selectedTagIds.contains)) {
+        return false;
+      }
       if (query.isEmpty) return true;
       return postIt.title.toLowerCase().contains(query) ||
           (postIt.details?.toLowerCase().contains(query) ?? false) ||
@@ -106,9 +112,10 @@ class _InboxPageState extends State<InboxPage> {
   @override
   Widget build(BuildContext context) {
     final planner = AppScope.of(context).planner;
+    final tags = AppScope.of(context).tags;
 
     return ListenableBuilder(
-      listenable: planner,
+      listenable: Listenable.merge([planner, tags]),
       builder: (context, _) {
         if (planner.isLoading) {
           return Center(child: CircularProgressIndicator());
@@ -161,6 +168,36 @@ class _InboxPageState extends State<InboxPage> {
                   ],
                 ),
               ),
+              if (tags.tags.isNotEmpty) ...[
+                SizedBox(height: shortHeight ? 2 : 4),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final tag in tags.tags) ...[
+                        TagChip(
+                          key: Key('inbox-tag-filter-${tag.id}'),
+                          tag: tag,
+                          selected: _selectedTagIds.contains(tag.id),
+                          onTap: () => setState(() {
+                            if (!_selectedTagIds.remove(tag.id)) {
+                              _selectedTagIds.add(tag.id);
+                            }
+                          }),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      if (_selectedTagIds.isNotEmpty)
+                        ActionChip(
+                          key: const Key('inbox-tag-clear'),
+                          avatar: const Icon(Icons.clear, size: 16),
+                          label: Text(AppStrings.tagFilterClear),
+                          onPressed: () => setState(_selectedTagIds.clear),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
               SizedBox(height: shortHeight ? 2 : 4),
               Row(
                 children: [
@@ -258,6 +295,7 @@ class _InboxRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPostponed = planner.isPostponed(postIt);
+    final tagsById = AppScope.of(context).tags.byIdMap;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -348,6 +386,18 @@ class _InboxRow extends StatelessWidget {
             ],
           ),
         ),
+        if (postIt.tagIds.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 4),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final tagId in postIt.tagIds)
+                  if (tagsById[tagId] != null) TagChip(tag: tagsById[tagId]!),
+              ],
+            ),
+          ),
       ],
     );
   }

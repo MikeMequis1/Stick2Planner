@@ -152,6 +152,9 @@ final class SyncEngine {
             case syncEntityHistory:
               await _apply.applyHistory(change.payload, change.rev);
               break;
+            case syncEntityTag:
+              await _apply.applyTag(change.payload, change.rev);
+              break;
           }
         }
         await _state.setCursor(snapshot.cursor);
@@ -419,6 +422,8 @@ final class SyncEngine {
         await _apply.applyPostIt(change.payload, change.rev);
       case syncEntityHistory:
         await _apply.applyHistory(change.payload, change.rev);
+      case syncEntityTag:
+        await _apply.applyTag(change.payload, change.rev);
       default:
         throw SyncException('entidade desconhecida ${change.entity}');
     }
@@ -428,9 +433,10 @@ final class SyncEngine {
     List<SyncRemoteChange> changes,
   ) {
     int priority(String entity) => switch (entity) {
-      syncEntityNote => 0,
-      syncEntityPostIt => 1,
-      _ => 2,
+      syncEntityTag => 0,
+      syncEntityNote => 1,
+      syncEntityPostIt => 2,
+      _ => 3,
     };
     return [...changes]
       ..sort((a, b) => priority(a.entity).compareTo(priority(b.entity)));
@@ -440,9 +446,10 @@ final class SyncEngine {
     List<SyncSnapshotEntity> entities,
   ) {
     int priority(String entity) => switch (entity) {
-      syncEntityNote => 0,
-      syncEntityPostIt => 1,
-      _ => 2,
+      syncEntityTag => 0,
+      syncEntityNote => 1,
+      syncEntityPostIt => 2,
+      _ => 3,
     };
     return [...entities]
       ..sort((a, b) => priority(a.entity).compareTo(priority(b.entity)));

@@ -1320,7 +1320,7 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 ### Validation
 
 - `flutter analyze`: no issues.
-- `flutter test`: **252 tests passing**.
+- `flutter test`: **264 tests passing**.
 - `dart analyze` / `dart test` on the server: no issues; **15 tests passing**.
 - Server rebuilt and `GET /v1/health` responding; release installed on the
   phone.
@@ -1337,7 +1337,7 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   notes/post-its zeroes the displayed counts. The JSON still stores the
   tombstones and history; old backups with legacy counts remain
   accepted.
-- `flutter test`: **252 tests passing**; server: **15 tests passing**.
+- `flutter test`: **264 tests passing**; server: **16 tests passing**.
 
 ## Event recurrence and Pending label (2026-11-05)
 
@@ -1371,3 +1371,23 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   updated to the new repository.
 - Both `Stick2Planner` and `stick2server` are public; the app README links the
   source repository and the server README links the app repository.
+
+## Calendar, time, tags and completion (2026-11-06)
+
+- Past days use a muted gray tint in every calendar view, while today and future
+  days keep the normal surface; the day header uses a muted foreground.
+- Events accept an optional time stored as minutes from local midnight. It is
+  shown on the event bar and inbox tile, never substituted for dates/timestamps.
+- Shared tags (name + palette tone) can be created, edited and deleted; deletion
+  removes associations without deleting post-its. Tags are assigned in the editor
+  and shown in details, inbox rows and the Inbox tag filter.
+- Schema v7 adds `post_its.time_minutes`, `post_its.tag_ids` and the `tags` table.
+  Sync payloads/backups carry the fields; old payloads/backups default to no time,
+  no tags and no recurrence.
+- Type selection uses icons; the former highlighted event is now **Done/feito**
+  with a pencil icon and an info dialog.
+- Events with an `endDate` before today are automatically marked done on startup,
+  resume, refresh and before mutations, with a single `eventCompleted` history
+  entry. Events without an end date are unchanged.
+- The task details title icon toggles done/reopen immediately.
+- `flutter test`: **264 tests passing**; server: **16 tests passing**.

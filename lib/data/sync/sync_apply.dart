@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../data/db/app_database.dart';
 import '../../data/db/converters.dart';
 import '../../data/mappers/mappers.dart';
@@ -54,6 +56,30 @@ final class SyncApplyService {
           .into(_db.postItHistoryEntries)
           .insertOnConflictUpdate(postItHistoryToCompanion(entry));
       await _recordRev(syncEntityHistory, entry.id, rev);
+    });
+  }
+
+  Future<void> applyTag(Map<String, Object?> payload, int rev) async {
+    final tag = tagFromPayload(payload);
+    await _db.transaction(() async {
+      await _db.into(_db.tags).insertOnConflictUpdate(tagToCompanion(tag));
+      if (tag.isDeleted) {
+        final rows = await _db.select(_db.postIts).get();
+        for (final row in rows) {
+          if (!row.tagIds.contains(tag.id)) continue;
+          await (_db.update(
+            _db.postIts,
+          )..where((table) => table.id.equals(row.id))).write(
+            PostItsCompanion(
+              tagIds: Value([
+                for (final id in row.tagIds)
+                  if (id != tag.id) id,
+              ]),
+            ),
+          );
+        }
+      }
+      await _recordRev(syncEntityTag, tag.id, rev);
     });
   }
 

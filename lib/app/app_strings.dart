@@ -242,6 +242,53 @@ abstract final class AppStrings {
   );
   static String get settingsAgendaBehavior =>
       _t('Comportamento da agenda', 'Calendar behavior');
+  static String get settingsTags => _t('Tags', 'Tags');
+  static String get settingsTagsHelp => _t(
+    'Criar, editar e excluir tags compartilhadas.',
+    'Create, edit and delete shared tags.',
+  );
+  static String get tagsTitle => _t('Tags', 'Tags');
+  static String get tagsEmpty => _t(
+    'Nenhuma tag criada ainda. Crie uma para identificar eventos e tarefas.',
+    'No tags yet. Create one to label events and tasks.',
+  );
+  static String get tagNew => _t('Nova tag', 'New tag');
+  static String get tagEdit => _t('Editar tag', 'Edit tag');
+  static String get tagName => _t('Nome da tag', 'Tag name');
+  static String get tagNameEmpty => _t('Informe um nome.', 'Enter a name.');
+  static String get tagNameDuplicate => _t(
+    'Já existe uma tag com esse nome.',
+    'A tag with this name already exists.',
+  );
+  static String get tagNameLong =>
+      _t('Use no máximo 40 caracteres.', 'Use at most 40 characters.');
+  static String get tagColor => _t('Cor', 'Color');
+  static String get tagTonePrimary => _t('Destaque', 'Accent');
+  static String get tagToneSecondary => _t('Secundária', 'Secondary');
+  static String get tagToneTertiary => _t('Terciária', 'Tertiary');
+  static String get tagTonePrimarySoft => _t('Destaque suave', 'Soft accent');
+  static String get tagToneSecondarySoft =>
+      _t('Secundária suave', 'Soft secondary');
+  static String get tagToneTertiarySoft =>
+      _t('Terciária suave', 'Soft tertiary');
+  static String get tagDeleteTitle => _t('Excluir tag?', 'Delete tag?');
+  static String get tagDeleteBody => _t(
+    'A tag será removida dos eventos e tarefas, mas os itens não serão excluídos.',
+    'The tag will be removed from events and tasks, but the items are kept.',
+  );
+  static String get tagFilter => _t('Filtrar por tags', 'Filter by tags');
+  static String get tagFilterClear => _t('Limpar tags', 'Clear tags');
+  static String get tagNone => _t('Sem tags', 'No tags');
+  static String get tagManage => _t('Gerenciar tags', 'Manage tags');
+  static String get tagDeleted => _t('Tag excluída.', 'Tag deleted.');
+  static String get tagSaved => _t('Tag salva.', 'Tag saved.');
+  static String get eventTime => _t('Horário', 'Time');
+  static String get eventTimeAdd => _t('Adicionar horário', 'Add time');
+  static String get eventTimeClear => _t('Remover horário', 'Remove time');
+  static String get eventTimeHelp => _t(
+    'Opcional, exibido no post-it do evento.',
+    'Optional, shown on the event post-it.',
+  );
   static String get settingsHints =>
       _t('Mostrar dicas de gestos na agenda', 'Show calendar gesture hints');
   static String get settingsHintsHelp => _t(
@@ -503,9 +550,12 @@ abstract final class AppStrings {
   static String get taskType => _t('Tarefa', 'Task');
   static String get eventType => _t('Evento', 'Event');
   static String get recurringType => _t('Pendência', 'Pending');
-  static String get highlightType => _t('Evento marcante', 'Highlighted event');
+  static String get highlightType => _t('Done/feito', 'Done/feito');
   static String get eventSymbol => '✮';
-  static String get highlightSymbol => '+';
+  static String get doneInfo => _t(
+    'Use para registrar acontecimentos positivos, pequenas conquistas ou coisas boas que aconteceram no seu dia. :)',
+    'Use it to record positive moments, small achievements or good things that happened in your day. :)',
+  );
 
   static String get detailsTitle =>
       _t('Detalhes do post-it', 'Post-it details');
@@ -536,8 +586,7 @@ abstract final class AppStrings {
   static String get fieldNoDate => _t('Sem data', 'Undated');
   static String get fieldStartDate => _t('Início', 'Start');
   static String get fieldEndDate => _t('Fim', 'End');
-  static String get fieldHighlight =>
-      _t('Evento marcante (+)', 'Highlighted event (+)');
+  static String get fieldHighlight => _t('Done/feito', 'Done/feito');
   static String get save => _t('Salvar', 'Save');
   static String get cancel => _t('Cancelar', 'Cancel');
   static String get edit => _t('Editar', 'Edit');
@@ -589,8 +638,8 @@ abstract final class AppStrings {
     'Only events can span multiple days.',
   );
   static String get errorHighlightEvent => _t(
-    'O símbolo + só pode ser usado em eventos.',
-    'The + symbol can only be used on events.',
+    'Done/feito só pode ser usado em eventos.',
+    'Done/feito can only be used on events.',
   );
   static String get errorRecurrenceEvent =>
       _t('Somente eventos podem se repetir.', 'Only events can repeat.');

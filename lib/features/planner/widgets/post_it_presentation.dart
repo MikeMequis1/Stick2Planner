@@ -19,22 +19,24 @@ String postItStatusLabel(PostItStatus status) => switch (status) {
   PostItStatus.cancelled => AppStrings.cancelled,
 };
 
-/// Símbolo literal do tipo: `+` para marcante, `✮` para evento.
+/// Símbolo literal do tipo; Done/feito usa apenas o ícone de lápis.
 String postItSymbol(PostIt postIt) {
-  if (postIt.isHighlight) return AppStrings.highlightSymbol;
+  if (postIt.isHighlight) return '';
   if (postIt.isEvent) return AppStrings.eventSymbol;
   return '';
 }
 
+IconData postItTypeIcon(PostItType type) => switch (type) {
+  PostItType.task => Icons.check_box_outline_blank,
+  PostItType.event => Icons.event_outlined,
+  PostItType.recurringTodo => Icons.repeat,
+};
+
 IconData postItIcon(PostIt postIt) {
   if (postIt.status == PostItStatus.done) return Icons.check_circle_outline;
   if (postIt.status == PostItStatus.cancelled) return Icons.cancel_outlined;
-  if (postIt.isHighlight) return Icons.add_circle_outline;
-  return switch (postIt.type) {
-    PostItType.task => Icons.check_box_outline_blank,
-    PostItType.event => Icons.star_border,
-    PostItType.recurringTodo => Icons.repeat,
-  };
+  if (postIt.isHighlight) return Icons.edit_outlined;
+  return postItTypeIcon(postIt.type);
 }
 
 ({Color background, Color foreground}) postItColors(
@@ -77,6 +79,9 @@ String postItSemanticLabel(PostIt postIt) {
   final date = postIt.startDate;
   if (date != null) {
     parts.add(postItDateLabel(postIt));
+  }
+  if (postIt.timeMinutes != null) {
+    parts.add(DateFormats.clockTime(postIt.timeMinutes!));
   }
   return parts.join(', ');
 }

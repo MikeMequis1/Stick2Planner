@@ -27,6 +27,8 @@ final class PostIt {
     this.endDate,
     this.recurrence = EventRecurrence.none,
     this.recurrenceInterval = 1,
+    this.timeMinutes,
+    this.tagIds = const [],
     this.sortOrder = 0,
     this.lastRolloverAt,
     this.deletedAt,
@@ -62,6 +64,12 @@ final class PostIt {
 
   /// Intervalo em semanas ou meses conforme [recurrence].
   final int recurrenceInterval;
+
+  /// Horário opcional do evento em minutos desde a meia-noite.
+  final int? timeMinutes;
+
+  /// IDs das tags associadas; definições ficam em `tags`.
+  final List<String> tagIds;
 
   /// Ordem visual dentro do dia.
   final int sortOrder;
@@ -119,6 +127,8 @@ final class PostIt {
     Object? endDate = _unset,
     EventRecurrence? recurrence,
     int? recurrenceInterval,
+    Object? timeMinutes = _unset,
+    List<String>? tagIds,
     int? sortOrder,
     Object? lastRolloverAt = _unset,
     DateTime? createdAt,
@@ -145,6 +155,10 @@ final class PostIt {
       endDate: identical(endDate, _unset) ? this.endDate : endDate as DateOnly?,
       recurrence: recurrence ?? this.recurrence,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      timeMinutes: identical(timeMinutes, _unset)
+          ? this.timeMinutes
+          : timeMinutes as int?,
+      tagIds: tagIds ?? this.tagIds,
       sortOrder: sortOrder ?? this.sortOrder,
       lastRolloverAt: identical(lastRolloverAt, _unset)
           ? this.lastRolloverAt

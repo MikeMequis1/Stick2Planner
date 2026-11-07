@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_scope.dart';
 import '../../../app/app_strings.dart';
 import '../../../app/controllers/planner_controller.dart';
 import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../../domain/entities/tag.dart';
 import '../../../domain/usecases/validate_post_it.dart';
+import '../../tags/tag_presentation.dart';
+import '../../tags/tags_page.dart';
+import 'post_it_presentation.dart';
 import 'validation_messages.dart';
 
 /// Abre o formulário de criação/edição.
@@ -58,6 +63,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   DateOnly? _endDate;
   late EventRecurrence _recurrence;
   late int _recurrenceInterval;
+  TimeOfDay? _time;
+  late List<String> _selectedTagIds;
   bool _saving = false;
   List<String> _errors = const [];
 
@@ -79,6 +86,11 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     _endDate = existing?.endDate;
     _recurrence = existing?.recurrence ?? EventRecurrence.none;
     _recurrenceInterval = existing?.recurrenceInterval ?? 1;
+    final minutes = existing?.timeMinutes;
+    _time = minutes == null
+        ? null
+        : TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+    _selectedTagIds = [...?existing?.tagIds];
   }
 
   @override
@@ -107,6 +119,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         _isHighlight = false;
         _recurrence = EventRecurrence.none;
         _recurrenceInterval = 1;
+        _time = null;
         if (type == PostItType.recurringTodo) {
           _startDate = null;
         } else {
@@ -155,6 +168,32 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       final date = DateOnly.fromDateTime(picked);
       _endDate = date.isSameDay(start) ? null : date;
     });
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _time ?? TimeOfDay.now(),
+      helpText: AppStrings.eventTime,
+    );
+    if (picked == null) return;
+    setState(() => _time = picked);
+  }
+
+  void _showDoneInfo() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.fieldHighlight),
+        content: Text(AppStrings.doneInfo),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppStrings.close),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _recurrenceSection() {
@@ -249,6 +288,69 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     );
   }
 
+  Widget _tagsSection(List<Tag> tags) {
+    final selected = _selectedTagIds.toSet();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                AppStrings.settingsTags,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+            IconButton(
+              key: const Key('editor-manage-tags'),
+              tooltip: AppStrings.tagManage,
+              visualDensity: VisualDensity.compact,
+              onPressed: _openTags,
+              icon: const Icon(Icons.settings_outlined, size: 18),
+            ),
+          ],
+        ),
+        if (tags.isEmpty)
+          Text(
+            AppStrings.tagsEmpty,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (final tag in tags)
+                TagChip(
+                  key: Key('editor-tag-${tag.id}'),
+                  tag: tag,
+                  selected: selected.contains(tag.id),
+                  onTap: () => setState(() {
+                    if (!_selectedTagIds.remove(tag.id)) {
+                      _selectedTagIds.add(tag.id);
+                    }
+                  }),
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Future<void> _openTags() async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const TagsPage()));
+    if (mounted) {
+      setState(() {
+        final available = AppScope.of(context).tags.byIdMap.keys.toSet();
+        _selectedTagIds.removeWhere((id) => !available.contains(id));
+      });
+    }
+  }
+
   Future<void> _save() async {
     setState(() {
       _saving = true;
@@ -273,6 +375,10 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           endDate: endDate,
           recurrence: _isEvent ? _recurrence : EventRecurrence.none,
           recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
+          timeMinutes: _isEvent && _time != null
+              ? _time!.hour * 60 + _time!.minute
+              : null,
+          tagIds: _selectedTagIds,
         );
       } else {
         await widget.controller.updatePostIt(
@@ -285,6 +391,10 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           endDate: endDate,
           recurrence: _isEvent ? _recurrence : EventRecurrence.none,
           recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
+          timeMinutes: _isEvent && _time != null
+              ? _time!.hour * 60 + _time!.minute
+              : null,
+          tagIds: _selectedTagIds,
         );
       }
 
@@ -310,6 +420,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final availableHeight = MediaQuery.sizeOf(context).height - bottomInset;
+    final availableTags = AppScope.of(context).tags.tags;
 
     return AnimatedPadding(
       duration: Duration(milliseconds: 150),
@@ -338,25 +449,22 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   child: Text(AppStrings.recurringType),
                 )
               else
-                SegmentedButton<PostItType>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: PostItType.task,
-                      label: Text(AppStrings.taskType),
-                    ),
-                    ButtonSegment(
-                      value: PostItType.event,
-                      label: Text(AppStrings.eventType),
-                    ),
-                    ButtonSegment(
-                      value: PostItType.recurringTodo,
-                      label: Text(AppStrings.recurringShort),
-                    ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    for (final type in PostItType.values)
+                      ChoiceChip(
+                        avatar: Icon(postItTypeIcon(type), size: 18),
+                        label: Text(switch (type) {
+                          PostItType.task => AppStrings.taskType,
+                          PostItType.event => AppStrings.eventType,
+                          PostItType.recurringTodo => AppStrings.recurringShort,
+                        }),
+                        selected: _type == type,
+                        onSelected: (_) => _changeType(type),
+                      ),
                   ],
-                  selected: {_type},
-                  onSelectionChanged: (selection) =>
-                      _changeType(selection.first),
                 ),
               SizedBox(height: 16),
               TextField(
@@ -382,6 +490,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                   alignLabelWithHint: true,
                 ),
               ),
+              _tagsSection(availableTags),
               if (!_isRecurringType) ...[
                 SizedBox(height: 8),
                 Text(
@@ -415,11 +524,56 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     date: _endDate ?? _startDate,
                     onTap: _pickEndDate,
                   ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          key: const Key('editor-time'),
+                          onPressed: _pickTime,
+                          icon: const Icon(Icons.schedule),
+                          label: Text(
+                            _time == null
+                                ? AppStrings.eventTimeAdd
+                                : '${AppStrings.eventTime}: '
+                                      '${DateFormats.clockTime(_time!.hour * 60 + _time!.minute)}',
+                          ),
+                        ),
+                      ),
+                      if (_time != null)
+                        IconButton(
+                          key: const Key('editor-time-clear'),
+                          tooltip: AppStrings.eventTimeClear,
+                          onPressed: () => setState(() => _time = null),
+                          icon: const Icon(Icons.close),
+                        ),
+                    ],
+                  ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(AppStrings.fieldHighlight),
-                    subtitle: Text(
-                      '${AppStrings.highlightSymbol} ${AppStrings.highlightType}',
+                    secondary: const Icon(Icons.edit_outlined),
+                    title: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      children: [
+                        Text(AppStrings.fieldHighlight),
+                        IconButton(
+                          key: const Key('editor-done-info'),
+                          tooltip: AppStrings.doneInfo,
+                          visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: _showDoneInfo,
+                          icon: Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                     value: _isHighlight,
                     onChanged: (value) => setState(() => _isHighlight = value),

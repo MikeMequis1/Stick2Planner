@@ -39,6 +39,15 @@ abstract final class DateFormats {
     return _capitalize(formatted.replaceAll('.', ''));
   }
 
+  /// "14:30" a partir de minutos desde a meia-noite.
+  static String clockTime(int minutes) {
+    final normalized = minutes.clamp(0, 24 * 60 - 1);
+    final hour = normalized ~/ 60;
+    final minute = normalized % 60;
+    return '${hour.toString().padLeft(2, '0')}:'
+        '${minute.toString().padLeft(2, '0')}';
+  }
+
   /// "2 - 8 nov 2026" ou "30 nov - 6 dez 2026".
   static String dateRangeShort(DateOnly start, DateOnly end) {
     final sameMonth = start.month == end.month && start.year == end.year;

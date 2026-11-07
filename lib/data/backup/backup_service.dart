@@ -8,6 +8,7 @@ import '../../data/db/app_database.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 import 'backup_document.dart';
 
 /// Snapshot local criado antes de uma importação.
@@ -73,6 +74,9 @@ final class BackupService {
               ..where((table) => table.key.like('planner.sync.%').not())
               ..orderBy([(table) => OrderingTerm(expression: table.key)]))
             .get();
+    final tags = await (_db.select(
+      _db.tags,
+    )..orderBy([(table) => OrderingTerm(expression: table.name)])).get();
 
     return BackupDocument(
       schemaVersion: _db.schemaVersion,
@@ -83,6 +87,7 @@ final class BackupService {
         'notes': [for (final row in notes) _noteToJson(row)],
         'noteLines': [for (final row in noteLines) _noteLineToJson(row)],
         'history': [for (final row in history) _historyToJson(row)],
+        'tags': [for (final row in tags) _tagToJson(row)],
         'settings': [
           for (final row in settings) {'key': row.key, 'value': row.value},
         ],
@@ -105,6 +110,7 @@ final class BackupService {
         await _db.delete(_db.postIts).go();
         await _db.delete(_db.noteLines).go();
         await _db.delete(_db.notes).go();
+        await _db.delete(_db.tags).go();
         await _db.customStatement(
           "DELETE FROM app_settings WHERE key NOT LIKE 'planner.sync.%'",
         );
@@ -160,6 +166,8 @@ final class BackupService {
                 _nullableString(entry, 'recurrence'),
               ),
               recurrenceInterval: _optionalInt(entry, 'recurrenceInterval', 1),
+              timeMinutes: _nullableInt(entry, 'timeMinutes'),
+              tagIds: _stringList(entry['tagIds']),
               sortOrder: _int(entry, 'sortOrder'),
               lastRolloverAt: _nullableTimestamp(entry, 'lastRolloverAt'),
               createdAt: _timestamp(entry, 'createdAt'),
@@ -181,6 +189,18 @@ final class BackupService {
             ),
         ];
 
+        final tags = [
+          for (final entry in _rowsOrEmpty(document.data, 'tags'))
+            TagRow(
+              id: _string(entry, 'id'),
+              name: _string(entry, 'name'),
+              tone: _tagTone(_string(entry, 'tone')),
+              createdAt: _timestamp(entry, 'createdAt'),
+              updatedAt: _timestamp(entry, 'updatedAt'),
+              deletedAt: _nullableTimestamp(entry, 'deletedAt'),
+            ),
+        ];
+
         final settings = [
           for (final entry in _rows(document.data, 'settings'))
             if (!_string(entry, 'key').startsWith('planner.sync.'))
@@ -195,6 +215,7 @@ final class BackupService {
           batch.insertAll(_db.noteLines, noteLines);
           batch.insertAll(_db.postIts, postIts);
           batch.insertAll(_db.postItHistoryEntries, history);
+          batch.insertAll(_db.tags, tags);
           batch.insertAll(_db.appSettings, settings);
         });
       });
@@ -318,6 +339,8 @@ final class BackupService {
     'endDate': row.endDate?.toIso8601String(),
     'recurrence': row.recurrence.name,
     'recurrenceInterval': row.recurrenceInterval,
+    'timeMinutes': row.timeMinutes,
+    'tagIds': row.tagIds,
     'sortOrder': row.sortOrder,
     'lastRolloverAt': _isoOrNull(row.lastRolloverAt),
     'createdAt': _iso(row.createdAt),
@@ -352,6 +375,15 @@ final class BackupService {
     'createdAt': _iso(row.createdAt),
   };
 
+  Map<String, Object?> _tagToJson(TagRow row) => {
+    'id': row.id,
+    'name': row.name,
+    'tone': row.tone.name,
+    'createdAt': _iso(row.createdAt),
+    'updatedAt': _iso(row.updatedAt),
+    'deletedAt': _isoOrNull(row.deletedAt),
+  };
+
   static String _iso(int milliseconds) => DateTime.fromMillisecondsSinceEpoch(
     milliseconds,
     isUtc: true,
@@ -379,6 +411,27 @@ final class BackupService {
       rows.add(entry);
     }
     return rows;
+  }
+
+  static List<Map<String, Object?>> _rowsOrEmpty(
+    Map<String, Object?> data,
+    String key,
+  ) {
+    if (data[key] == null) return const [];
+    return _rows(data, key);
+  }
+
+  static List<String> _stringList(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final item in value)
+        if (item is String && item.isNotEmpty) item,
+    ];
+  }
+
+  static int? _nullableInt(Map<String, Object?> row, String key) {
+    final value = row[key];
+    return value is int ? value : null;
   }
 
   static String _string(Map<String, Object?> row, String key) {
@@ -495,6 +548,13 @@ final class BackupService {
       if (value.name == name) return value;
     }
     return EventRecurrence.none;
+  }
+
+  static TagTone _tagTone(String name) {
+    for (final value in TagTone.values) {
+      if (value.name == name) return value;
+    }
+    return TagTone.primary;
   }
 
   static int _optionalInt(Map<String, Object?> row, String key, int fallback) {

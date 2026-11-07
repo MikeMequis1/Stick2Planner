@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_scope.dart';
 import '../../../app/app_strings.dart';
 import '../../../app/controllers/notes_controller.dart';
 import '../../../app/controllers/planner_controller.dart';
@@ -7,6 +8,7 @@ import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/entities/note.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../tags/tag_presentation.dart';
 import 'post_it_presentation.dart';
 
 /// Folha de detalhes com acesso às ações explícitas (alternativa aos gestos).
@@ -28,6 +30,7 @@ Future<void> showPostItDetailsSheet(
       final linkedNote = postIt.noteId == null
           ? null
           : notesController.findById(postIt.noteId!);
+      final tagsById = AppScope.of(sheetContext).tags.byIdMap;
 
       Future<void> openNote() async {
         if (linkedNote == null) return;
@@ -246,9 +249,33 @@ Future<void> showPostItDetailsSheet(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(postItIcon(postIt), color: theme.colorScheme.primary),
+                    if (postIt.isEvent)
+                      Icon(postItIcon(postIt), color: theme.colorScheme.primary)
+                    else
+                      ListenableBuilder(
+                        listenable: planner,
+                        builder: (context, _) {
+                          final current =
+                              planner.postItById(postIt.id) ?? postIt;
+                          final done = current.status == PostItStatus.done;
+                          return IconButton(
+                            key: const Key('details-complete-icon'),
+                            tooltip: done
+                                ? AppStrings.statusReopenAction
+                                : AppStrings.statusDoneAction,
+                            onPressed: () => planner.setPostItStatus(
+                              current,
+                              done ? PostItStatus.active : PostItStatus.done,
+                            ),
+                            icon: Icon(
+                              postItIcon(current),
+                              color: theme.colorScheme.primary,
+                            ),
+                          );
+                        },
+                      ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -264,6 +291,7 @@ Future<void> showPostItDetailsSheet(
                   runSpacing: 8,
                   children: [
                     Chip(
+                      avatar: Icon(postItIcon(postIt), size: 18),
                       label: Text(
                         symbol.isEmpty
                             ? postItTypeLabel(postIt)
@@ -271,6 +299,14 @@ Future<void> showPostItDetailsSheet(
                       ),
                     ),
                     Chip(label: Text(postItStatusLabel(postIt.status))),
+                    if (postIt.timeMinutes != null)
+                      Chip(
+                        avatar: const Icon(Icons.schedule, size: 18),
+                        label: Text(DateFormats.clockTime(postIt.timeMinutes!)),
+                      ),
+                    for (final tagId in postIt.tagIds)
+                      if (tagsById[tagId] != null)
+                        TagChip(tag: tagsById[tagId]!),
                     if (postIt.noteId != null)
                       Chip(
                         avatar: Icon(Icons.link, size: 18),

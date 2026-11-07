@@ -1316,7 +1316,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 ### Validação
 
 - `flutter analyze`: sem issues.
-- `flutter test`: **252 testes aprovados**.
+- `flutter test`: **264 testes aprovados**.
 - `dart analyze` / `dart test` no servidor: sem issues; **15 testes aprovados**.
 - Servidor reconstruído e `GET /v1/health` respondendo; release instalado no
   celular.
@@ -1333,7 +1333,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   notas/post-its zera as contagens exibidas. O JSON continua guardando os
   tombstones e o histórico; backups antigos com contagens legadas continuam
   aceitos.
-- `flutter test`: **252 testes aprovados**; servidor: **15 testes aprovados**.
+- `flutter test`: **264 testes aprovados**; servidor: **16 testes aprovados**.
 
 ## Repetição de eventos e rótulo Pendência (2026-11-05)
 
@@ -1366,6 +1366,27 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   atualizados para o novo repositório.
 - `Stick2Planner` e `stick2server` são públicos; o README do app linka o
   código-fonte e o README do servidor linka o repositório do app.
+
+## Agenda, horário, tags e conclusão (2026-11-06)
+
+- Dias anteriores recebem um tom acinzentado discreto em todas as visões; hoje e
+  futuros mantêm a superfície normal, com o número do dia em tom atenuado.
+- Eventos aceitam horário opcional salvo como minutos desde a meia-noite local.
+  Ele aparece na barra do evento e no cartão da Caixinha, sem substituir datas
+  nem timestamps.
+- Tags compartilhadas (nome + tom da paleta) podem ser criadas, editadas e
+  excluídas; excluir remove associações sem apagar post-its. As tags são
+  escolhidas no editor e exibidas nos detalhes, na Caixinha e no filtro por tags.
+- Esquema v7 adiciona `post_its.time_minutes`, `post_its.tag_ids` e a tabela
+  `tags`. Payloads/backups carregam os campos; dados antigos assumem sem horário,
+  sem tags e sem repetição.
+- A seleção de tipo usa ícones; o antigo evento marcante virou **Done/feito**,
+  com lápis e diálogo de informação.
+- Eventos com `endDate` anterior a hoje são concluídos automaticamente ao abrir,
+  retomar, atualizar e antes de mutações, com um único registro
+  `eventCompleted`. Eventos sem data final não mudam.
+- O ícone junto ao título dos detalhes alterna concluída/reabrir imediatamente.
+- `flutter test`: **264 testes aprovados**; servidor: **16 testes aprovados**.
 
 
 

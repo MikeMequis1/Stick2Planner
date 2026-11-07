@@ -182,6 +182,8 @@ suspended until the user decides.
 - The server stores them opaquely; occurrences are generated on the device for
   the visible period and are not separate records.
 - Older payloads without the fields default to no recurrence and interval 1.
+- Post-its also carry optional `timeMinutes` and `tagIds`; tag definitions use the
+  `tag` sync entity. Older payloads default to no time and no tags.
 
 ## Notes and links
 

@@ -9,6 +9,7 @@ import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 import 'converters.dart';
 import 'tables.dart';
 
@@ -25,6 +26,7 @@ part 'app_database.g.dart';
     NoteLines,
     PostIts,
     PostItHistoryEntries,
+    Tags,
     SyncOutbox,
     SyncRowStates,
     SyncStates,
@@ -34,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +90,17 @@ class AppDatabase extends _$AppDatabase {
           await migrator.addColumn(postIts, postIts.recurrenceInterval);
         }
       }
+      if (from < 7) {
+        if (!await _hasColumn('post_its', 'time_minutes')) {
+          await migrator.addColumn(postIts, postIts.timeMinutes);
+        }
+        if (!await _hasColumn('post_its', 'tag_ids')) {
+          await migrator.addColumn(postIts, postIts.tagIds);
+        }
+        if (!await _hasTable('tags')) {
+          await migrator.createTable(tags);
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -97,6 +110,14 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> _hasColumn(String table, String column) async {
     final rows = await customSelect('PRAGMA table_info($table)').get();
     return rows.any((row) => row.data['name'] == column);
+  }
+
+  Future<bool> _hasTable(String table) async {
+    final rows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable<String>(table)],
+    ).get();
+    return rows.isNotEmpty;
   }
 
   /// Conexão em arquivo dentro do diretório de dados do aplicativo.  ///

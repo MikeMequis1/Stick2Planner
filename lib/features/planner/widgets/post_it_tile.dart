@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_strings.dart';
+import '../../../core/date_formatting.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_presentation.dart';
 
@@ -104,6 +105,16 @@ class _PostItTileState extends State<PostItTile> {
                                 : TextDecoration.none,
                           ),
                         ),
+                        if (postIt.timeMinutes != null)
+                          Text(
+                            DateFormats.clockTime(postIt.timeMinutes!),
+                            style: TextStyle(
+                              fontSize: compact ? 8 : 9.5,
+                              height: 1.1,
+                              fontWeight: FontWeight.w800,
+                              color: colors.foreground,
+                            ),
+                          ),
                         if (widget.isPostponed && !compact)
                           Text(
                             AppStrings.postponed.toLowerCase(),

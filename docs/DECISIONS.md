@@ -285,6 +285,22 @@ stages. Each item: context, decision, consequence.
 - Schema v6 migrates v1–v5; old sync payloads/backups without the fields default
   to `none`/`1`.
 
+## Event time, tags and completion (schema v7)
+
+- Event time is optional `timeMinutes` (0–1439), local wall-clock; not a UTC
+  timestamp and not used for ordering.
+- Tags are a shared table (`id`, `name`, tone, timestamps) and `post_its.tag_ids`
+  stores the associations. A tag deletion is a tombstone plus association removal,
+  never a post-it deletion.
+- Tags use `ColorScheme` roles/containers so their colors follow the active
+  palette in light/dark themes.
+- Active events with an `endDate` before today become done automatically; the
+  check is idempotent and records one `eventCompleted` history entry. Events
+  without an end date keep the previous behavior.
+- The task title icon in details toggles done/reopen without leaving the sheet.
+- Schema v7 migrates v1–v6; old payloads/backups default to no time, no tags and
+  no recurrence.
+
 ## Localization
 
 - **App:** Portuguese (BR) and English, persisted in `app_settings`. `AppStrings`

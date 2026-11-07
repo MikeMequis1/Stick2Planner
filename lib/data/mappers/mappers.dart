@@ -6,6 +6,7 @@ import '../../data/db/converters.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 
 PostIt postItFromRow(PostItRow row) => PostIt(
   id: row.id,
@@ -21,6 +22,8 @@ PostIt postItFromRow(PostItRow row) => PostIt(
   endDate: row.endDate,
   recurrence: row.recurrence,
   recurrenceInterval: row.recurrenceInterval,
+  timeMinutes: row.timeMinutes,
+  tagIds: row.tagIds,
   sortOrder: row.sortOrder,
   lastRolloverAt: row.lastRolloverAt == null
       ? null
@@ -44,6 +47,8 @@ PostItsCompanion postItToCompanion(PostIt postIt) => PostItsCompanion(
   endDate: Value<DateOnly?>(postIt.endDate),
   recurrence: Value(postIt.recurrence),
   recurrenceInterval: Value(postIt.recurrenceInterval),
+  timeMinutes: Value(postIt.timeMinutes),
+  tagIds: Value(postIt.tagIds),
   sortOrder: Value(postIt.sortOrder),
   lastRolloverAt: Value(
     postIt.lastRolloverAt == null
@@ -116,4 +121,24 @@ NoteLinesCompanion noteLineToCompanion(NoteLine line) => NoteLinesCompanion(
   position: Value(line.position),
   content: Value(line.text),
   isChecked: Value(line.isChecked),
+);
+
+Tag tagFromRow(TagRow row) => Tag(
+  id: row.id,
+  name: row.name,
+  tone: row.tone,
+  createdAt: dateTimeFromStorage(row.createdAt),
+  updatedAt: dateTimeFromStorage(row.updatedAt),
+  deletedAt: row.deletedAt == null ? null : dateTimeFromStorage(row.deletedAt!),
+);
+
+TagsCompanion tagToCompanion(Tag tag) => TagsCompanion(
+  id: Value(tag.id),
+  name: Value(tag.name),
+  tone: Value(tag.tone),
+  createdAt: Value(dateTimeToStorage(tag.createdAt)),
+  updatedAt: Value(dateTimeToStorage(tag.updatedAt)),
+  deletedAt: Value(
+    tag.deletedAt == null ? null : dateTimeToStorage(tag.deletedAt!),
+  ),
 );

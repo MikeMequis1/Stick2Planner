@@ -65,7 +65,12 @@ class DayCell extends StatelessWidget {
       },
       builder: (context, candidateData, rejectedData) {
         final isDropTarget = candidateData.isNotEmpty;
-        final muted = !day.isCurrentMonth;
+        final isPast = day.date.isBefore(today);
+        final pastTint = Color.alphaBlend(
+          scheme.onSurface.withValues(alpha: 0.055),
+          scheme.surface,
+        );
+        final muted = !day.isCurrentMonth || isPast;
         final borderColor = isDropTarget
             ? scheme.primary
             : (isSelected ? scheme.primary : scheme.outlineVariant);
@@ -95,6 +100,9 @@ class DayCell extends StatelessWidget {
                 duration: motion,
                 curve: Curves.easeOutCubic,
                 child: AnimatedContainer(
+                  key: isPast
+                      ? Key('day-past-${day.date.toIso8601String()}')
+                      : null,
                   duration: motion,
                   curve: Curves.easeOut,
                   clipBehavior: Clip.antiAlias,
@@ -103,9 +111,11 @@ class DayCell extends StatelessWidget {
                         ? scheme.primaryContainer.withValues(alpha: 0.45)
                         : (isSelected
                               ? scheme.primaryContainer.withValues(alpha: 0.28)
-                              : (muted
-                                    ? scheme.surfaceContainerLowest
-                                    : scheme.surface)),
+                              : (isPast
+                                    ? pastTint
+                                    : (muted
+                                          ? scheme.surfaceContainerLowest
+                                          : scheme.surface))),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: borderColor,
@@ -136,6 +146,7 @@ class DayCell extends StatelessWidget {
                               isSelected: isSelected,
                               isToday: isToday,
                               muted: muted,
+                              isPast: isPast,
                               compact: compact || tight,
                               dense: tight,
                             ),
@@ -460,6 +471,7 @@ class _DayHeader extends StatelessWidget {
     required this.isSelected,
     required this.isToday,
     required this.muted,
+    required this.isPast,
     required this.compact,
     this.dense = false,
   });
@@ -468,6 +480,7 @@ class _DayHeader extends StatelessWidget {
   final bool isSelected;
   final bool isToday;
   final bool muted;
+  final bool isPast;
   final bool compact;
   final bool dense;
 

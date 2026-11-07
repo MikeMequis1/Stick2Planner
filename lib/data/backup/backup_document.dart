@@ -9,7 +9,7 @@ const backupFormatName = 'stick2planner-backup';
 const backupFormatVersion = 1;
 
 /// Versões de esquema local cujos backups podem ser importados.
-const supportedBackupSchemaVersions = <int>{4, 5, 6};
+const supportedBackupSchemaVersions = <int>{4, 5, 6, 7};
 
 /// Falhas previstas ao ler, validar ou aplicar um backup.
 enum BackupErrorCode {
@@ -40,6 +40,7 @@ final class BackupCounts {
     required this.noteLines,
     required this.history,
     required this.settings,
+    this.tags = 0,
   });
 
   final int postIts;
@@ -47,6 +48,7 @@ final class BackupCounts {
   final int noteLines;
   final int history;
   final int settings;
+  final int tags;
 
   Map<String, Object?> toJson() => {
     'postIts': postIts,
@@ -54,6 +56,7 @@ final class BackupCounts {
     'noteLines': noteLines,
     'history': history,
     'settings': settings,
+    'tags': tags,
   };
 
   static BackupCounts fromJson(Object? value) {
@@ -64,6 +67,7 @@ final class BackupCounts {
       noteLines: _asInt(map['noteLines'], 'counts.noteLines'),
       history: _asInt(map['history'], 'counts.history'),
       settings: _asInt(map['settings'], 'counts.settings'),
+      tags: map['tags'] == null ? 0 : _asInt(map['tags'], 'counts.tags'),
     );
   }
 
@@ -74,10 +78,12 @@ final class BackupCounts {
       other.notes == notes &&
       other.noteLines == noteLines &&
       other.history == history &&
-      other.settings == settings;
+      other.settings == settings &&
+      other.tags == tags;
 
   @override
-  int get hashCode => Object.hash(postIts, notes, noteLines, history, settings);
+  int get hashCode =>
+      Object.hash(postIts, notes, noteLines, history, settings, tags);
 }
 
 /// Documento de backup já validado.
@@ -242,8 +248,15 @@ final class BackupDocument {
         return activePostItIds.contains(row['postItId']);
       }).length,
       settings: _asList(data['settings'], 'data.settings').length,
+      tags: _tags(data).where((entry) {
+        final row = _asMap(entry, 'data.tags[]');
+        return row['deletedAt'] == null;
+      }).length,
     );
   }
+
+  static List<Object?> _tags(Map<String, Object?> data) =>
+      data['tags'] is List ? data['tags'] as List : const [];
 
   static BackupCounts _rawCountsOf(Map<String, Object?> data) => BackupCounts(
     postIts: _asList(data['postIts'], 'data.postIts').length,
@@ -251,6 +264,7 @@ final class BackupDocument {
     noteLines: _asList(data['noteLines'], 'data.noteLines').length,
     history: _asList(data['history'], 'data.history').length,
     settings: _asList(data['settings'], 'data.settings').length,
+    tags: _tags(data).length,
   );
 
   static void _validateStructure(Map<String, Object?> data) {
@@ -354,6 +368,22 @@ final class BackupDocument {
           'postIts.recurrenceInterval inválido',
         );
       }
+      final timeMinutes = row['timeMinutes'];
+      if (timeMinutes != null &&
+          (timeMinutes is! int || timeMinutes < 0 || timeMinutes >= 1440)) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'postIts.timeMinutes inválido',
+        );
+      }
+      final tagIds = row['tagIds'];
+      if (tagIds != null &&
+          (tagIds is! List || tagIds.any((value) => value is! String))) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'postIts.tagIds inválido',
+        );
+      }
       final noteId = row['noteId'];
       if (noteId != null) {
         if (noteId is! String || !noteIds.contains(noteId)) {
@@ -363,6 +393,21 @@ final class BackupDocument {
           );
         }
       }
+    }
+
+    final tags = _tags(data);
+    final tagIds = <String>{};
+    for (final entry in tags) {
+      final row = _asMap(entry, 'data.tags[]');
+      final id = _asString(row['id'], 'tags.id');
+      if (!tagIds.add(id)) {
+        throw BackupException(BackupErrorCode.invalidData, 'tag duplicada $id');
+      }
+      _asString(row['name'], 'tags.name');
+      _asString(row['tone'], 'tags.tone');
+      _requiredTimestamp(row['createdAt'], 'tags.createdAt');
+      _requiredTimestamp(row['updatedAt'], 'tags.updatedAt');
+      _optionalTimestamp(row['deletedAt'], 'tags.deletedAt');
     }
 
     final history = _asList(data['history'], 'data.history');

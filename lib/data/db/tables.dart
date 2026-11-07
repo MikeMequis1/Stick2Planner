@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 import 'converters.dart';
 
 /// Preferências de visualização e estado leve do aplicativo.
@@ -47,6 +48,21 @@ class NoteLines extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
+/// Tags compartilhadas por eventos e tarefas.
+@DataClassName('TagRow')
+@TableIndex(name: 'idx_tags_name', columns: {#name})
+class Tags extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get tone => textEnum<TagTone>()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get deletedAt => integer().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
 /// Post-its da agenda.
 @DataClassName('PostItRow')
 @TableIndex(name: 'idx_post_its_start_date', columns: {#startDate})
@@ -70,6 +86,9 @@ class PostIts extends Table {
       textEnum<EventRecurrence>().withDefault(const Constant('none'))();
   IntColumn get recurrenceInterval =>
       integer().withDefault(const Constant(1))();
+  IntColumn get timeMinutes => integer().nullable()();
+  TextColumn get tagIds =>
+      text().map(const TagIdsConverter()).withDefault(const Constant('[]'))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get lastRolloverAt => integer().nullable()();
   IntColumn get createdAt => integer()();

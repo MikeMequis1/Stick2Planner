@@ -11,11 +11,13 @@ import '../data/db/app_database.dart';
 import '../data/repositories/drift_note_repository.dart';
 import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
+import '../data/repositories/drift_tag_repository.dart';
 import '../data/sync/sync_state_store.dart';
 import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
+import 'controllers/tags_controller.dart';
 import 'services/screen_wake_service.dart';
 import 'services/sync_coordinator.dart';
 import 'services/token_store.dart';
@@ -35,6 +37,7 @@ final class AppDependencies {
     required this.database,
     required this.planner,
     required this.notes,
+    required this.tags,
     AppNavigationController? navigation,
     AppSettingsController? settings,
     ScreenWakeService? screenWake,
@@ -72,7 +75,9 @@ final class AppDependencies {
     this.sync.onApplied = () async {
       await planner.refresh();
       await notes.refresh();
+      await tags.refresh();
     };
+    tags.onDeleted = planner.removeTagFromAll;
   }
 
   factory AppDependencies.fromDatabase(
@@ -88,6 +93,7 @@ final class AppDependencies {
     final postItRepository = DriftPostItRepository(database);
     final noteRepository = DriftNoteRepository(database);
     final settingsRepository = DriftSettingsRepository(database);
+    final tagRepository = DriftTagRepository(database);
 
     return AppDependencies(
       database: database,
@@ -103,6 +109,7 @@ final class AppDependencies {
         clock: clock,
       ),
       notes: NotesController(noteRepository: noteRepository, clock: clock),
+      tags: TagsController(repository: tagRepository, clock: clock),
     );
   }
 
@@ -119,6 +126,7 @@ final class AppDependencies {
   final AppDatabase database;
   final PlannerController planner;
   final NotesController notes;
+  final TagsController tags;
   final AppNavigationController navigation;
   final AppSettingsController settings;
   final ScreenWakeService screenWake;
@@ -131,6 +139,7 @@ final class AppDependencies {
     await Future.wait([
       planner.initialize(),
       notes.initialize(),
+      tags.initialize(),
       settings.initialize(),
     ]);
     await sync.initialize();
@@ -140,6 +149,7 @@ final class AppDependencies {
     sync.dispose();
     planner.dispose();
     notes.dispose();
+    tags.dispose();
     navigation.dispose();
     settings.dispose();
     await database.close();

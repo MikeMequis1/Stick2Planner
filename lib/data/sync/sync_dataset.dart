@@ -49,6 +49,7 @@ final class SyncDatasetService {
       _db.noteLines,
     )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
     final historyRows = await _db.select(_db.postItHistoryEntries).get();
+    final tagRows = await _db.select(_db.tags).get();
 
     final linesByNote = <String, List<NoteLineRow>>{};
     for (final row in lineRows) {
@@ -79,6 +80,14 @@ final class SyncDatasetService {
           historyPayload(postItHistoryFromRow(row)),
           dateTimeFromStorage(row.createdAt),
           false,
+        ),
+      for (final row in tagRows)
+        _entity(
+          syncEntityTag,
+          row.id,
+          tagPayload(tagFromRow(row)),
+          dateTimeFromStorage(row.updatedAt),
+          row.deletedAt != null,
         ),
     ];
   }

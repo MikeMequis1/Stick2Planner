@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_strings.dart';
+import '../../../core/date_formatting.dart';
 import '../../../domain/entities/post_it.dart';
 import 'post_it_presentation.dart';
 
@@ -107,6 +108,28 @@ class _EventBarState extends State<EventBar> {
                     color: colors.foreground,
                   ),
                   const SizedBox(width: 6),
+                  if (postIt.timeMinutes != null) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: widget.compact ? 3 : 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.foreground.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        DateFormats.clockTime(postIt.timeMinutes!),
+                        style: TextStyle(
+                          fontSize: widget.compact ? 8.5 : 10,
+                          height: 1.1,
+                          fontWeight: FontWeight.w800,
+                          color: colors.foreground,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                  ],
                   Expanded(
                     child: Text(
                       widget.showTitle ? postIt.title : AppStrings.continuation,

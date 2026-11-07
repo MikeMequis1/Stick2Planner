@@ -18,10 +18,18 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Features
 
 - **Calendar:** day, 4-day, week, 2-week and month views; multi-day events;
-  drag, resize, reorder and quick create; anchored 4-day window.
+  drag, resize, reorder and quick create; anchored 4-day window; past days use a
+  discreet muted tint.
 - **Event recurrence:** daily, every N weeks, every N months or yearly;
   occurrences keep the event duration.
-- **Inbox:** search, status filters, sorting and undated post-its.
+- **Event time:** optional start time, always visible on the event bar, without
+  replacing event dates or internal timestamps.
+- **Tags:** shared tags for events and tasks, with palette-based colors, tag
+  management, multi-tag filtering in the Inbox and sync/backup support.
+- **Done/feito:** positive-moment events use a pencil icon and a short contextual
+  explanation. Completed events are marked done automatically after their end
+  date; tasks can be completed from the details title icon.
+- **Inbox:** search, status filters, tag filters, sorting and undated post-its.
 - **Notes:** Markdown rendering, checklists, line selection, snapshots and live
   links between notes and post-its.
 - **Offline first:** all data is stored locally in SQLite. No account is
@@ -39,7 +47,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (schema v6, migrations v1 → v6).
+- Drift + SQLite (schema v7, migrations v1 → v7).
 - Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:
   [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Secure device tokens stored with `flutter_secure_storage`.

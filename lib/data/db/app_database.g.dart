@@ -1174,6 +1174,27 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _timeMinutesMeta = const VerificationMeta(
+    'timeMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> timeMinutes = GeneratedColumn<int>(
+    'time_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> tagIds =
+      GeneratedColumn<String>(
+        'tag_ids',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<String>>($PostItsTable.$convertertagIds);
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -1245,6 +1266,8 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     endDate,
     recurrence,
     recurrenceInterval,
+    timeMinutes,
+    tagIds,
     sortOrder,
     lastRolloverAt,
     createdAt,
@@ -1321,6 +1344,15 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         recurrenceInterval.isAcceptableOrUnknown(
           data['recurrence_interval']!,
           _recurrenceIntervalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('time_minutes')) {
+      context.handle(
+        _timeMinutesMeta,
+        timeMinutes.isAcceptableOrUnknown(
+          data['time_minutes']!,
+          _timeMinutesMeta,
         ),
       );
     }
@@ -1432,6 +1464,16 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         DriftSqlType.int,
         data['${effectivePrefix}recurrence_interval'],
       )!,
+      timeMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}time_minutes'],
+      ),
+      tagIds: $PostItsTable.$convertertagIds.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tag_ids'],
+        )!,
+      ),
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -1476,6 +1518,8 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
   $converterrecurrence = const EnumNameConverter<EventRecurrence>(
     EventRecurrence.values,
   );
+  static TypeConverter<List<String>, String> $convertertagIds =
+      const TagIdsConverter();
 }
 
 class PostItRow extends DataClass implements Insertable<PostItRow> {
@@ -1492,6 +1536,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
   final DateOnly? endDate;
   final EventRecurrence recurrence;
   final int recurrenceInterval;
+  final int? timeMinutes;
+  final List<String> tagIds;
   final int sortOrder;
   final int? lastRolloverAt;
   final int createdAt;
@@ -1511,6 +1557,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     this.endDate,
     required this.recurrence,
     required this.recurrenceInterval,
+    this.timeMinutes,
+    required this.tagIds,
     required this.sortOrder,
     this.lastRolloverAt,
     required this.createdAt,
@@ -1559,6 +1607,14 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       );
     }
     map['recurrence_interval'] = Variable<int>(recurrenceInterval);
+    if (!nullToAbsent || timeMinutes != null) {
+      map['time_minutes'] = Variable<int>(timeMinutes);
+    }
+    {
+      map['tag_ids'] = Variable<String>(
+        $PostItsTable.$convertertagIds.toSql(tagIds),
+      );
+    }
     map['sort_order'] = Variable<int>(sortOrder);
     if (!nullToAbsent || lastRolloverAt != null) {
       map['last_rollover_at'] = Variable<int>(lastRolloverAt);
@@ -1598,6 +1654,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           : Value(endDate),
       recurrence: Value(recurrence),
       recurrenceInterval: Value(recurrenceInterval),
+      timeMinutes: timeMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timeMinutes),
+      tagIds: Value(tagIds),
       sortOrder: Value(sortOrder),
       lastRolloverAt: lastRolloverAt == null && nullToAbsent
           ? const Value.absent()
@@ -1635,6 +1695,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
         serializer.fromJson<String>(json['recurrence']),
       ),
       recurrenceInterval: serializer.fromJson<int>(json['recurrenceInterval']),
+      timeMinutes: serializer.fromJson<int?>(json['timeMinutes']),
+      tagIds: serializer.fromJson<List<String>>(json['tagIds']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       lastRolloverAt: serializer.fromJson<int?>(json['lastRolloverAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -1665,6 +1727,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
         $PostItsTable.$converterrecurrence.toJson(recurrence),
       ),
       'recurrenceInterval': serializer.toJson<int>(recurrenceInterval),
+      'timeMinutes': serializer.toJson<int?>(timeMinutes),
+      'tagIds': serializer.toJson<List<String>>(tagIds),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'lastRolloverAt': serializer.toJson<int?>(lastRolloverAt),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -1687,6 +1751,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     Value<DateOnly?> endDate = const Value.absent(),
     EventRecurrence? recurrence,
     int? recurrenceInterval,
+    Value<int?> timeMinutes = const Value.absent(),
+    List<String>? tagIds,
     int? sortOrder,
     Value<int?> lastRolloverAt = const Value.absent(),
     int? createdAt,
@@ -1706,6 +1772,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     endDate: endDate.present ? endDate.value : this.endDate,
     recurrence: recurrence ?? this.recurrence,
     recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+    timeMinutes: timeMinutes.present ? timeMinutes.value : this.timeMinutes,
+    tagIds: tagIds ?? this.tagIds,
     sortOrder: sortOrder ?? this.sortOrder,
     lastRolloverAt: lastRolloverAt.present
         ? lastRolloverAt.value
@@ -1739,6 +1807,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       recurrenceInterval: data.recurrenceInterval.present
           ? data.recurrenceInterval.value
           : this.recurrenceInterval,
+      timeMinutes: data.timeMinutes.present
+          ? data.timeMinutes.value
+          : this.timeMinutes,
+      tagIds: data.tagIds.present ? data.tagIds.value : this.tagIds,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       lastRolloverAt: data.lastRolloverAt.present
           ? data.lastRolloverAt.value
@@ -1765,6 +1837,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           ..write('endDate: $endDate, ')
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
+          ..write('timeMinutes: $timeMinutes, ')
+          ..write('tagIds: $tagIds, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('lastRolloverAt: $lastRolloverAt, ')
           ..write('createdAt: $createdAt, ')
@@ -1789,6 +1863,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     endDate,
     recurrence,
     recurrenceInterval,
+    timeMinutes,
+    tagIds,
     sortOrder,
     lastRolloverAt,
     createdAt,
@@ -1812,6 +1888,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           other.endDate == this.endDate &&
           other.recurrence == this.recurrence &&
           other.recurrenceInterval == this.recurrenceInterval &&
+          other.timeMinutes == this.timeMinutes &&
+          other.tagIds == this.tagIds &&
           other.sortOrder == this.sortOrder &&
           other.lastRolloverAt == this.lastRolloverAt &&
           other.createdAt == this.createdAt &&
@@ -1833,6 +1911,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
   final Value<DateOnly?> endDate;
   final Value<EventRecurrence> recurrence;
   final Value<int> recurrenceInterval;
+  final Value<int?> timeMinutes;
+  final Value<List<String>> tagIds;
   final Value<int> sortOrder;
   final Value<int?> lastRolloverAt;
   final Value<int> createdAt;
@@ -1853,6 +1933,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.endDate = const Value.absent(),
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
+    this.timeMinutes = const Value.absent(),
+    this.tagIds = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.lastRolloverAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1874,6 +1956,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.endDate = const Value.absent(),
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
+    this.timeMinutes = const Value.absent(),
+    this.tagIds = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.lastRolloverAt = const Value.absent(),
     required int createdAt,
@@ -1900,6 +1984,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Expression<String>? endDate,
     Expression<String>? recurrence,
     Expression<int>? recurrenceInterval,
+    Expression<int>? timeMinutes,
+    Expression<String>? tagIds,
     Expression<int>? sortOrder,
     Expression<int>? lastRolloverAt,
     Expression<int>? createdAt,
@@ -1921,6 +2007,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       if (endDate != null) 'end_date': endDate,
       if (recurrence != null) 'recurrence': recurrence,
       if (recurrenceInterval != null) 'recurrence_interval': recurrenceInterval,
+      if (timeMinutes != null) 'time_minutes': timeMinutes,
+      if (tagIds != null) 'tag_ids': tagIds,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (lastRolloverAt != null) 'last_rollover_at': lastRolloverAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -1944,6 +2032,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Value<DateOnly?>? endDate,
     Value<EventRecurrence>? recurrence,
     Value<int>? recurrenceInterval,
+    Value<int?>? timeMinutes,
+    Value<List<String>>? tagIds,
     Value<int>? sortOrder,
     Value<int?>? lastRolloverAt,
     Value<int>? createdAt,
@@ -1965,6 +2055,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       endDate: endDate ?? this.endDate,
       recurrence: recurrence ?? this.recurrence,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      timeMinutes: timeMinutes ?? this.timeMinutes,
+      tagIds: tagIds ?? this.tagIds,
       sortOrder: sortOrder ?? this.sortOrder,
       lastRolloverAt: lastRolloverAt ?? this.lastRolloverAt,
       createdAt: createdAt ?? this.createdAt,
@@ -2026,6 +2118,14 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     if (recurrenceInterval.present) {
       map['recurrence_interval'] = Variable<int>(recurrenceInterval.value);
     }
+    if (timeMinutes.present) {
+      map['time_minutes'] = Variable<int>(timeMinutes.value);
+    }
+    if (tagIds.present) {
+      map['tag_ids'] = Variable<String>(
+        $PostItsTable.$convertertagIds.toSql(tagIds.value),
+      );
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -2063,6 +2163,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
           ..write('endDate: $endDate, ')
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
+          ..write('timeMinutes: $timeMinutes, ')
+          ..write('tagIds: $tagIds, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('lastRolloverAt: $lastRolloverAt, ')
           ..write('createdAt: $createdAt, ')
@@ -2494,6 +2596,415 @@ class PostItHistoryEntriesCompanion extends UpdateCompanion<PostItHistoryRow> {
           ..write('fromValue: $fromValue, ')
           ..write('toValue: $toValue, ')
           ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TagsTable extends Tags with TableInfo<$TagsTable, TagRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TagTone, String> tone =
+      GeneratedColumn<String>(
+        'tone',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TagTone>($TagsTable.$convertertone);
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<int> deletedAt = GeneratedColumn<int>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    tone,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TagRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TagRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TagRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      tone: $TagsTable.$convertertone.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tone'],
+        )!,
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $TagsTable createAlias(String alias) {
+    return $TagsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<TagTone, String, String> $convertertone =
+      const EnumNameConverter<TagTone>(TagTone.values);
+}
+
+class TagRow extends DataClass implements Insertable<TagRow> {
+  final String id;
+  final String name;
+  final TagTone tone;
+  final int createdAt;
+  final int updatedAt;
+  final int? deletedAt;
+  const TagRow({
+    required this.id,
+    required this.name,
+    required this.tone,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    {
+      map['tone'] = Variable<String>($TagsTable.$convertertone.toSql(tone));
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<int>(deletedAt);
+    }
+    return map;
+  }
+
+  TagsCompanion toCompanion(bool nullToAbsent) {
+    return TagsCompanion(
+      id: Value(id),
+      name: Value(name),
+      tone: Value(tone),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory TagRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TagRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      tone: $TagsTable.$convertertone.fromJson(
+        serializer.fromJson<String>(json['tone']),
+      ),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      deletedAt: serializer.fromJson<int?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'tone': serializer.toJson<String>($TagsTable.$convertertone.toJson(tone)),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'deletedAt': serializer.toJson<int?>(deletedAt),
+    };
+  }
+
+  TagRow copyWith({
+    String? id,
+    String? name,
+    TagTone? tone,
+    int? createdAt,
+    int? updatedAt,
+    Value<int?> deletedAt = const Value.absent(),
+  }) => TagRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    tone: tone ?? this.tone,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  TagRow copyWithCompanion(TagsCompanion data) {
+    return TagRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      tone: data.tone.present ? data.tone.value : this.tone,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TagRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('tone: $tone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, tone, createdAt, updatedAt, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TagRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.tone == this.tone &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class TagsCompanion extends UpdateCompanion<TagRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<TagTone> tone;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int?> deletedAt;
+  final Value<int> rowid;
+  const TagsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.tone = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TagsCompanion.insert({
+    required String id,
+    required String name,
+    required TagTone tone,
+    required int createdAt,
+    required int updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       tone = Value(tone),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<TagRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? tone,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (tone != null) 'tone': tone,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TagsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<TagTone>? tone,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return TagsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      tone: tone ?? this.tone,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (tone.present) {
+      map['tone'] = Variable<String>(
+        $TagsTable.$convertertone.toSql(tone.value),
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<int>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TagsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('tone: $tone, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3552,6 +4063,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PostItsTable postIts = $PostItsTable(this);
   late final $PostItHistoryEntriesTable postItHistoryEntries =
       $PostItHistoryEntriesTable(this);
+  late final $TagsTable tags = $TagsTable(this);
   late final $SyncOutboxTable syncOutbox = $SyncOutboxTable(this);
   late final $SyncRowStatesTable syncRowStates = $SyncRowStatesTable(this);
   late final $SyncStatesTable syncStates = $SyncStatesTable(this);
@@ -3575,6 +4087,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_post_it_history_post_it_id',
     'CREATE INDEX idx_post_it_history_post_it_id ON post_it_history_entries (post_it_id)',
   );
+  late final Index idxTagsName = Index(
+    'idx_tags_name',
+    'CREATE INDEX idx_tags_name ON tags (name)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3585,6 +4101,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     noteLines,
     postIts,
     postItHistoryEntries,
+    tags,
     syncOutbox,
     syncRowStates,
     syncStates,
@@ -3593,6 +4110,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxPostItsStatus,
     idxPostItsNoteId,
     idxPostItHistoryPostItId,
+    idxTagsName,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4521,6 +5039,8 @@ typedef $$PostItsTableCreateCompanionBuilder = PostItsCompanion Function({
   Value<DateOnly?> endDate,
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
+  Value<int?> timeMinutes,
+  Value<List<String>> tagIds,
   Value<int> sortOrder,
   Value<int?> lastRolloverAt,
   required int createdAt,
@@ -4542,6 +5062,8 @@ typedef $$PostItsTableUpdateCompanionBuilder = PostItsCompanion Function({
   Value<DateOnly?> endDate,
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
+  Value<int?> timeMinutes,
+  Value<List<String>> tagIds,
   Value<int> sortOrder,
   Value<int?> lastRolloverAt,
   Value<int> createdAt,
@@ -4666,6 +5188,17 @@ class $$PostItsTableFilterComposer
   ColumnFilters<int> get recurrenceInterval => $composableBuilder(
     column: $table.recurrenceInterval,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timeMinutes => $composableBuilder(
+    column: $table.timeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get tagIds => $composableBuilder(
+    column: $table.tagIds,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
@@ -4811,6 +5344,16 @@ class $$PostItsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get timeMinutes => $composableBuilder(
+    column: $table.timeMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tagIds => $composableBuilder(
+    column: $table.tagIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -4915,6 +5458,14 @@ class $$PostItsTableAnnotationComposer
     column: $table.recurrenceInterval,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get timeMinutes => $composableBuilder(
+    column: $table.timeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get tagIds =>
+      $composableBuilder(column: $table.tagIds, builder: (column) => column);
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
@@ -5024,6 +5575,8 @@ class $$PostItsTableTableManager
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
+                Value<int?> timeMinutes = const Value.absent(),
+                Value<List<String>> tagIds = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> lastRolloverAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -5044,6 +5597,8 @@ class $$PostItsTableTableManager
                 endDate: endDate,
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
+                timeMinutes: timeMinutes,
+                tagIds: tagIds,
                 sortOrder: sortOrder,
                 lastRolloverAt: lastRolloverAt,
                 createdAt: createdAt,
@@ -5066,6 +5621,8 @@ class $$PostItsTableTableManager
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
+                Value<int?> timeMinutes = const Value.absent(),
+                Value<List<String>> tagIds = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> lastRolloverAt = const Value.absent(),
                 required int createdAt,
@@ -5086,6 +5643,8 @@ class $$PostItsTableTableManager
                 endDate: endDate,
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
+                timeMinutes: timeMinutes,
+                tagIds: tagIds,
                 sortOrder: sortOrder,
                 lastRolloverAt: lastRolloverAt,
                 createdAt: createdAt,
@@ -5539,6 +6098,225 @@ typedef $$PostItHistoryEntriesTableProcessedTableManager =
       (PostItHistoryRow, $$PostItHistoryEntriesTableReferences),
       PostItHistoryRow,
       PrefetchHooks Function({bool postItId})
+    >;
+typedef $$TagsTableCreateCompanionBuilder = TagsCompanion Function({
+  required String id,
+  required String name,
+  required TagTone tone,
+  required int createdAt,
+  required int updatedAt,
+  Value<int?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$TagsTableUpdateCompanionBuilder = TagsCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<TagTone> tone,
+  Value<int> createdAt,
+  Value<int> updatedAt,
+  Value<int?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$TagsTableFilterComposer extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TagTone, TagTone, String> get tone =>
+      $composableBuilder(
+        column: $table.tone,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TagsTableOrderingComposer extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tone => $composableBuilder(
+    column: $table.tone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TagsTable> {
+  $$TagsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TagTone, String> get tone =>
+      $composableBuilder(column: $table.tone, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$TagsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TagsTable,
+          TagRow,
+          $$TagsTableFilterComposer,
+          $$TagsTableOrderingComposer,
+          $$TagsTableAnnotationComposer,
+          $$TagsTableCreateCompanionBuilder,
+          $$TagsTableUpdateCompanionBuilder,
+          (TagRow, BaseReferences<_$AppDatabase, $TagsTable, TagRow>),
+          TagRow,
+          PrefetchHooks Function()
+        > {
+  $$TagsTableTableManager(_$AppDatabase db, $TagsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TagsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<TagTone> tone = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TagsCompanion(
+                id: id,
+                name: name,
+                tone: tone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required TagTone tone,
+                required int createdAt,
+                required int updatedAt,
+                Value<int?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TagsCompanion.insert(
+                id: id,
+                name: name,
+                tone: tone,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TagsTable, TagRow>(table),
+                  BaseReferences<_$AppDatabase, $TagsTable, TagRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TagsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TagsTable,
+      TagRow,
+      $$TagsTableFilterComposer,
+      $$TagsTableOrderingComposer,
+      $$TagsTableAnnotationComposer,
+      $$TagsTableCreateCompanionBuilder,
+      $$TagsTableUpdateCompanionBuilder,
+      (TagRow, BaseReferences<_$AppDatabase, $TagsTable, TagRow>),
+      TagRow,
+      PrefetchHooks Function()
     >;
 typedef $$SyncOutboxTableCreateCompanionBuilder = SyncOutboxCompanion Function({
   required String entity,
@@ -6155,6 +6933,7 @@ class $AppDatabaseManager {
       $$PostItsTableTableManager(_db, _db.postIts);
   $$PostItHistoryEntriesTableTableManager get postItHistoryEntries =>
       $$PostItHistoryEntriesTableTableManager(_db, _db.postItHistoryEntries);
+  $$TagsTableTableManager get tags => $$TagsTableTableManager(_db, _db.tags);
   $$SyncOutboxTableTableManager get syncOutbox =>
       $$SyncOutboxTableTableManager(_db, _db.syncOutbox);
   $$SyncRowStatesTableTableManager get syncRowStates =>

@@ -7,6 +7,7 @@ import '../../data/db/converters.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 import 'sync_payload.dart';
 
 /// Grava a outbox na mesma transação das alterações locais.
@@ -49,6 +50,9 @@ final class SyncOutboxRecorder {
       await recordHistory(entry);
     }
   }
+
+  Future<void> recordTag(Tag tag) =>
+      _record(syncEntityTag, tag.id, tagPayload(tag), tag.updatedAt);
 
   Future<void> _record(
     String entity,

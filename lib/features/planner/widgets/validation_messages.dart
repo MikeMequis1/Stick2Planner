@@ -7,8 +7,7 @@ String postItValidationMessage(PostItValidationError error) {
     PostItValidationError.emptyTitle => AppStrings.errorTitleEmpty,
     PostItValidationError.titleTooLong => AppStrings.errorTitleLong,
     PostItValidationError.eventRequiresDate => AppStrings.errorEventDate,
-    PostItValidationError.eventEndBeforeStart =>
-      AppStrings.errorEndBeforeStart,
+    PostItValidationError.eventEndBeforeStart => AppStrings.errorEndBeforeStart,
     PostItValidationError.endDateRequiresStart =>
       AppStrings.errorEndWithoutStart,
     PostItValidationError.taskHasInterval => AppStrings.errorIntervalOnTask,

@@ -283,6 +283,23 @@ etapas. Cada item: contexto, decisão, consequência.
 - O esquema v6 migra de v1–v5; payloads/backups antigos sem os campos assumem
   `none`/`1`.
 
+## Horário, tags e conclusão (esquema v7)
+
+- Horário do evento é `timeMinutes` opcional (0–1439), relógio local; não é
+  timestamp UTC nem participa da ordenação.
+- Tags são uma tabela compartilhada (`id`, `name`, tom, timestamps) e
+  `post_its.tag_ids` guarda as associações. Excluir tag gera tombstone e remove
+  associações, nunca apaga o post-it.
+- As tags usam papéis/containers do `ColorScheme`, acompanhando a paleta ativa em
+  tema claro/escuro.
+- Eventos ativos com `endDate` anterior a hoje viram concluídos automaticamente;
+  a verificação é idempotente e grava um único `eventCompleted` no histórico.
+  Eventos sem data final mantêm o comportamento anterior.
+- O ícone junto ao título nos detalhes alterna concluída/reabrir sem fechar a
+  folha.
+- O esquema v7 migra de v1–v6; payloads/backups antigos assumem sem horário, sem
+  tags e sem repetição.
+
 ## Localização
 
 - **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`

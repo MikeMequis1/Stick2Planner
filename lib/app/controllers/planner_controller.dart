@@ -14,6 +14,7 @@ import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
 import '../../domain/repositories/post_it_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
+import '../../domain/usecases/ensure_event_completion.dart';
 import '../../domain/usecases/ensure_recurring_rollover.dart';
 import '../../domain/usecases/validate_post_it.dart';
 import '../planner_view_mode.dart';
@@ -73,7 +74,7 @@ final class PlannerController extends ChangeNotifier {
         AgendaViewMode.week,
       );
       _postIts = await _postItRepository.loadAll();
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       _error = null;
     } on Object {
       _error = 'load_failed';
@@ -87,6 +88,7 @@ final class PlannerController extends ChangeNotifier {
   Future<void> refresh() async {
     try {
       _postIts = await _postItRepository.loadAll();
+      await _applyDailyMaintenance();
       _error = null;
     } on Object {
       _error = 'load_failed';
@@ -172,7 +174,7 @@ final class PlannerController extends ChangeNotifier {
   /// operações relevantes. Não depende de timers.
   Future<void> ensureRecurringRollover() {
     return _exclusive(() async {
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       notifyListeners();
     });
   }
@@ -182,7 +184,7 @@ final class PlannerController extends ChangeNotifier {
 
   Future<void> setPostItStatus(PostIt postIt, PostItStatus status) {
     return _exclusive(() async {
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       final current = _findCurrent(postIt.id);
       if (current == null || current.status == status) return;
 
@@ -278,12 +280,14 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
+    int? timeMinutes,
+    List<String> tagIds = const [],
     String? noteId,
     String? noteExcerpt,
     String? sourceNoteId,
   }) {
     return _exclusive(() async {
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       final now = _clock.now().toUtc();
       final resolvedStart = type == PostItType.recurringTodo
           ? _initialRecurringDate(startDate)
@@ -308,6 +312,10 @@ final class PlannerController extends ChangeNotifier {
           effectiveRecurrence,
           recurrenceInterval,
         ),
+        timeMinutes: type == PostItType.event
+            ? _normalizeTime(timeMinutes)
+            : null,
+        tagIds: _normalizeTagIds(tagIds),
         sortOrder: _nextOrderFor(resolvedStart),
         lastRolloverAt: type == PostItType.recurringTodo ? now : null,
         createdAt: now,
@@ -334,9 +342,11 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
+    int? timeMinutes,
+    List<String> tagIds = const [],
   }) {
     return _exclusive(() async {
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       final current = _findCurrent(existing.id) ?? existing;
       final effectiveType = current.isRecurring ? current.type : type;
       final effectiveStart = current.isRecurring
@@ -361,6 +371,10 @@ final class PlannerController extends ChangeNotifier {
           effectiveRecurrence,
           recurrenceInterval,
         ),
+        timeMinutes: effectiveType == PostItType.event
+            ? _normalizeTime(timeMinutes)
+            : null,
+        tagIds: _normalizeTagIds(tagIds),
         sortOrder: dateChanged && effectiveType != PostItType.event
             ? _nextOrderFor(effectiveStart)
             : current.sortOrder,
@@ -415,7 +429,7 @@ final class PlannerController extends ChangeNotifier {
     int? targetIndex,
   }) {
     return _exclusive(() async {
-      await _applyRecurringRollover();
+      await _applyDailyMaintenance();
       final current = _findCurrent(postIt.id);
       if (current == null) return;
 
@@ -589,16 +603,28 @@ final class PlannerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _applyRecurringRollover() async {
-    final plan = const EnsureRecurringRollover()(
+  Future<void> _applyDailyMaintenance() async {
+    final now = _clock.now().toUtc();
+    final today = this.today;
+    final rollover = const EnsureRecurringRollover()(
       postIts: _postIts,
       today: today,
-      now: _clock.now().toUtc(),
+      now: now,
       idGenerator: () => const Uuid().v4(),
     );
-    if (!plan.hasChanges) return;
+    final completion = const EnsureEventCompletion()(
+      postIts: _postIts,
+      today: today,
+      now: now,
+      idGenerator: () => const Uuid().v4(),
+    );
+    final updates = [...rollover.updates, ...completion.updates];
+    if (updates.isEmpty) return;
 
-    await _postItRepository.saveBatch(plan.updates, history: plan.history);
+    await _postItRepository.saveBatch(
+      updates,
+      history: [...rollover.history, ...completion.history],
+    );
     _postIts = await _postItRepository.loadAll();
   }
 
@@ -623,6 +649,9 @@ final class PlannerController extends ChangeNotifier {
     }
     return null;
   }
+
+  /// Estado atual de um post-it pelo ID (para telas abertas).
+  PostIt? postItById(String id) => _findCurrent(id);
 
   List<PostIt> _sortedDayItems(DateOnly date) {
     final items = [
@@ -712,6 +741,39 @@ final class PlannerController extends ChangeNotifier {
       EventRecurrence.weekly => value.clamp(1, 52),
       EventRecurrence.monthly => value.clamp(1, 24),
     };
+  }
+
+  static int? _normalizeTime(int? value) {
+    if (value == null || value < 0 || value >= 24 * 60) return null;
+    return value;
+  }
+
+  static List<String> _normalizeTagIds(List<String> values) {
+    final seen = <String>{};
+    return [
+      for (final value in values)
+        if (value.isNotEmpty && seen.add(value)) value,
+    ];
+  }
+
+  /// Remove uma tag de todos os post-its ao excluí-la.
+  Future<void> removeTagFromAll(String tagId) {
+    return _exclusive(() async {
+      final updates = <PostIt>[
+        for (final postIt in _postIts)
+          if (postIt.tagIds.contains(tagId))
+            postIt.copyWith(
+              tagIds: [
+                for (final id in postIt.tagIds)
+                  if (id != tagId) id,
+              ],
+              updatedAt: _clock.now().toUtc(),
+            ),
+      ];
+      if (updates.isEmpty) return;
+      await _postItRepository.saveBatch(updates);
+      await _reload();
+    });
   }
 
   static String? _normalizeDetails(String? details) {

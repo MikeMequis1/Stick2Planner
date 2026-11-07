@@ -10,6 +10,7 @@ import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/sync/sync_models.dart';
 import 'about_page.dart';
+import '../tags/tags_page.dart';
 import 'connection_test_page.dart';
 import 'qr_scan_page.dart';
 
@@ -193,6 +194,27 @@ class _SettingsPageState extends State<SettingsPage> {
                         onChanged: settings.setShowCalendarHints,
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  AppStrings.settingsTags,
+                  style: theme.textTheme.titleSmall,
+                ),
+                SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    key: const Key('settings-tags'),
+                    leading: const Icon(Icons.sell_outlined),
+                    title: Text(AppStrings.settingsTags),
+                    subtitle: Text(AppStrings.settingsTagsHelp),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const TagsPage(),
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 24),
@@ -767,6 +789,7 @@ class _BackupSectionState extends State<_BackupSection> {
       if (!mounted) return;
       await scope.planner.refresh();
       await scope.notes.refresh();
+      await scope.tags.refresh();
       await scope.settings.reload();
       if (!mounted) return;
       messenger.showSnackBar(
@@ -819,6 +842,7 @@ class _BackupSectionState extends State<_BackupSection> {
       if (!mounted) return;
       await scope.planner.refresh();
       await scope.notes.refresh();
+      await scope.tags.refresh();
       await scope.settings.reload();
       if (!mounted) return;
       messenger.showSnackBar(

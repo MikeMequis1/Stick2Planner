@@ -18,10 +18,19 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 ## Funcionalidades
 
 - **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos multi-dia; arraste,
-  redimensionamento, reordenação e criação rápida; janela de 4 dias ancorada.
+  redimensionamento, reordenação e criação rápida; janela de 4 dias ancorada;
+  dias anteriores recebem um tom acinzentado discreto.
 - **Repetição de eventos:** diária, a cada N semanas, a cada N meses ou anual;
   as ocorrências mantêm a duração do evento.
-- **Caixinha:** busca, filtros por estado, ordenação e post-its sem data.
+- **Horário do evento:** horário inicial opcional, sempre visível na barra do
+  evento, sem substituir datas nem timestamps internos.
+- **Tags:** tags compartilhadas entre eventos e tarefas, com cores da paleta,
+  gerenciamento, filtro múltiplo na Caixinha e suporte a sync/backup.
+- **Done/feito:** eventos positivos usam ícone de lápis e uma explicação curta;
+  eventos são concluídos automaticamente após a data final e tarefas podem ser
+  concluídas pelo ícone junto ao título nos detalhes.
+- **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
+  sem data.
 - **Notas:** renderização Markdown, checklists, seleção de linhas, snapshots e
   vínculos vivos entre notas e post-its.
 - **Offline-first:** todos os dados ficam em SQLite local. Não há conta e o app
@@ -39,7 +48,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 ## Stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (esquema v6, migrações v1 → v6).
+- Drift + SQLite (esquema v7, migrações v1 → v7).
 - Servidor de sincronização opcional em Dart/shelf + SQLite, com imagens Docker
   prontas: [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Tokens de dispositivo guardados com `flutter_secure_storage`.

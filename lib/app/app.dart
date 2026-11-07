@@ -19,6 +19,7 @@ class PlannerApp extends StatelessWidget {
     return AppScope(
       planner: dependencies.planner,
       notes: dependencies.notes,
+      tags: dependencies.tags,
       navigation: dependencies.navigation,
       settings: dependencies.settings,
       backup: dependencies.backup,

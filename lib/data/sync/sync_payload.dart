@@ -2,11 +2,13 @@ import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/tag.dart';
 
 /// Entidades sincronizáveis. Preferências e credenciais ficam locais.
 const syncEntityPostIt = 'postIt';
 const syncEntityNote = 'note';
 const syncEntityHistory = 'history';
+const syncEntityTag = 'tag';
 
 Map<String, Object?> postItPayload(PostIt postIt) => {
   'id': postIt.id,
@@ -22,6 +24,8 @@ Map<String, Object?> postItPayload(PostIt postIt) => {
   'endDate': postIt.endDate?.toIso8601String(),
   'recurrence': postIt.recurrence.name,
   'recurrenceInterval': postIt.recurrenceInterval,
+  'timeMinutes': postIt.timeMinutes,
+  'tagIds': postIt.tagIds,
   'sortOrder': postIt.sortOrder,
   'lastRolloverAt': postIt.lastRolloverAt?.toUtc().toIso8601String(),
   'createdAt': postIt.createdAt.toUtc().toIso8601String(),
@@ -47,6 +51,8 @@ PostIt postItFromPayload(Map<String, Object?> payload) => PostIt(
     EventRecurrence.none,
   ),
   recurrenceInterval: _optionalInteger(payload, 'recurrenceInterval', 1),
+  timeMinutes: _optionalNullableInteger(payload, 'timeMinutes'),
+  tagIds: _stringList(payload['tagIds']),
   sortOrder: _integer(payload, 'sortOrder'),
   lastRolloverAt: _optionalTime(payload, 'lastRolloverAt'),
   createdAt: _time(payload, 'createdAt'),
@@ -123,6 +129,24 @@ PostItHistoryEntry historyFromPayload(Map<String, Object?> payload) =>
       createdAt: _time(payload, 'createdAt'),
     );
 
+Map<String, Object?> tagPayload(Tag tag) => {
+  'id': tag.id,
+  'name': tag.name,
+  'tone': tag.tone.name,
+  'createdAt': tag.createdAt.toUtc().toIso8601String(),
+  'updatedAt': tag.updatedAt.toUtc().toIso8601String(),
+  'deletedAt': tag.deletedAt?.toUtc().toIso8601String(),
+};
+
+Tag tagFromPayload(Map<String, Object?> payload) => Tag(
+  id: _text(payload, 'id'),
+  name: _text(payload, 'name'),
+  tone: _optionalEnum(TagTone.values, payload['tone'], TagTone.primary),
+  createdAt: _time(payload, 'createdAt'),
+  updatedAt: _time(payload, 'updatedAt'),
+  deletedAt: _optionalTime(payload, 'deletedAt'),
+);
+
 String _text(Map<String, Object?> payload, String key) {
   final value = payload[key];
   if (value is String && value.isNotEmpty) return value;
@@ -185,4 +209,17 @@ int _optionalInteger(Map<String, Object?> payload, String key, int fallback) {
   final value = payload[key];
   if (value is int) return value;
   return fallback;
+}
+
+int? _optionalNullableInteger(Map<String, Object?> payload, String key) {
+  final value = payload[key];
+  return value is int ? value : null;
+}
+
+List<String> _stringList(Object? raw) {
+  if (raw is! List) return const [];
+  return [
+    for (final value in raw)
+      if (value is String && value.isNotEmpty) value,
+  ];
 }
