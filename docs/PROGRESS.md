@@ -1422,3 +1422,4 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
 - `flutter test`: **275 tests passing**; server: **16 tests passing**.
+  Version **0.3.1+6** packages the sync fixes.

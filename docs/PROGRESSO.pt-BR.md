@@ -1421,6 +1421,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
 - `flutter test`: **275 testes aprovados**; servidor: **16 testes aprovados**.
+  Versão **0.3.1+6** empacota as correções de sync.
 
 
 

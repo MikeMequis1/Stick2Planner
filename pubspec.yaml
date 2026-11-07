@@ -2,7 +2,7 @@ name: stick2planner
 description: "Stick2Planner - planner visual offline-first para tablets Android."
 publish_to: 'none'
 
-version: 0.3.0+5
+version: 0.3.1+6
 
 environment:
   sdk: ^3.13.7
