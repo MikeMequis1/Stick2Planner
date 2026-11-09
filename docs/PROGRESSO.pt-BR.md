@@ -1417,11 +1417,14 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - A conferência de sync agora conta tags dos dois lados, diferenças apenas de tag
   exigem confirmação e **Manter remoto** limpa as tags locais antes de aplicar o
   snapshot. Tags viajam como entidade própria, com tombstones e `tagIds`.
+- Conexões em arquivo agora usam WAL, `busy_timeout = 5000` e
+  `synchronous = NORMAL`, evitando falhas transitórias de `database is locked`
+  quando a conexão do WorkManager cruza uma leitura/escrita do foreground.
 - O ícone do tipo Tarefa agora é uma caixa marcada (☑) e os chips de tipo do
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
-- `flutter test`: **275 testes aprovados**; servidor: **16 testes aprovados**.
-  Versão **0.3.1+6** empacota as correções de sync.
+- `flutter test`: **276 testes aprovados**; servidor: **16 testes aprovados**.
+  Versão **0.3.2+7** empacota as correções de sync.
 
 
 

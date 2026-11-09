@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' show Database;
 
 import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
@@ -128,6 +129,16 @@ class AppDatabase extends _$AppDatabase {
     return rows.isNotEmpty;
   }
 
+  /// Ajustes aplicados a toda conexão em arquivo (app e WorkManager).
+  static void configureConnection(Database database) {
+    // O WorkManager abre outra conexão no isolate de background. WAL + espera
+    // por lock evitam falhas de "database is locked" quando o sync automático
+    // coincide com uma escrita/abertura no foreground.
+    database.execute('PRAGMA journal_mode = WAL');
+    database.execute('PRAGMA busy_timeout = 5000');
+    database.execute('PRAGMA synchronous = NORMAL');
+  }
+
   /// Conexão em arquivo dentro do diretório de dados do aplicativo.  ///
   /// O caminho depende de `path_provider`, por isso é resolvido de forma
   /// preguiçosa; testes injetam um executor próprio.
@@ -136,7 +147,10 @@ class AppDatabase extends _$AppDatabase {
       final directory = await getApplicationSupportDirectory();
       await directory.create(recursive: true);
       final file = File(p.join(directory.path, fileName));
-      return NativeDatabase.createInBackground(file);
+      return NativeDatabase.createInBackground(
+        file,
+        setup: configureConnection,
+      );
     });
   }
 

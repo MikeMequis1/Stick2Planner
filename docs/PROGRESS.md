@@ -1418,8 +1418,11 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Sync review counts now include tags on both sides, tag-only differences require
   confirmation, and **Keep remote** clears local tags before applying the remote
   snapshot. Tags travel as a first-class entity with tombstones and `tagIds`.
+- File connections now use WAL, `busy_timeout = 5000` and `synchronous = NORMAL`,
+  preventing transient `database is locked` failures when the WorkManager
+  connection overlaps a foreground read/write.
 - The task type icon is now a checked box (☑) and the editor type chips no longer
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **275 tests passing**; server: **16 tests passing**.
-  Version **0.3.1+6** packages the sync fixes.
+- `flutter test`: **276 tests passing**; server: **16 tests passing**.
+  Version **0.3.2+7** packages the sync fixes.
