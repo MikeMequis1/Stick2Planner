@@ -324,10 +324,28 @@ SyncAck _ack(Object? raw) {
 
 SyncConflict _conflict(Object? raw) {
   final map = _map(raw, 'conflict');
+  final entity = _string(map['entity'], 'conflict.entity');
+  final entityId = _string(map['entityId'], 'conflict.entityId');
+  final server = _map(map['server'], 'conflict.server');
+  final payload = server['payload'];
+  final decoded = payload is String ? jsonDecode(payload) : payload;
+  if (decoded is! Map) {
+    throw const SyncException('payload inválido');
+  }
   return SyncConflict(
-    entity: _string(map['entity'], 'conflict.entity'),
-    entityId: _string(map['entityId'], 'conflict.entityId'),
-    server: _remote(map['server']),
+    entity: entity,
+    entityId: entityId,
+    server: SyncRemoteChange(
+      entity: entity,
+      entityId: entityId,
+      rev: _int(server['rev'], 'conflict.server.rev'),
+      deleted: server['deleted'] == true,
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        _int(server['updatedAt'], 'conflict.server.updatedAt'),
+        isUtc: true,
+      ),
+      payload: Map<String, Object?>.from(decoded),
+    ),
   );
 }
 

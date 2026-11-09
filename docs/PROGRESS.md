@@ -1421,8 +1421,11 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - File connections now use WAL, `busy_timeout = 5000` and `synchronous = NORMAL`,
   preventing transient `database is locked` failures when the WorkManager
   connection overlaps a foreground read/write.
+- Conflict responses are parsed with the outer entity/entityId and the nested
+  server state, fixing `change.entity inválido` failures when tags or notes
+  conflict during sync.
 - The task type icon is now a checked box (☑) and the editor type chips no longer
   show the selection checkmark.
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
-- `flutter test`: **276 tests passing**; server: **16 tests passing**.
-  Version **0.3.2+7** packages the sync fixes.
+- `flutter test`: **277 tests passing**; server: **16 tests passing**.
+  Version **0.3.3+8** packages the sync fixes.

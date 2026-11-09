@@ -1420,11 +1420,14 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Conexões em arquivo agora usam WAL, `busy_timeout = 5000` e
   `synchronous = NORMAL`, evitando falhas transitórias de `database is locked`
   quando a conexão do WorkManager cruza uma leitura/escrita do foreground.
+- Respostas de conflito são lidas com a entidade externa e o estado aninhado do
+  servidor, corrigindo `change.entity inválido` quando tags ou notas entram em
+  conflito durante o sync.
 - O ícone do tipo Tarefa agora é uma caixa marcada (☑) e os chips de tipo do
   editor não exibem mais o check de seleção.
 - O antigo rótulo **Done/feito** agora é **Feito** (PT-BR) e **Feat** (EN).
-- `flutter test`: **276 testes aprovados**; servidor: **16 testes aprovados**.
-  Versão **0.3.2+7** empacota as correções de sync.
+- `flutter test`: **277 testes aprovados**; servidor: **16 testes aprovados**.
+  Versão **0.3.3+8** empacota as correções de sync.
 
 
 
