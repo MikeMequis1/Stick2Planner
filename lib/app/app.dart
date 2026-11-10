@@ -20,6 +20,8 @@ class PlannerApp extends StatelessWidget {
       planner: dependencies.planner,
       notes: dependencies.notes,
       tags: dependencies.tags,
+      routines: dependencies.routines,
+      notifications: dependencies.notifications,
       navigation: dependencies.navigation,
       settings: dependencies.settings,
       backup: dependencies.backup,

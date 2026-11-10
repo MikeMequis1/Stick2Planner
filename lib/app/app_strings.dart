@@ -704,4 +704,102 @@ abstract final class AppStrings {
   );
   static String hiddenEvents(int count) =>
       _language == AppLanguage.en ? '+$count events' : '+$count eventos';
+
+  // Rotinas
+  static String get routines => _t('Rotinas', 'Routines');
+  static String get routineNew => _t('Nova rotina', 'New routine');
+  static String get routineEdit => _t('Editar rotina', 'Edit routine');
+  static String get routineName => _t('Nome da rotina', 'Routine name');
+  static String get routineDescription =>
+      _t('Descrição (opcional)', 'Description (optional)');
+  static String get routineDays => _t('Dias da semana', 'Days of the week');
+  static String get routineActivities => _t('Atividades', 'Activities');
+  static String get routineAddItem => _t('Adicionar atividade', 'Add activity');
+  static String get routineItemTitle => _t('Atividade', 'Activity');
+  static String get routineItemDescription => _t(
+    'Descrição da atividade (opcional)',
+    'Activity description (optional)',
+  );
+  static String get routineEmpty => _t(
+    'Nenhuma rotina criada ainda. Crie uma para organizar a semana.',
+    'No routines yet. Create one to organize your week.',
+  );
+  static String get routineEmptyDay =>
+      _t('Nenhuma rotina para este dia.', 'No routines for this day.');
+  static String routineProgress(int done, int total) =>
+      _language == AppLanguage.en
+      ? '$done of $total done'
+      : '$done de $total concluídas';
+  static String routineItemCount(int count) =>
+      _language == AppLanguage.en ? '$count activities' : '$count atividades';
+  static String get routineNoDays =>
+      _t('Selecione pelo menos um dia.', 'Select at least one day.');
+  static String get routineNameRequired =>
+      _t('Informe o nome da rotina.', 'Enter the routine name.');
+  static String get routineDeleteTitle =>
+      _t('Excluir rotina?', 'Delete routine?');
+  static String get routineDeleteBody => _t(
+    'A rotina e suas atividades serão excluídas. Os post-its não serão alterados.',
+    'The routine and its activities will be deleted. Post-its are not changed.',
+  );
+  static String get routineDeleted =>
+      _t('Rotina excluída.', 'Routine deleted.');
+  static String get routineSaved => _t('Rotina salva.', 'Routine saved.');
+  static String get routineItemRequired =>
+      _t('Informe o nome da atividade.', 'Enter the activity name.');
+  static String weekdayShort(int weekday) => switch (weekday) {
+    1 => _t('Seg', 'Mon'),
+    2 => _t('Ter', 'Tue'),
+    3 => _t('Qua', 'Wed'),
+    4 => _t('Qui', 'Thu'),
+    5 => _t('Sex', 'Fri'),
+    6 => _t('Sáb', 'Sat'),
+    _ => _t('Dom', 'Sun'),
+  };
+
+  // Notificações
+  static String get settingsNotifications =>
+      _t('Notificações', 'Notifications');
+  static String get settingsNotificationsHelp => _t(
+    'Resumo diário e lembretes locais, sem internet.',
+    'Daily summary and local reminders, no internet required.',
+  );
+  static String get notificationsEnabled =>
+      _t('Ativar notificações', 'Enable notifications');
+  static String get notificationsEnabledHelp => _t(
+    'Mostra o resumo do dia e os lembretes configurados.',
+    'Shows the daily summary and configured reminders.',
+  );
+  static String get notificationsPermissionDenied => _t(
+    'Permissão de notificações não concedida.',
+    'Notification permission was not granted.',
+  );
+  static String get notificationDailyTitle =>
+      _t('Hoje no Stick2Planner', 'Today in Stick2Planner');
+  static String get notificationReminderTitle => _t('Lembrete', 'Reminder');
+  static String notificationSummaryMore(int count) =>
+      _language == AppLanguage.en ? '+$count more' : '+$count mais';
+  static String notificationReminderBody(String title, int minutes) =>
+      _language == AppLanguage.en
+      ? '$title in $minutes minutes'
+      : '$title em $minutes minutos';
+  static String get reminderLabel => _t('Lembrete', 'Reminder');
+  static String get reminderNone => _t('Sem lembrete', 'No reminder');
+  static String reminderMinutes(int minutes) => _language == AppLanguage.en
+      ? '$minutes min before'
+      : '$minutes min antes';
+  static String get reminderNeedsTime => _t(
+    'Defina um horário para usar lembretes.',
+    'Set a time to use reminders.',
+  );
+
+  // Campos contextuais
+  static String get resolvedFieldsHidden => _t(
+    'Datas, horário e recorrência ficam ocultos enquanto o item está concluído ou cancelado. Reabra para editar.',
+    'Dates, time and recurrence are hidden while the item is done or cancelled. Reopen it to edit.',
+  );
+
+  // Navegação compacta
+  static String get configShort => _t('Config', 'Config');
+  static String get syncShort => _t('Sync', 'Sync');
 }

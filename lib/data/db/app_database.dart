@@ -28,6 +28,9 @@ part 'app_database.g.dart';
     PostIts,
     PostItHistoryEntries,
     Tags,
+    Routines,
+    RoutineItems,
+    RoutineCompletions,
     SyncOutbox,
     SyncRowStates,
     SyncStates,
@@ -37,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -108,6 +111,21 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE tags SET tone = 'tertiary' WHERE tone = 'tertiarySoft'",
           );
+        }
+      }
+      if (from < 9) {
+        if (await _hasTable('post_its') &&
+            !await _hasColumn('post_its', 'reminder_minutes')) {
+          await migrator.addColumn(postIts, postIts.reminderMinutes);
+        }
+        if (!await _hasTable('routines')) {
+          await migrator.createTable(routines);
+        }
+        if (!await _hasTable('routine_items')) {
+          await migrator.createTable(routineItems);
+        }
+        if (!await _hasTable('routine_completions')) {
+          await migrator.createTable(routineCompletions);
         }
       }
     },

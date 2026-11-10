@@ -28,6 +28,7 @@ final class PostIt {
     this.recurrence = EventRecurrence.none,
     this.recurrenceInterval = 1,
     this.timeMinutes,
+    this.reminderMinutes,
     this.tagIds = const [],
     this.sortOrder = 0,
     this.lastRolloverAt,
@@ -65,8 +66,11 @@ final class PostIt {
   /// Intervalo em semanas ou meses conforme [recurrence].
   final int recurrenceInterval;
 
-  /// Horário opcional do evento em minutos desde a meia-noite.
+  /// Horário opcional do evento/tarefa em minutos desde a meia-noite.
   final int? timeMinutes;
+
+  /// Minutos de antecedência do lembrete; exige [timeMinutes].
+  final int? reminderMinutes;
 
   /// IDs das tags associadas; definições ficam em `tags`.
   final List<String> tagIds;
@@ -128,6 +132,7 @@ final class PostIt {
     EventRecurrence? recurrence,
     int? recurrenceInterval,
     Object? timeMinutes = _unset,
+    Object? reminderMinutes = _unset,
     List<String>? tagIds,
     int? sortOrder,
     Object? lastRolloverAt = _unset,
@@ -158,6 +163,9 @@ final class PostIt {
       timeMinutes: identical(timeMinutes, _unset)
           ? this.timeMinutes
           : timeMinutes as int?,
+      reminderMinutes: identical(reminderMinutes, _unset)
+          ? this.reminderMinutes
+          : reminderMinutes as int?,
       tagIds: tagIds ?? this.tagIds,
       sortOrder: sortOrder ?? this.sortOrder,
       lastRolloverAt: identical(lastRolloverAt, _unset)

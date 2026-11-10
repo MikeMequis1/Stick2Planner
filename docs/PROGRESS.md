@@ -1429,3 +1429,31 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - The former **Done/feito** label is now **Feito** (PT-BR) and **Feat** (EN).
 - `flutter test`: **277 tests passing**; server: **16 tests passing**.
   Version **0.3.3+8** packages the sync fixes.
+
+## Navigation, notes, routines and notifications (2026-11-10)
+
+- Navigation is now a single adaptive surface: landscape rail with the main
+  sections at the top and Config/Sync pinned at the bottom; portrait bottom bar
+  with all actions distributed evenly. The app name was removed from the top.
+- Notes text fields keep the native editing behavior. The Markdown toolbar no
+  longer takes keyboard focus, and the editor exposes the adaptive system text
+  selection menu for cut/copy/paste/select all.
+- **Routines** were added with weekly cards, expandable activities, editing,
+  reordering, deletion and completion stored per `item + date`; completing a
+  routine on Monday does not complete Tuesday.
+- **Notifications** were added with a global switch, daily summary for the next
+  seven days and per-item reminders (5/10/15/30/60 minutes before). Scheduling is
+  local and Android-only; Windows remains a no-op.
+- Post-its accept an optional time for tasks as well as events, plus
+  `reminderMinutes`; reminders are skipped without a time, for resolved items and
+  for past occurrences.
+- Resolved items hide date/time/recurrence editing while keeping the stored
+  values, reducing form noise during completion follow-up.
+- Schema **v9** adds `routines`, `routine_items`, `routine_completions` and
+  `post_its.reminder_minutes`, migrating from v1–v8 without resetting data.
+  Backups accept v4–v9 and carry `reminderMinutes`; routines are local-only and
+  are not part of JSON backups or sync yet.
+- `flutter test`: **284 tests passing**; server: **16 tests passing**.
+- Build: `flutter build apk --release --split-per-abi`; version **0.4.0+9**.
+  Installed on the tablet (`versionCode 2009`) preserving prior data. Not
+  published pending authorization.

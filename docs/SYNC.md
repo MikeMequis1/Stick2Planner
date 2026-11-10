@@ -199,6 +199,13 @@ suspended until the user decides.
 - Tags count in the local/remote review and in keep-local/keep-remote
   replacement, together with post-its and notes.
 
+## Routines
+
+- Routines and their per-day completion states are local-only in this version;
+  they are not sent to the server.
+- Post-it reminders (`reminderMinutes`) travel inside the post-it payload and are
+  stored opaquely by the server.
+
 ## Notes and links
 
 - A **note is an atomic unit**: title, type, Markdown, lines/checklists, IDs,

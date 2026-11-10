@@ -9,7 +9,7 @@ const backupFormatName = 'stick2planner-backup';
 const backupFormatVersion = 1;
 
 /// Versões de esquema local cujos backups podem ser importados.
-const supportedBackupSchemaVersions = <int>{4, 5, 6, 7, 8};
+const supportedBackupSchemaVersions = <int>{4, 5, 6, 7, 8, 9};
 
 /// Falhas previstas ao ler, validar ou aplicar um backup.
 enum BackupErrorCode {
@@ -382,6 +382,16 @@ final class BackupDocument {
         throw const BackupException(
           BackupErrorCode.invalidData,
           'postIts.tagIds inválido',
+        );
+      }
+      final reminderMinutes = row['reminderMinutes'];
+      if (reminderMinutes != null &&
+          (reminderMinutes is! int ||
+              reminderMinutes < 0 ||
+              reminderMinutes > 7 * 24 * 60)) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'postIts.reminderMinutes inválido',
         );
       }
       final noteId = row['noteId'];

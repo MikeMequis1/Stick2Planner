@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -12,12 +13,15 @@ import '../data/repositories/drift_note_repository.dart';
 import '../data/repositories/drift_post_it_repository.dart';
 import '../data/repositories/drift_settings_repository.dart';
 import '../data/repositories/drift_tag_repository.dart';
+import '../data/repositories/drift_routine_repository.dart';
 import '../data/sync/sync_state_store.dart';
 import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
+import 'controllers/routines_controller.dart';
 import 'controllers/tags_controller.dart';
+import 'services/notification_service.dart';
 import 'services/screen_wake_service.dart';
 import 'services/sync_coordinator.dart';
 import 'services/token_store.dart';
@@ -38,6 +42,8 @@ final class AppDependencies {
     required this.planner,
     required this.notes,
     required this.tags,
+    required this.routines,
+    AppNotificationService? notifications,
     AppNavigationController? navigation,
     AppSettingsController? settings,
     ScreenWakeService? screenWake,
@@ -48,6 +54,7 @@ final class AppDependencies {
     SyncTransportFactory? syncTransportFactory,
     Stream<bool>? connectivityChanges,
   }) : navigation = navigation ?? AppNavigationController(),
+       notifications = notifications ?? AppNotificationService(),
        screenWake = screenWake ?? const WakelockPlusScreenWakeService(),
        backupFiles = backupFiles ?? const FilePickerBackupGateway(),
        backup =
@@ -94,6 +101,7 @@ final class AppDependencies {
     final noteRepository = DriftNoteRepository(database);
     final settingsRepository = DriftSettingsRepository(database);
     final tagRepository = DriftTagRepository(database);
+    final routineRepository = DriftRoutineRepository(database);
 
     return AppDependencies(
       database: database,
@@ -110,6 +118,7 @@ final class AppDependencies {
       ),
       notes: NotesController(noteRepository: noteRepository, clock: clock),
       tags: TagsController(repository: tagRepository, clock: clock),
+      routines: RoutinesController(repository: routineRepository, clock: clock),
     );
   }
 
@@ -127,6 +136,8 @@ final class AppDependencies {
   final PlannerController planner;
   final NotesController notes;
   final TagsController tags;
+  final RoutinesController routines;
+  final AppNotificationService notifications;
   final AppNavigationController navigation;
   final AppSettingsController settings;
   final ScreenWakeService screenWake;
@@ -134,22 +145,51 @@ final class AppDependencies {
   final BackupFileGateway backupFiles;
   late final TokenStore tokens;
   late final SyncCoordinator sync;
+  Timer? _notificationTimer;
 
   Future<void> initialize() async {
     await Future.wait([
       planner.initialize(),
       notes.initialize(),
       tags.initialize(),
+      routines.initialize(),
       settings.initialize(),
     ]);
+    await notifications.initialize(enabled: settings.notificationsEnabled);
+    planner.addListener(_onDataChanged);
+    routines.addListener(_onDataChanged);
+    settings.addListener(_onDataChanged);
+    await refreshNotifications();
     await sync.initialize();
   }
 
+  /// Reagenda resumo/lembretes depois de retomada ou alteração relevante.
+  Future<void> refreshNotifications() async {
+    await notifications.setEnabled(settings.notificationsEnabled);
+    await notifications.sync(
+      postIts: planner.postIts,
+      routines: routines.routines,
+    );
+  }
+
+  void _onDataChanged() {
+    if (!notifications.isSupported) return;
+    _notificationTimer?.cancel();
+    _notificationTimer = Timer(const Duration(seconds: 2), () {
+      unawaited(refreshNotifications());
+    });
+  }
+
   Future<void> dispose() async {
+    _notificationTimer?.cancel();
+    planner.removeListener(_onDataChanged);
+    routines.removeListener(_onDataChanged);
+    settings.removeListener(_onDataChanged);
     sync.dispose();
     planner.dispose();
     notes.dispose();
     tags.dispose();
+    routines.dispose();
     navigation.dispose();
     settings.dispose();
     await database.close();

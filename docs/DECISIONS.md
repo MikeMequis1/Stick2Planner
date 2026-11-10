@@ -319,6 +319,22 @@ stages. Each item: context, decision, consequence.
 - Tag tones are limited to five; schema v8 rewrites legacy `tertiarySoft` tags to
   `tertiary`, keeping the hue instead of dropping the tag.
 
+## Routines and notifications (schema v9)
+
+- Routines are local-only (`routines`, `routine_items`, `routine_completions`).
+  Completion is keyed by `routine_item_id + date`, so each occurrence has an
+  independent state; no global completion flag.
+- `post_its.reminder_minutes` stores the lead time; reminders require
+  `time_minutes` and an active item. Re-scheduling cancels and rebuilds the local
+  notification set, avoiding duplicates and dropping resolved/past items.
+- Android notifications use `flutter_local_notifications` with inexact alarms
+  (no exact-alarm permission); Windows and tests are no-ops. Daily summaries are
+  scheduled for the next seven days at 08:00.
+- The navigation shell now has one adaptive surface: landscape rail with
+  Config/Sync pinned at the bottom and a six-action bar in portrait.
+- Routines are not part of sync or JSON backups yet; post-it reminders are
+  carried in both.
+
 ## Localization
 
 - **App:** Portuguese (BR) and English, persisted in `app_settings`. `AppStrings`

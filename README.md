@@ -30,6 +30,12 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
   explanation. Completed events are marked done automatically after their end
   date; tasks can be completed from the details title icon.
 - **Inbox:** search, status filters, tag filters, sorting and undated post-its.
+- **Routines:** weekly cards with activities, per-day completion (independent for
+  each occurrence), expandable sections and local persistence.
+- **Notifications:** optional daily summary and per-item reminders (minutes
+  before), scheduled locally on Android without internet.
+- **Navigation:** adaptive single rail in landscape (Config/Sync at the bottom)
+  and an evenly distributed bottom bar in portrait.
 - **Notes:** Markdown rendering, checklists, line selection, snapshots and live
   links between notes and post-its.
 - **Offline first:** all data is stored locally in SQLite. No account is
@@ -47,7 +53,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart, Android SDK.
-- Drift + SQLite (schema v8, migrations v1 → v8).
+- Drift + SQLite (schema v9, migrations v1 → v9).
 - Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:
   [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Secure device tokens stored with `flutter_secure_storage`.

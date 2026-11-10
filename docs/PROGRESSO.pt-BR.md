@@ -1429,5 +1429,33 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter test`: **277 testes aprovados**; servidor: **16 testes aprovados**.
   Versão **0.3.3+8** empacota as correções de sync.
 
+## Navegação, notas, rotinas e notificações (2026-11-10)
+
+- A navegação agora é uma superfície adaptativa única: trilho em paisagem com as
+  seções principais no topo e Config/Sync fixos no rodapé; barra inferior em
+  retrato com todas as ações distribuídas igualmente. O nome do app saiu do topo.
+- Os campos de texto das Notas mantêm o comportamento nativo. A barra Markdown
+  não rouba mais o foco do teclado e o editor expõe o menu de seleção adaptativo
+  do sistema para recortar/copiar/colar/selecionar tudo.
+- **Rotinas** foram adicionadas com cards semanais, atividades expansíveis,
+  edição, reordenação, exclusão e conclusão por `item + data`; concluir na
+  segunda não conclui na terça.
+- **Notificações** ganharam chave geral, resumo diário dos próximos sete dias e
+  lembretes por item (5/10/15/30/60 minutos antes). O agendamento é local e só
+  no Android; no Windows permanece no-op.
+- Post-its aceitam horário opcional também em tarefas e um `reminderMinutes`;
+  lembretes são ignorados sem horário, para itens resolvidos e ocorrências
+  passadas.
+- Itens concluídos/cancelados ocultam data/horário/recorrência, preservando os
+  valores gravados e reduzindo ruído visual.
+- Esquema **v9** adiciona `routines`, `routine_items`, `routine_completions` e
+  `post_its.reminder_minutes`, migrando de v1–v8 sem resetar dados. Backups
+  aceitam v4–v9 e carregam `reminderMinutes`; rotinas são locais e ainda não
+  entram em backup JSON nem no sync.
+- `flutter test`: **284 testes aprovados**; servidor: **16 testes aprovados**.
+- Build: `flutter build apk --release --split-per-abi`; versão **0.4.0+9**.
+  Instalada no tablet (`versionCode 2009`) preservando os dados anteriores. Não
+  publicada, aguardando autorização.
+
 
 

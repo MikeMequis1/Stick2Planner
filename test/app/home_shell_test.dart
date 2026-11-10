@@ -20,13 +20,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('abre na agenda e navega pelas três seções', (tester) async {
+  testWidgets('abre na agenda e navega pelas seções', (tester) async {
     await pumpApp(tester);
 
-    expect(find.text(AppStrings.appName), findsOneWidget);
+    expect(find.text(AppStrings.appName), findsNothing);
     expect(find.text(AppStrings.agenda), findsWidgets);
     expect(find.text(AppStrings.inbox), findsWidgets);
     expect(find.text(AppStrings.notes), findsWidgets);
+    expect(find.text(AppStrings.routines), findsWidgets);
     expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.byType(DayCell), findsNWidgets(7));
     expect(find.byKey(const Key('day-2026-10-31')), findsOneWidget);
@@ -50,6 +51,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('add-note')), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text(AppStrings.routines),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('add-routine')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -63,37 +73,29 @@ void main() {
 
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.byKey(const Key('add-post-it')), findsOneWidget);
     expect(find.byType(DayCell), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('add-post-it')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-title')), findsOneWidget);
+    await tester.ensureVisible(find.text(AppStrings.cancel));
     await tester.tap(find.text(AppStrings.cancel));
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text(AppStrings.inbox),
-      ),
-    );
+    await tester.tap(find.byKey(const Key('nav-inbox')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('add-post-it')), findsOneWidget);
     await tester.tap(find.byKey(const Key('add-post-it')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('editor-title')), findsOneWidget);
+    await tester.ensureVisible(find.text(AppStrings.cancel));
     await tester.tap(find.text(AppStrings.cancel));
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text(AppStrings.notes),
-      ),
-    );
+    await tester.tap(find.byKey(const Key('nav-notes')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('add-post-it')), findsNothing);
@@ -117,7 +119,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AppStrings.settings), findsOneWidget);
-    final status = tester.getRect(find.byKey(const Key('settings-sync-status')));
+    final status = tester.getRect(
+      find.byKey(const Key('settings-sync-status')),
+    );
     expect(status.top, greaterThanOrEqualTo(0));
     expect(status.bottom, lessThan(600));
   });

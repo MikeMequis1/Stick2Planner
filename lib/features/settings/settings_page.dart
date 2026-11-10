@@ -218,6 +218,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 SizedBox(height: 24),
+                Text(
+                  AppStrings.settingsNotifications,
+                  style: theme.textTheme.titleSmall,
+                ),
+                SizedBox(height: 8),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: const _NotificationsSection(),
+                ),
+                SizedBox(height: 24),
                 Column(
                   key: _syncKey,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -259,6 +269,37 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       },
     );
+  }
+}
+
+class _NotificationsSection extends StatelessWidget {
+  const _NotificationsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = AppScope.of(context).settings;
+    return SwitchListTile(
+      key: const Key('settings-notifications'),
+      secondary: const Icon(Icons.notifications_outlined),
+      title: Text(AppStrings.notificationsEnabled),
+      subtitle: Text(AppStrings.notificationsEnabledHelp),
+      value: settings.notificationsEnabled,
+      onChanged: (enabled) => _set(context, enabled),
+    );
+  }
+
+  Future<void> _set(BuildContext context, bool enabled) async {
+    final scope = AppScope.of(context);
+    await scope.settings.setNotificationsEnabled(enabled);
+    if (enabled) {
+      final granted = await scope.notifications.requestPermission();
+      if (!granted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.notificationsPermissionDenied)),
+        );
+      }
+    }
+    await scope.refreshNotifications();
   }
 }
 

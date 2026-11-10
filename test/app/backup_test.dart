@@ -10,6 +10,7 @@ import 'package:stick2planner/app/bootstrap.dart';
 import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
+import 'package:stick2planner/app/controllers/routines_controller.dart';
 import 'package:stick2planner/app/controllers/tags_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/backup/backup_document.dart';
@@ -17,6 +18,7 @@ import 'package:stick2planner/data/backup/backup_file_gateway.dart';
 import 'package:stick2planner/data/backup/backup_service.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/repositories/drift_tag_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
 import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
@@ -81,6 +83,10 @@ void main() {
       ),
       tags: TagsController(
         repository: DriftTagRepository(database),
+        clock: clock,
+      ),
+      routines: RoutinesController(
+        repository: DriftRoutineRepository(database),
         clock: clock,
       ),
       backup: BackupService(

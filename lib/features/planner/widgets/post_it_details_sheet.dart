@@ -304,6 +304,16 @@ Future<void> showPostItDetailsSheet(
                         avatar: const Icon(Icons.schedule, size: 18),
                         label: Text(DateFormats.clockTime(postIt.timeMinutes!)),
                       ),
+                    if (postIt.reminderMinutes != null)
+                      Chip(
+                        avatar: const Icon(
+                          Icons.notifications_active_outlined,
+                          size: 18,
+                        ),
+                        label: Text(
+                          AppStrings.reminderMinutes(postIt.reminderMinutes!),
+                        ),
+                      ),
                     for (final tagId in postIt.tagIds)
                       if (tagsById[tagId] != null)
                         TagChip(tag: tagsById[tagId]!),

@@ -49,6 +49,7 @@ void main() {
       type: PostItType.event,
       startDate: DateOnly(2026, 11, 6),
       timeMinutes: 14 * 60 + 15,
+      reminderMinutes: 30,
       tagIds: [tag.id],
     );
 
@@ -59,6 +60,7 @@ void main() {
         .cast<Map<String, Object?>>()
         .single;
     expect(postIt['timeMinutes'], 855);
+    expect(postIt['reminderMinutes'], 30);
     expect(postIt['tagIds'], [tag.id]);
   });
 
@@ -93,6 +95,26 @@ void main() {
     expect(moved.timeMinutes, 570);
     expect(moved.tagIds, [tag.id]);
     expect(moved.startDate, DateOnly(2026, 11, 7));
+  });
+
+  test('tarefa aceita horário e lembrete', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 6, 12));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    final task = await dependencies.planner.createPostIt(
+      title: 'Consulta',
+      type: PostItType.task,
+      startDate: DateOnly(2026, 11, 6),
+      timeMinutes: 10 * 60 + 30,
+      reminderMinutes: 30,
+    );
+
+    expect(task.timeMinutes, 630);
+    expect(task.reminderMinutes, 30);
+    final stored = dependencies.planner.postIts.single;
+    expect(stored.timeMinutes, 630);
+    expect(stored.reminderMinutes, 30);
   });
 
   test('recusa nome vazio, longo ou duplicado', () async {

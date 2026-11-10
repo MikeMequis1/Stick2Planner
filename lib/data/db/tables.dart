@@ -87,6 +87,7 @@ class PostIts extends Table {
   IntColumn get recurrenceInterval =>
       integer().withDefault(const Constant(1))();
   IntColumn get timeMinutes => integer().nullable()();
+  IntColumn get reminderMinutes => integer().nullable()();
   TextColumn get tagIds =>
       text().map(const TagIdsConverter()).withDefault(const Constant('[]'))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
@@ -113,6 +114,50 @@ class PostItHistoryEntries extends Table {
 
   @override
   Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Rotinas semanais, locais ao dispositivo.
+@DataClassName('RoutineRow')
+class Routines extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get details => text().nullable()();
+  IntColumn get weekdays => integer().withDefault(const Constant(0))();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Atividades de uma rotina, em ordem.
+@DataClassName('RoutineItemRow')
+@TableIndex(name: 'idx_routine_items_routine_id', columns: {#routineId})
+class RoutineItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get routineId =>
+      text().references(Routines, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text()();
+  TextColumn get details => text().nullable()();
+  IntColumn get position => integer()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Conclusão de uma atividade em uma data específica.
+@DataClassName('RoutineCompletionRow')
+@TableIndex(name: 'idx_routine_completions_item', columns: {#routineItemId})
+class RoutineCompletions extends Table {
+  TextColumn get routineItemId =>
+      text().references(RoutineItems, #id, onDelete: KeyAction.cascade)();
+  TextColumn get date => text().map(const DateOnlyConverter())();
+  IntColumn get completedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {routineItemId, date};
 }
 
 /// Fila local de alterações pendentes de envio ao servidor.

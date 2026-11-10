@@ -6,6 +6,7 @@ import '../../data/db/converters.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
 
 PostIt postItFromRow(PostItRow row) => PostIt(
@@ -23,6 +24,7 @@ PostIt postItFromRow(PostItRow row) => PostIt(
   recurrence: row.recurrence,
   recurrenceInterval: row.recurrenceInterval,
   timeMinutes: row.timeMinutes,
+  reminderMinutes: row.reminderMinutes,
   tagIds: row.tagIds,
   sortOrder: row.sortOrder,
   lastRolloverAt: row.lastRolloverAt == null
@@ -48,6 +50,7 @@ PostItsCompanion postItToCompanion(PostIt postIt) => PostItsCompanion(
   recurrence: Value(postIt.recurrence),
   recurrenceInterval: Value(postIt.recurrenceInterval),
   timeMinutes: Value(postIt.timeMinutes),
+  reminderMinutes: Value(postIt.reminderMinutes),
   tagIds: Value(postIt.tagIds),
   sortOrder: Value(postIt.sortOrder),
   lastRolloverAt: Value(
@@ -142,3 +145,38 @@ TagsCompanion tagToCompanion(Tag tag) => TagsCompanion(
     tag.deletedAt == null ? null : dateTimeToStorage(tag.deletedAt!),
   ),
 );
+
+Routine routineFromRows(
+  RoutineRow row,
+  List<RoutineItemRow> itemRows,
+  Map<String, Set<DateOnly>> completions,
+) => Routine(
+  id: row.id,
+  name: row.name,
+  details: row.details,
+  weekdays: {
+    for (var day = 1; day <= 7; day++)
+      if (row.weekdays & (1 << (day - 1)) != 0) day,
+  },
+  items: [
+    for (final item in itemRows)
+      RoutineItem(
+        id: item.id,
+        routineId: item.routineId,
+        title: item.title,
+        details: item.details,
+        position: item.position,
+        completedDates: completions[item.id] ?? const {},
+      ),
+  ],
+  createdAt: dateTimeFromStorage(row.createdAt),
+  updatedAt: dateTimeFromStorage(row.updatedAt),
+);
+
+int routineWeekdayMask(Set<int> weekdays) {
+  var mask = 0;
+  for (final day in weekdays) {
+    if (day >= 1 && day <= 7) mask |= 1 << (day - 1);
+  }
+  return mask;
+}

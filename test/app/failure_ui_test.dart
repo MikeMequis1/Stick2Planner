@@ -6,10 +6,12 @@ import 'package:stick2planner/app/bootstrap.dart';
 import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
+import 'package:stick2planner/app/controllers/routines_controller.dart';
 import 'package:stick2planner/app/controllers/tags_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/repositories/drift_tag_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
 import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
@@ -53,6 +55,10 @@ void main() {
         repository: DriftTagRepository(database),
         clock: FixedClock(DateTime(2026, 11, 3, 9)),
       ),
+      routines: RoutinesController(
+        repository: DriftRoutineRepository(database),
+        clock: FixedClock(DateTime(2026, 11, 3, 9)),
+      ),
     );
     await dependencies.initialize();
     addTearDown(dependencies.dispose);
@@ -60,7 +66,7 @@ void main() {
     await tester.pumpWidget(PlannerApp(dependencies: dependencies));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text(AppStrings.appName), findsOneWidget);
+    expect(find.byKey(const Key('add-post-it')), findsOneWidget);
     return dependencies;
   }
 

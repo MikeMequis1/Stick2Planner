@@ -2,7 +2,7 @@ name: stick2planner
 description: "Stick2Planner - planner visual offline-first para tablets Android."
 publish_to: 'none'
 
-version: 0.3.3+8
+version: 0.4.0+9
 
 environment:
   sdk: ^3.13.7
@@ -34,6 +34,9 @@ dependencies:
   device_info_plus: ^13.3.0
   package_info_plus: ^10.2.2
   url_launcher: ^6.3.3
+  flutter_local_notifications: 22.0.0
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:

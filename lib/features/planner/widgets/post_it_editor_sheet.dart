@@ -64,6 +64,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   late EventRecurrence _recurrence;
   late int _recurrenceInterval;
   TimeOfDay? _time;
+  int? _reminderMinutes;
   late List<String> _selectedTagIds;
   bool _saving = false;
   List<String> _errors = const [];
@@ -73,6 +74,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   bool get _isEvent => _type == PostItType.event;
 
   bool get _isRecurringType => _type == PostItType.recurringTodo;
+
+  bool get _isResolved =>
+      widget.existing != null && widget.existing!.status != PostItStatus.active;
 
   @override
   void initState() {
@@ -90,6 +94,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     _time = minutes == null
         ? null
         : TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+    _reminderMinutes = existing?.reminderMinutes;
     _selectedTagIds = [...?existing?.tagIds];
   }
 
@@ -120,6 +125,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         _recurrence = EventRecurrence.none;
         _recurrenceInterval = 1;
         _time = null;
+        _reminderMinutes = null;
         if (type == PostItType.recurringTodo) {
           _startDate = null;
         } else {
@@ -394,12 +400,30 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     try {
       final title = _titleController.text;
       final details = _detailsController.text;
-      final startDate = _isRecurringType
-          ? widget.existing?.startDate
-          : _startDate;
-      final endDate = _isEvent ? _endDate : null;
+      final existing = widget.existing;
+      final startDate = _isResolved
+          ? existing?.startDate
+          : (_isRecurringType ? existing?.startDate : _startDate);
+      final endDate = _isResolved
+          ? existing?.endDate
+          : (_isEvent ? _endDate : null);
+      final canSchedule = _isEvent || _type == PostItType.task;
+      final timeMinutes = _isResolved
+          ? existing?.timeMinutes
+          : (canSchedule && _time != null
+                ? _time!.hour * 60 + _time!.minute
+                : null);
+      final reminderMinutes = _isResolved
+          ? existing?.reminderMinutes
+          : (timeMinutes == null ? null : _reminderMinutes);
+      final recurrence = _isResolved
+          ? (existing?.recurrence ?? EventRecurrence.none)
+          : (_isEvent ? _recurrence : EventRecurrence.none);
+      final recurrenceInterval = _isResolved
+          ? (existing?.recurrenceInterval ?? 1)
+          : (_isEvent ? _recurrenceInterval : 1);
 
-      if (widget.existing == null) {
+      if (existing == null) {
         await widget.controller.createPostIt(
           title: title,
           type: _type,
@@ -407,27 +431,25 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           details: details,
           startDate: startDate,
           endDate: endDate,
-          recurrence: _isEvent ? _recurrence : EventRecurrence.none,
-          recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
-          timeMinutes: _isEvent && _time != null
-              ? _time!.hour * 60 + _time!.minute
-              : null,
+          recurrence: recurrence,
+          recurrenceInterval: recurrenceInterval,
+          timeMinutes: timeMinutes,
+          reminderMinutes: reminderMinutes,
           tagIds: _selectedTagIds,
         );
       } else {
         await widget.controller.updatePostIt(
-          widget.existing!,
+          existing,
           title: title,
           type: _type,
           isHighlight: _isHighlight,
           details: details,
           startDate: startDate,
           endDate: endDate,
-          recurrence: _isEvent ? _recurrence : EventRecurrence.none,
-          recurrenceInterval: _isEvent ? _recurrenceInterval : 1,
-          timeMinutes: _isEvent && _time != null
-              ? _time!.hour * 60 + _time!.minute
-              : null,
+          recurrence: recurrence,
+          recurrenceInterval: recurrenceInterval,
+          timeMinutes: timeMinutes,
+          reminderMinutes: reminderMinutes,
           tagIds: _selectedTagIds,
         );
       }
@@ -529,7 +551,33 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 ),
               ),
               _tagsSection(availableTags),
-              if (!_isRecurringType) ...[
+              if (_isResolved)
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.lock_clock_outlined,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            AppStrings.resolvedFieldsHidden,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (!_isRecurringType) ...[
                 SizedBox(height: 8),
                 Text(
                   _isEvent ? AppStrings.fieldStartDate : AppStrings.fieldDate,
@@ -562,6 +610,8 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     date: _endDate ?? _startDate,
                     onTap: _pickEndDate,
                   ),
+                ],
+                if (_isEvent || _type == PostItType.task) ...[
                   SizedBox(height: 8),
                   Row(
                     children: [
@@ -582,11 +632,59 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                         IconButton(
                           key: const Key('editor-time-clear'),
                           tooltip: AppStrings.eventTimeClear,
-                          onPressed: () => setState(() => _time = null),
+                          onPressed: () => setState(() {
+                            _time = null;
+                            _reminderMinutes = null;
+                          }),
                           icon: const Icon(Icons.close),
                         ),
                     ],
                   ),
+                  if (_time != null) ...[
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButton<int?>(
+                            key: const Key('editor-reminder'),
+                            isExpanded: true,
+                            value: _reminderMinutes,
+                            hint: Text(AppStrings.reminderNone),
+                            items: [
+                              DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text(AppStrings.reminderNone),
+                              ),
+                              for (final minutes in <int>{
+                                5,
+                                10,
+                                15,
+                                30,
+                                60,
+                                ?_reminderMinutes,
+                              })
+                                DropdownMenuItem<int?>(
+                                  value: minutes,
+                                  child: Text(
+                                    AppStrings.reminderMinutes(minutes),
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _reminderMinutes = value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+                if (_isEvent) ...[
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     secondary: const Icon(Icons.edit_outlined),

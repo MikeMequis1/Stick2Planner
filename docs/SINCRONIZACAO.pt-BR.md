@@ -198,6 +198,13 @@ usuário decidir.
 - Tags entram na conferência local/remota e na substituição manter local/manter
   remoto, junto com post-its e notas.
 
+## Rotinas
+
+- Rotinas e o estado de conclusão por dia são locais nesta versão; não são
+  enviados ao servidor.
+- Lembretes de post-it (`reminderMinutes`) viajam no payload do post-it e são
+  armazenados de forma opaca pelo servidor.
+
 ## Notas e vínculos
 
 - A **nota é uma unidade atômica**: título, tipo, Markdown, linhas/checklists,

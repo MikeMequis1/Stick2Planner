@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 /// Seções principais do aplicativo, na ordem do trilho/barra de navegação.
-enum AppSection { agenda, inbox, notes }
+enum AppSection { agenda, inbox, notes, routines }
 
 /// Controla a seção visível da casca e permite navegação a partir de rotas
 /// empilhadas (por exemplo, detalhe de nota → Agenda).

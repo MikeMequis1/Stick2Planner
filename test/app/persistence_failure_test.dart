@@ -3,11 +3,13 @@ import 'package:stick2planner/app/bootstrap.dart';
 import 'package:stick2planner/app/services/token_store.dart';
 import 'package:stick2planner/app/controllers/notes_controller.dart';
 import 'package:stick2planner/app/controllers/planner_controller.dart';
+import 'package:stick2planner/app/controllers/routines_controller.dart';
 import 'package:stick2planner/app/controllers/tags_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
 import 'package:stick2planner/data/repositories/drift_tag_repository.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
@@ -36,6 +38,10 @@ void main() {
         notes: NotesController(noteRepository: DriftNoteRepository(database)),
         tags: TagsController(
           repository: DriftTagRepository(database),
+          clock: FixedClock(DateTime(2026, 11, 3, 9)),
+        ),
+        routines: RoutinesController(
+          repository: DriftRoutineRepository(database),
           clock: FixedClock(DateTime(2026, 11, 3, 9)),
         ),
       );

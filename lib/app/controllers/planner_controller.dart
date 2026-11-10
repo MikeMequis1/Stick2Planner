@@ -298,6 +298,7 @@ final class PlannerController extends ChangeNotifier {
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
     int? timeMinutes,
+    int? reminderMinutes,
     List<String> tagIds = const [],
     String? noteId,
     String? noteExcerpt,
@@ -312,6 +313,9 @@ final class PlannerController extends ChangeNotifier {
       final effectiveRecurrence = type == PostItType.event
           ? recurrence
           : EventRecurrence.none;
+      final normalizedTime = type == PostItType.recurringTodo
+          ? null
+          : _normalizeTime(timeMinutes);
       final postIt = PostIt(
         id: const Uuid().v4(),
         title: title.trim(),
@@ -329,9 +333,10 @@ final class PlannerController extends ChangeNotifier {
           effectiveRecurrence,
           recurrenceInterval,
         ),
-        timeMinutes: type == PostItType.event
-            ? _normalizeTime(timeMinutes)
-            : null,
+        timeMinutes: normalizedTime,
+        reminderMinutes: normalizedTime == null
+            ? null
+            : _normalizeReminder(reminderMinutes),
         tagIds: _normalizeTagIds(tagIds),
         sortOrder: _nextOrderFor(resolvedStart),
         lastRolloverAt: type == PostItType.recurringTodo ? now : null,
@@ -360,6 +365,7 @@ final class PlannerController extends ChangeNotifier {
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
     int? timeMinutes,
+    int? reminderMinutes,
     List<String> tagIds = const [],
   }) {
     return _exclusive(() async {
@@ -375,6 +381,9 @@ final class PlannerController extends ChangeNotifier {
       final dateChanged =
           current.startDate?.toIso8601String() !=
           effectiveStart?.toIso8601String();
+      final normalizedTime = effectiveType == PostItType.recurringTodo
+          ? current.timeMinutes
+          : _normalizeTime(timeMinutes);
       final now = _clock.now().toUtc();
       final updated = current.copyWith(
         title: title.trim(),
@@ -388,9 +397,12 @@ final class PlannerController extends ChangeNotifier {
           effectiveRecurrence,
           recurrenceInterval,
         ),
-        timeMinutes: effectiveType == PostItType.event
-            ? _normalizeTime(timeMinutes)
-            : null,
+        timeMinutes: normalizedTime,
+        reminderMinutes: effectiveType == PostItType.recurringTodo
+            ? current.reminderMinutes
+            : (normalizedTime == null
+                  ? null
+                  : _normalizeReminder(reminderMinutes)),
         tagIds: _normalizeTagIds(tagIds),
         sortOrder: dateChanged && effectiveType != PostItType.event
             ? _nextOrderFor(effectiveStart)
@@ -762,6 +774,11 @@ final class PlannerController extends ChangeNotifier {
 
   static int? _normalizeTime(int? value) {
     if (value == null || value < 0 || value >= 24 * 60) return null;
+    return value;
+  }
+
+  static int? _normalizeReminder(int? value) {
+    if (value == null || value < 0 || value > 7 * 24 * 60) return null;
     return value;
   }
 

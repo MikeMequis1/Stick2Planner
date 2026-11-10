@@ -29,6 +29,7 @@ final class AppSettingsController extends ChangeNotifier {
   bool _animationsEnabled = true;
   bool _keepScreenAwake = true;
   bool _showCalendarHints = true;
+  bool _notificationsEnabled = false;
   bool _isLoading = true;
 
   ThemeMode get themeMode => _themeMode;
@@ -37,6 +38,7 @@ final class AppSettingsController extends ChangeNotifier {
   bool get animationsEnabled => _animationsEnabled;
   bool get keepScreenAwake => _keepScreenAwake;
   bool get showCalendarHints => _showCalendarHints;
+  bool get notificationsEnabled => _notificationsEnabled;
   bool get isLoading => _isLoading;
 
   Future<void> initialize() async {
@@ -70,6 +72,7 @@ final class AppSettingsController extends ChangeNotifier {
     _animationsEnabled = values[SettingsKeys.animationsEnabled] != 'false';
     _keepScreenAwake = values[SettingsKeys.keepScreenAwake] != 'false';
     _showCalendarHints = values[SettingsKeys.showCalendarHints] != 'false';
+    _notificationsEnabled = values[SettingsKeys.notificationsEnabled] == 'true';
     unawaited(_applyWakeLock());
   }
 
@@ -123,6 +126,16 @@ final class AppSettingsController extends ChangeNotifier {
     notifyListeners();
     await _settingsRepository.write(
       SettingsKeys.showCalendarHints,
+      enabled.toString(),
+    );
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    if (_notificationsEnabled == enabled) return;
+    _notificationsEnabled = enabled;
+    notifyListeners();
+    await _settingsRepository.write(
+      SettingsKeys.notificationsEnabled,
       enabled.toString(),
     );
   }

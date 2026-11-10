@@ -6,7 +6,9 @@ import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/planner_controller.dart';
+import 'controllers/routines_controller.dart';
 import 'controllers/tags_controller.dart';
+import 'services/notification_service.dart';
 import 'services/sync_coordinator.dart';
 
 /// Expõe os controllers para a árvore de widgets.
@@ -18,6 +20,8 @@ class AppScope extends InheritedWidget {
     required this.planner,
     required this.notes,
     required this.tags,
+    required this.routines,
+    required this.notifications,
     required this.navigation,
     required this.settings,
     required this.backup,
@@ -29,6 +33,8 @@ class AppScope extends InheritedWidget {
   final PlannerController planner;
   final NotesController notes;
   final TagsController tags;
+  final RoutinesController routines;
+  final AppNotificationService notifications;
   final AppNavigationController navigation;
   final AppSettingsController settings;
   final BackupService backup;
@@ -41,11 +47,21 @@ class AppScope extends InheritedWidget {
     return scope!;
   }
 
+  Future<void> refreshNotifications() async {
+    await notifications.setEnabled(settings.notificationsEnabled);
+    await notifications.sync(
+      postIts: planner.postIts,
+      routines: routines.routines,
+    );
+  }
+
   @override
   bool updateShouldNotify(AppScope oldWidget) =>
       planner != oldWidget.planner ||
       notes != oldWidget.notes ||
       tags != oldWidget.tags ||
+      routines != oldWidget.routines ||
+      notifications != oldWidget.notifications ||
       navigation != oldWidget.navigation ||
       settings != oldWidget.settings ||
       backup != oldWidget.backup ||

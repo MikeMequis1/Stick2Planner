@@ -301,7 +301,10 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 ? AppStrings.markdownToolsHidePreview
                 : AppStrings.markdownToolsShowPreview,
             selected: _showPreview,
-            onPressed: () => setState(() => _showPreview = !_showPreview),
+            onPressed: () {
+              setState(() => _showPreview = !_showPreview);
+              _markdownFocus.requestFocus();
+            },
           ),
         ],
       ),
@@ -320,6 +323,11 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       textAlignVertical: TextAlignVertical.top,
       scrollPadding: EdgeInsets.only(bottom: 160),
       style: theme.textTheme.bodyLarge?.copyWith(height: 1.45),
+      enableInteractiveSelection: true,
+      contextMenuBuilder: (context, editableTextState) =>
+          AdaptiveTextSelectionToolbar.editableText(
+            editableTextState: editableTextState,
+          ),
       decoration: InputDecoration(
         hintText: AppStrings.markdownFieldHint,
         border: OutlineInputBorder(),
@@ -475,15 +483,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       if (mounted) Navigator.of(context).pop();
     } on NoteValidationException {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.noteTitleRequired)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppStrings.noteTitleRequired)));
       }
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppStrings.noteSaveError)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppStrings.noteSaveError)));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -538,7 +545,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           ),
           SizedBox(height: 16),
           if (_isText) ...[
-            _buildMarkdownToolbar(theme),
+            ExcludeFocus(child: _buildMarkdownToolbar(theme)),
             SizedBox(height: 8),
             _buildMarkdownEditor(theme),
           ] else ...[

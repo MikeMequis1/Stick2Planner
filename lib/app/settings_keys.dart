@@ -9,4 +9,5 @@ abstract final class SettingsKeys {
   static const animationsEnabled = 'planner.animationsEnabled';
   static const keepScreenAwake = 'planner.keepScreenAwake';
   static const showCalendarHints = 'planner.showCalendarHints';
+  static const notificationsEnabled = 'planner.notificationsEnabled';
 }

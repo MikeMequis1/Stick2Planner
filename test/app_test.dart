@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:stick2planner/app/app.dart';
-import 'package:stick2planner/app/app_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -19,7 +18,7 @@ void main() {
     await tester.pumpWidget(PlannerApp(dependencies: dependencies));
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.appName), findsOneWidget);
+    expect(find.byKey(const Key('calendar-swipe-area')), findsOneWidget);
     expect(find.byKey(const Key('day-2026-10-31')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

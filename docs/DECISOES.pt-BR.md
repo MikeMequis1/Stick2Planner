@@ -320,6 +320,22 @@ etapas. Cada item: contexto, decisão, consequência.
 - Os tons de tag ficam limitados a cinco; o esquema v8 converte tags legadas
   `tertiarySoft` para `tertiary`, preservando a matiz em vez de descartar a tag.
 
+## Rotinas e notificações (esquema v9)
+
+- Rotinas são locais (`routines`, `routine_items`, `routine_completions`). A
+  conclusão usa `routine_item_id + data`, então cada ocorrência tem estado
+  próprio; não existe conclusão global.
+- `post_its.reminder_minutes` guarda a antecedência; lembretes exigem
+  `time_minutes` e item ativo. O reagendamento cancela e reconstrói o conjunto
+  local, sem duplicar e descartando itens resolvidos/passados.
+- Notificações Android usam `flutter_local_notifications` com alarmes inexatos
+  (sem permissão de alarme exato); Windows e testes são no-op. O resumo diário é
+  agendado para os próximos sete dias às 08:00.
+- A casca de navegação agora tem uma superfície adaptativa: trilho em paisagem
+  com Config/Sync no rodapé e barra de seis ações em retrato.
+- Rotinas ainda não entram no sync nem no backup JSON; lembretes de post-its
+  entram nos dois.
+
 ## Localização
 
 - **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`

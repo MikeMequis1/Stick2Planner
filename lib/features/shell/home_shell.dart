@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../app/controllers/app_navigation_controller.dart';
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
+import '../../app/controllers/app_navigation_controller.dart';
+import '../../app/services/sync_coordinator.dart';
 import '../inbox/inbox_page.dart';
 import '../notes/notes_page.dart';
 import '../planner/agenda_page.dart';
 import '../planner/widgets/post_it_editor_sheet.dart';
+import '../routines/routine_editor_page.dart';
+import '../routines/routines_page.dart';
 import '../settings/settings_page.dart';
 
-/// Casca de navegação: trilho em tablets largos, barra inferior em telas
-/// estreitas. Preserva o estado de cada seção com [IndexedStack].
+/// Casca de navegação adaptativa.
 ///
-/// Cada página escuta seu próprio controller, então a casca não precisa
-/// reconstruir a árvore inteira a cada mudança de dados.
+/// Paisagem: trilho único com as seções no topo e Config/Sync no rodapé.
+/// Retrato: barra inferior com todas as ações distribuídas igualmente.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -42,58 +44,51 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final scope = AppScope.of(context);
     scope.planner.handleAppResumed().catchError((Object _) {});
     scope.sync.handleAppResumed();
+    scope.refreshNotifications();
   }
 
-  static final _pages = <Widget>[AgendaPage(), InboxPage(), NotesPage()];
-
-  static List<NavigationRailDestination> get _railDestinations =>
-      <NavigationRailDestination>[
-        NavigationRailDestination(
-          icon: Icon(Icons.calendar_month_outlined),
-          selectedIcon: Icon(Icons.calendar_month),
-          label: Text(AppStrings.agenda),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.inbox_outlined),
-          selectedIcon: Icon(Icons.inbox),
-          label: Text(AppStrings.inbox),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.note_alt_outlined),
-          selectedIcon: Icon(Icons.note_alt),
-          label: Text(AppStrings.notes),
-        ),
-      ];
-
-  static List<NavigationDestination> get _barDestinations =>
-      <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.calendar_month_outlined),
-          selectedIcon: Icon(Icons.calendar_month),
-          label: AppStrings.agenda,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.inbox_outlined),
-          selectedIcon: Icon(Icons.inbox),
-          label: AppStrings.inbox,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.note_alt_outlined),
-          selectedIcon: Icon(Icons.note_alt),
-          label: AppStrings.notes,
-        ),
-      ];
+  static const _pages = <Widget>[
+    AgendaPage(),
+    InboxPage(),
+    NotesPage(),
+    RoutinesPage(),
+  ];
 
   void _select(int index) {
+    if (index >= AppSection.values.length) return;
     AppScope.of(context).navigation.select(AppSection.values[index]);
   }
 
   Future<void> _openSettings() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const SettingsPage()));
     if (!mounted) return;
     await AppScope.of(context).sync.refreshConfig();
+  }
+
+  Future<void> _openSyncSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const SettingsPage(focusSync: true),
+      ),
+    );
+    if (!mounted) return;
+    await AppScope.of(context).sync.refreshConfig();
+  }
+
+  void _openNewPostIt() {
+    final planner = AppScope.of(context).planner;
+    showPostItEditorSheet(
+      context,
+      controller: planner,
+      initialDate: planner.selectedDate,
+    );
+  }
+
+  Future<void> _openNewRoutine() async {
+    await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const RoutineEditorPage()));
   }
 
   @override
@@ -104,53 +99,53 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final isCompact = width < 600;
     final isShort = height < 500;
     final app = AppScope.of(context);
-    final planner = app.planner;
     final navigation = app.navigation;
+    final sync = app.sync;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([navigation, app.sync]),
+      listenable: Listenable.merge([navigation, sync]),
       builder: (context, _) {
         final index = navigation.section.index;
+        final destinations = _railDestinations();
+        final visual = _syncVisual(sync);
         return Scaffold(
           resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            title: Text(AppStrings.appName),
-            actions: [
-              if (index != AppSection.notes.index &&
-                  (isCompact || index == AppSection.inbox.index))
-                IconButton(
-                  key: Key('add-post-it'),
-                  tooltip: AppStrings.newPostIt,
-                  onPressed: () => showPostItEditorSheet(
-                    context,
-                    controller: planner,
-                    initialDate: planner.selectedDate,
-                  ),
-                  icon: Icon(Icons.add),
-                ),
-              IconButton(
-                key: Key('open-settings'),
-                tooltip: AppStrings.settings,
-                onPressed: _openSettings,
-                icon: Icon(Icons.settings_outlined),
-              ),
-              _SyncStatusButton(onReturned: () => app.sync.refreshConfig()),
-              const SizedBox(width: 4),
-            ],
-          ),
           body: SafeArea(
-            top: false,
             child: useRail
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       NavigationRail(
-                        minWidth: 88,
+                        minWidth: 84,
                         selectedIndex: index,
                         onDestinationSelected: _select,
-                        destinations: _railDestinations,
+                        labelType: height < 600
+                            ? NavigationRailLabelType.none
+                            : NavigationRailLabelType.all,
+                        trailingAtBottom: true,
+                        destinations: destinations,
+                        trailing: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                key: const Key('open-sync-settings'),
+                                tooltip: visual.tooltip,
+                                onPressed: _openSyncSettings,
+                                icon: Icon(visual.icon, color: visual.color),
+                              ),
+                              IconButton(
+                                key: const Key('open-settings'),
+                                tooltip: AppStrings.settings,
+                                onPressed: _openSettings,
+                                icon: const Icon(Icons.settings_outlined),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      VerticalDivider(width: 1),
+                      const VerticalDivider(width: 1),
                       Expanded(
                         child: IndexedStack(index: index, children: _pages),
                       ),
@@ -162,89 +157,134 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               ? null
               : NavigationBar(
                   selectedIndex: index,
-                  onDestinationSelected: _select,
-                  destinations: _barDestinations,
-                ),
-          floatingActionButton: index == AppSection.agenda.index
-              ? (isShort
-                    ? FloatingActionButton.small(
-                        key: Key('add-post-it'),
-                        tooltip: AppStrings.newPostIt,
-                        onPressed: () => showPostItEditorSheet(
-                          context,
-                          controller: planner,
-                          initialDate: planner.selectedDate,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  onDestinationSelected: (value) {
+                    if (value == 4) {
+                      _openSettings();
+                    } else if (value == 5) {
+                      _openSyncSettings();
+                    } else {
+                      _select(value);
+                    }
+                  },
+                  destinations: [
+                    for (var i = 0; i < AppSection.values.length; i++)
+                      NavigationDestination(
+                        key: Key('nav-${AppSection.values[i].name}'),
+                        icon: Icon(_sectionIcon(AppSection.values[i])),
+                        selectedIcon: Icon(
+                          _sectionIcon(AppSection.values[i], selected: true),
                         ),
-                        child: Icon(Icons.add),
-                      )
-                    : (!isCompact
-                          ? FloatingActionButton.extended(
-                              key: Key('add-post-it'),
-                              onPressed: () => showPostItEditorSheet(
-                                context,
-                                controller: planner,
-                                initialDate: planner.selectedDate,
-                              ),
-                              icon: Icon(Icons.add),
-                              label: Text(AppStrings.newPostIt),
-                            )
-                          : null))
-              : null,
+                        label: _sectionLabel(AppSection.values[i]),
+                      ),
+                    NavigationDestination(
+                      key: const Key('open-settings'),
+                      icon: const Icon(Icons.settings_outlined),
+                      label: AppStrings.configShort,
+                    ),
+                    NavigationDestination(
+                      key: const Key('open-sync-settings'),
+                      icon: Icon(visual.icon, color: visual.color),
+                      label: AppStrings.syncShort,
+                    ),
+                  ],
+                ),
+          floatingActionButton: switch (navigation.section) {
+            AppSection.agenda || AppSection.inbox =>
+              isShort || isCompact
+                  ? FloatingActionButton.small(
+                      key: const Key('add-post-it'),
+                      tooltip: AppStrings.newPostIt,
+                      onPressed: _openNewPostIt,
+                      child: const Icon(Icons.add),
+                    )
+                  : FloatingActionButton.extended(
+                      key: const Key('add-post-it'),
+                      onPressed: _openNewPostIt,
+                      icon: const Icon(Icons.add),
+                      label: Text(AppStrings.newPostIt),
+                    ),
+            AppSection.routines => FloatingActionButton.extended(
+              key: const Key('add-routine'),
+              onPressed: _openNewRoutine,
+              icon: const Icon(Icons.add),
+              label: Text(AppStrings.routineNew),
+            ),
+            AppSection.notes => null,
+          },
         );
       },
     );
   }
+
+  static String _sectionLabel(AppSection section) => switch (section) {
+    AppSection.agenda => AppStrings.agenda,
+    AppSection.inbox => AppStrings.inbox,
+    AppSection.notes => AppStrings.notes,
+    AppSection.routines => AppStrings.routines,
+  };
+
+  static IconData _sectionIcon(AppSection section, {bool selected = false}) =>
+      switch (section) {
+        AppSection.agenda =>
+          selected ? Icons.calendar_month : Icons.calendar_month_outlined,
+        AppSection.inbox => selected ? Icons.inbox : Icons.inbox_outlined,
+        AppSection.notes => selected ? Icons.note_alt : Icons.note_alt_outlined,
+        AppSection.routines =>
+          selected ? Icons.event_repeat : Icons.event_repeat_outlined,
+      };
+
+  static List<NavigationRailDestination> _railDestinations() => [
+    for (final section in AppSection.values)
+      NavigationRailDestination(
+        icon: Icon(_sectionIcon(section)),
+        selectedIcon: Icon(_sectionIcon(section, selected: true)),
+        label: Text(_sectionLabel(section)),
+      ),
+  ];
 }
 
-/// Ícone de nuvem que reflete o estado da sincronização e abre Configurações
-/// já rolada até a seção de conexão.
-class _SyncStatusButton extends StatelessWidget {
-  const _SyncStatusButton({required this.onReturned});
-
-  final Future<void> Function() onReturned;
-
-  @override
-  Widget build(BuildContext context) {
-    final sync = AppScope.of(context).sync;
-    final scheme = Theme.of(context).colorScheme;
-
-    final IconData icon;
-    final String tooltip;
-    Color? color;
-    if (!sync.configured) {
-      icon = Icons.cloud_off_outlined;
-      tooltip = AppStrings.syncNotPaired;
-    } else if (sync.pendingPreflight != null) {
-      icon = Icons.cloud_sync_outlined;
-      tooltip = AppStrings.syncPendingReview;
-      color = scheme.tertiary;
-    } else if (sync.busy) {
-      icon = Icons.cloud_sync_outlined;
-      tooltip = AppStrings.syncRunning;
-    } else if (sync.lastError != null) {
-      icon = Icons.cloud_off_outlined;
-      tooltip = AppStrings.syncError;
-      color = scheme.error;
-    } else if (sync.pendingCount > 0) {
-      icon = Icons.cloud_upload_outlined;
-      tooltip = AppStrings.syncPending(sync.pendingCount);
-    } else {
-      icon = Icons.cloud_done_outlined;
-      tooltip = AppStrings.syncLastSyncLabel(sync.lastSyncAt);
-    }
-
-    return IconButton(
-      key: const Key('open-sync-settings'),
-      tooltip: tooltip,
-      onPressed: () async {
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => const SettingsPage(focusSync: true),
-          ),
-        );
-        await onReturned();
-      },
-      icon: Icon(icon, color: color),
+({IconData icon, String tooltip, Color? color}) _syncVisual(
+  SyncCoordinator sync,
+) {
+  if (!sync.configured) {
+    return (
+      icon: Icons.cloud_off_outlined,
+      tooltip: AppStrings.syncNotPaired,
+      color: null,
     );
   }
+  if (sync.pendingPreflight != null) {
+    return (
+      icon: Icons.cloud_sync_outlined,
+      tooltip: AppStrings.syncPendingReview,
+      color: null,
+    );
+  }
+  if (sync.busy) {
+    return (
+      icon: Icons.cloud_sync_outlined,
+      tooltip: AppStrings.syncRunning,
+      color: null,
+    );
+  }
+  if (sync.lastError != null) {
+    return (
+      icon: Icons.cloud_off_outlined,
+      tooltip: AppStrings.syncError,
+      color: null,
+    );
+  }
+  if (sync.pendingCount > 0) {
+    return (
+      icon: Icons.cloud_upload_outlined,
+      tooltip: AppStrings.syncPending(sync.pendingCount),
+      color: null,
+    );
+  }
+  return (
+    icon: Icons.cloud_done_outlined,
+    tooltip: AppStrings.syncLastSyncLabel(sync.lastSyncAt),
+    color: null,
+  );
 }
