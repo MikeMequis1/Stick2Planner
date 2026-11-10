@@ -327,9 +327,19 @@ stages. Each item: context, decision, consequence.
 - `post_its.reminder_minutes` stores the lead time; reminders require
   `time_minutes` and an active item. Re-scheduling cancels and rebuilds the local
   notification set, avoiding duplicates and dropping resolved/past items.
-- Android notifications use `flutter_local_notifications` with inexact alarms
-  (no exact-alarm permission); Windows and tests are no-ops. Daily summaries are
-  scheduled for the next seven days at 08:00.
+- Android notifications use `flutter_local_notifications`. The small icon lives
+  in `res/drawable/ic_stat_planner.xml` and is pinned with `res/raw/keep.xml`
+  because resource shrinking otherwise removes it and the plugin throws
+  `invalid_icon`.
+- Scheduling prefers exact alarms (`exactAllowWhileIdle`) when authorized and
+  falls back to `inexactAllowWhileIdle`. The manifest declares both
+  `SCHEDULE_EXACT_ALARM` and `USE_EXACT_ALARM`; the latter is auto-granted on
+  Android 13+ but restricted by Play policy to alarm/calendar-centric apps.
+- Settings exposes a test action that posts one immediate notification and one
+  scheduled 10 seconds later, so channel, permission and scheduler can be
+  validated independently of real reminders.
+- Windows and tests are no-ops. Daily summaries are scheduled for the next seven
+  days at 08:00.
 - The navigation shell now has one adaptive surface: landscape rail with
   Config/Sync pinned at the bottom and a six-action bar in portrait.
 - Routines are not part of sync or JSON backups yet; post-it reminders are

@@ -328,9 +328,19 @@ etapas. Cada item: contexto, decisão, consequência.
 - `post_its.reminder_minutes` guarda a antecedência; lembretes exigem
   `time_minutes` e item ativo. O reagendamento cancela e reconstrói o conjunto
   local, sem duplicar e descartando itens resolvidos/passados.
-- Notificações Android usam `flutter_local_notifications` com alarmes inexatos
-  (sem permissão de alarme exato); Windows e testes são no-op. O resumo diário é
-  agendado para os próximos sete dias às 08:00.
+- Notificações Android usam `flutter_local_notifications`. O ícone pequeno fica
+  em `res/drawable/ic_stat_planner.xml` e é fixado por `res/raw/keep.xml`, pois
+  o encolhimento de recursos o remove e o plugin lança `invalid_icon`.
+- O agendamento prefere alarmes exatos (`exactAllowWhileIdle`) quando
+  autorizados e cai para `inexactAllowWhileIdle` caso contrário. O manifesto
+  declara `SCHEDULE_EXACT_ALARM` e `USE_EXACT_ALARM`; este último é concedido
+  automaticamente no Android 13+, mas a política do Play o restringe a apps
+  centrados em alarme/calendário.
+- As Configurações expõem uma ação de teste que publica uma notificação
+  imediata e agenda outra para 10 segundos depois, permitindo validar canal,
+  permissão e agendador sem depender de lembretes reais.
+- Windows e testes são no-op. O resumo diário é agendado para os próximos sete
+  dias às 08:00.
 - A casca de navegação agora tem uma superfície adaptativa: trilho em paisagem
   com Config/Sync no rodapé e barra de seis ações em retrato.
 - Rotinas ainda não entram no sync nem no backup JSON; lembretes de post-its

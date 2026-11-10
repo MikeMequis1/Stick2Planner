@@ -126,26 +126,48 @@ final class AppNotificationService {
       FlutterLocalNotificationsPlugin();
   bool _ready = false;
   bool _enabled = false;
+  bool _exactAllowed = false;
+  String? _lastError;
 
   bool get isSupported => !kIsWeb && Platform.isAndroid;
+  bool get isReady => _ready;
+  bool get exactAllowed => _exactAllowed;
+  String? get lastError => _lastError;
+
+  static const _notificationDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'planner_reminders',
+      'Lembretes do Planner',
+      channelDescription:
+          'Resumo diário e lembretes de eventos, tarefas e rotinas.',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: 'ic_stat_planner',
+    ),
+  );
 
   Future<void> initialize({required bool enabled}) async {
     _enabled = enabled;
+    _lastError = null;
     if (!isSupported) return;
     try {
       tz.initializeTimeZones();
       final zone = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(zone.identifier));
-    } on Object {
+    } on Object catch (error) {
       // Mantém o fuso padrão; o agendamento ainda funciona.
+      _lastError = error.toString();
     }
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings('ic_stat_planner');
     const settings = InitializationSettings(android: android);
     try {
-      await _plugin.initialize(settings: settings);
-      _ready = true;
-    } on Object {
+      final initialized = await _plugin.initialize(settings: settings);
+      _ready = initialized ?? true;
+      _exactAllowed = await _canScheduleExact();
+      if (!_ready) _lastError = 'notification_initialize_failed';
+    } on Object catch (error) {
       _ready = false;
+      _lastError = error.toString();
     }
   }
 
@@ -155,12 +177,71 @@ final class AppNotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    return await android?.requestNotificationsPermission() ?? false;
+    if (android == null) return false;
+    final granted = await android.requestNotificationsPermission();
+    _exactAllowed = await _canScheduleExact();
+    return granted ?? true;
   }
+
+  Future<bool> requestExactPermission() async {
+    if (!isSupported) return false;
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android == null) return false;
+    final granted = await android.requestExactAlarmsPermission();
+    _exactAllowed = granted ?? await _canScheduleExact();
+    return _exactAllowed;
+  }
+
+  Future<bool> _canScheduleExact() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    return await android?.canScheduleExactNotifications() ?? false;
+  }
+
+  AndroidScheduleMode get _scheduleMode => _exactAllowed
+      ? AndroidScheduleMode.exactAllowWhileIdle
+      : AndroidScheduleMode.inexactAllowWhileIdle;
 
   Future<void> setEnabled(bool value) async {
     _enabled = value;
     if (!value && _ready) await _plugin.cancelAll();
+  }
+
+  /// Envia uma notificação imediata e agenda outra em 10 s para validar o
+  /// canal, a permissão e o agendador.
+  Future<bool> sendTest() async {
+    if (!isSupported) return false;
+    if (!_ready) {
+      await initialize(enabled: _enabled);
+    }
+    if (!_ready) return false;
+    try {
+      await _plugin.show(
+        id: _testImmediateId,
+        title: AppStrings.notificationTestTitle,
+        body: AppStrings.notificationTestBody,
+        notificationDetails: _notificationDetails,
+      );
+      final at = _clock.now().add(const Duration(seconds: 10));
+      await _plugin.zonedSchedule(
+        id: _testScheduledId,
+        title: AppStrings.notificationTestScheduledTitle,
+        body: AppStrings.notificationTestScheduledBody,
+        scheduledDate: _toTz(at),
+        androidScheduleMode: _scheduleMode,
+        notificationDetails: _notificationDetails,
+      );
+      _lastError = null;
+      return true;
+    } on Object catch (error) {
+      _lastError = error.toString();
+      return false;
+    }
   }
 
   Future<void> sync({
@@ -168,32 +249,41 @@ final class AppNotificationService {
     required List<Routine> routines,
   }) async {
     if (!_ready) return;
-    await _plugin.cancelAll();
-    if (!_enabled) return;
-    final now = _clock.now();
-    final plan = buildNotificationPlan(
-      postIts: postIts,
-      routines: routines,
-      now: now,
-    );
-    for (final notification in plan) {
-      await _plugin.zonedSchedule(
-        id: notification.id,
-        title: notification.title,
-        body: notification.body,
-        scheduledDate: tz.TZDateTime.from(notification.at, tz.local),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'planner_reminders',
-            'Lembretes do Planner',
-            channelDescription:
-                'Resumo diário e lembretes de eventos, tarefas e rotinas.',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-        ),
+    try {
+      await _plugin.cancelAll();
+      if (!_enabled) return;
+      final now = _clock.now();
+      final plan = buildNotificationPlan(
+        postIts: postIts,
+        routines: routines,
+        now: now,
       );
+      for (final notification in plan) {
+        await _plugin.zonedSchedule(
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          scheduledDate: _toTz(notification.at),
+          androidScheduleMode: _scheduleMode,
+          notificationDetails: _notificationDetails,
+        );
+      }
+      _lastError = null;
+    } on Object catch (error) {
+      _lastError = error.toString();
     }
   }
+
+  tz.TZDateTime _toTz(DateTime value) => tz.TZDateTime(
+    tz.local,
+    value.year,
+    value.month,
+    value.day,
+    value.hour,
+    value.minute,
+    value.second,
+  );
+
+  static const _testImmediateId = 999999;
+  static const _testScheduledId = 999998;
 }

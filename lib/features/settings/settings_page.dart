@@ -278,13 +278,33 @@ class _NotificationsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = AppScope.of(context).settings;
-    return SwitchListTile(
-      key: const Key('settings-notifications'),
-      secondary: const Icon(Icons.notifications_outlined),
-      title: Text(AppStrings.notificationsEnabled),
-      subtitle: Text(AppStrings.notificationsEnabledHelp),
-      value: settings.notificationsEnabled,
-      onChanged: (enabled) => _set(context, enabled),
+    final notifications = AppScope.of(context).notifications;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SwitchListTile(
+          key: const Key('settings-notifications'),
+          secondary: const Icon(Icons.notifications_outlined),
+          title: Text(AppStrings.notificationsEnabled),
+          subtitle: Text(AppStrings.notificationsEnabledHelp),
+          value: settings.notificationsEnabled,
+          onChanged: (enabled) => _set(context, enabled),
+        ),
+        ListTile(
+          key: const Key('settings-notifications-test'),
+          leading: const Icon(Icons.notifications_active_outlined),
+          title: Text(AppStrings.notificationsTest),
+          subtitle: notifications.lastError == null
+              ? null
+              : Text(
+                  notifications.lastError!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+          trailing: const Icon(Icons.send_outlined),
+          onTap: () => _test(context),
+        ),
+      ],
     );
   }
 
@@ -293,13 +313,38 @@ class _NotificationsSection extends StatelessWidget {
     await scope.settings.setNotificationsEnabled(enabled);
     if (enabled) {
       final granted = await scope.notifications.requestPermission();
-      if (!granted && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.notificationsPermissionDenied)),
-        );
+      if (granted == false) {
+        await scope.settings.setNotificationsEnabled(false);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppStrings.notificationsPermissionDenied)),
+          );
+        }
+      } else {
+        final exact = await scope.notifications.requestExactPermission();
+        if (!exact && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppStrings.notificationsExactDenied)),
+          );
+        }
       }
     }
     await scope.refreshNotifications();
+  }
+
+  Future<void> _test(BuildContext context) async {
+    final scope = AppScope.of(context);
+    final sent = await scope.notifications.sendTest();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          sent
+              ? AppStrings.notificationsTestSent
+              : AppStrings.notificationsTestFailed,
+        ),
+      ),
+    );
   }
 }
 

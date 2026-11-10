@@ -1457,5 +1457,30 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Instalada no tablet (`versionCode 2009`) preservando os dados anteriores. Não
   publicada, aguardando autorização.
 
+## Correção da entrega de notificações (0.4.1)
+
+- Notificações imediatas e agendadas falhavam com
+  `PlatformException(invalid_icon)`: o drawable do ícone pequeno era removido
+  pelo encolhimento de recursos. Adicionados `res/drawable/ic_stat_planner.xml`
+  e `res/raw/keep.xml` (`tools:keep`) para o R8/AGP preservar o ícone, e a
+  inicialização/detalhes passaram a usar esse drawable.
+- Adicionada a ação **Enviar notificação de teste** nas Configurações: publica
+  uma notificação imediata e agenda outra para 10 segundos depois, mostrando o
+  último erro na legenda do item. Valida canal, permissão e agendador sem
+  esperar um lembrete real.
+- Ao ativar as notificações, o app pede a permissão de execução, desliga a chave
+  se negada e solicita acesso a alarmes exatos quando disponível. Alarmes exatos
+  são usados quando autorizados; caso contrário, o agendamento cai para
+  `inexactAllowWhileIdle`.
+- Manifesto inclui `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`,
+  `SCHEDULE_EXACT_ALARM` e `USE_EXACT_ALARM`. O `USE_EXACT_ALARM` é concedido
+  automaticamente no Android 13+, mas a política do Play o espera apenas para
+  apps cuja função principal é alarme/calendário — revisar antes de publicar.
+- Verificado no tablet: a notificação imediata de teste foi publicada e a
+  agendada disparou após 10 segundos, canal `planner_reminders` com importância
+  4.
+- Build: versão **0.4.1+10**, instalada no tablet (`versionCode 2010`). Não
+  publicada, aguardando autorização.
+
 
 

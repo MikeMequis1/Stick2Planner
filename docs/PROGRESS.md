@@ -1457,3 +1457,27 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Build: `flutter build apk --release --split-per-abi`; version **0.4.0+9**.
   Installed on the tablet (`versionCode 2009`) preserving prior data. Not
   published pending authorization.
+
+## Notification delivery fix (0.4.1)
+
+- Scheduled and immediate notifications failed with
+  `PlatformException(invalid_icon)`: the small-icon drawable was removed by
+  resource shrinking. Added `res/drawable/ic_stat_planner.xml` and
+  `res/raw/keep.xml` (`tools:keep`) so R8/AGP keeps the icon, and switched
+  initialization/details to that drawable.
+- Added a **Send test notification** action in Settings that posts one immediate
+  notification and one scheduled 10 seconds later, surfacing the last
+  notification error in the tile subtitle. This validates channel, permission
+  and scheduler without waiting for a real reminder.
+- Enabling notifications now requests the runtime permission, falls back to
+  disabling the switch when denied, and requests exact-alarm access when
+  available. Exact alarms are used when authorized; otherwise scheduling falls
+  back to `inexactAllowWhileIdle`.
+- Manifest adds `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`,
+  `SCHEDULE_EXACT_ALARM` and `USE_EXACT_ALARM`. `USE_EXACT_ALARM` is granted
+  automatically on Android 13+, but Play policy expects it only for apps whose
+  core function is alarms/calendar — review before publishing.
+- Verified on the tablet: immediate test notification posted and the scheduled
+  test fired after 10 seconds, channel `planner_reminders` at importance 4.
+- Build: version **0.4.1+10**, installed on the tablet (`versionCode 2010`).
+  Not published pending authorization.

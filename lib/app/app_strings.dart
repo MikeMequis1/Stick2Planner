@@ -777,6 +777,32 @@ abstract final class AppStrings {
   static String get notificationDailyTitle =>
       _t('Hoje no Stick2Planner', 'Today in Stick2Planner');
   static String get notificationReminderTitle => _t('Lembrete', 'Reminder');
+  static String get notificationTestTitle =>
+      _t('Teste de notificação', 'Notification test');
+  static String get notificationTestBody => _t(
+    'Se você está vendo isto, as notificações locais estão funcionando.',
+    'If you can see this, local notifications are working.',
+  );
+  static String get notificationTestScheduledTitle =>
+      _t('Teste agendado', 'Scheduled test');
+  static String get notificationTestScheduledBody => _t(
+    'Notificação agendada disparada 10 segundos depois.',
+    'Scheduled notification fired 10 seconds later.',
+  );
+  static String get notificationsTest =>
+      _t('Enviar notificação de teste', 'Send test notification');
+  static String get notificationsTestSent => _t(
+    'Teste enviado. Outra notificação chegará em 10 s.',
+    'Test sent. Another notification will arrive in 10 s.',
+  );
+  static String get notificationsTestFailed => _t(
+    'Não foi possível enviar a notificação de teste. Verifique a permissão.',
+    'Could not send the test notification. Check the permission.',
+  );
+  static String get notificationsExactDenied => _t(
+    'Alarmes exatos não autorizados; usando agendamento aproximado.',
+    'Exact alarms not authorized; using approximate scheduling.',
+  );
   static String notificationSummaryMore(int count) =>
       _language == AppLanguage.en ? '+$count more' : '+$count mais';
   static String notificationReminderBody(String title, int minutes) =>
