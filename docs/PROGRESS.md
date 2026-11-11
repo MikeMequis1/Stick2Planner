@@ -1481,3 +1481,39 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   test fired after 10 seconds, channel `planner_reminders` at importance 4.
 - Build: version **0.4.1+10**, installed on the tablet (`versionCode 2010`).
   Not published pending authorization.
+
+## Routine creation date, drag and drop, and list safety (2026-11-10)
+
+- `Routine.createdOn` derives the local creation date from the persisted
+  `createdAt`. `runsOn` now requires `date >= createdOn`, so routines never
+  produce occurrences before they existed, including after offline gaps or
+  delayed synchronization. Edits preserve the original `createdAt`.
+- Routines remain local-only: there is no server routine entity yet, so no
+  receipt timestamp can overwrite the creation instant. The sync docs record the
+  payload/merge requirement for a future routine sync.
+- Checklist lines in Notes and activities in Routines now use drag handles
+  (`ReorderableListView`) instead of up/down arrows. The drag proxy elevates the
+  item, the handle isolates the gesture from text editing/checkboxes, and routine
+  cards persist the new order immediately through the controller. Existing notes
+  and routines also autosave the new order when the drag ends; new drafts still
+  use the Save action.
+- List item deletion now requires a continuous long press. A circular indicator
+  fills around the trash icon; releasing early cancels, completing deletes
+  without an extra dialog. It is implemented by the shared `HoldToDeleteButton`
+  and applies to note lines, routine editor activities and routine card
+  activities.
+- Note excerpt selection starts with a long press on the first line; after that,
+  tapping other lines toggles their selection instead of opening the editor. A
+  close button in the selection bar cancels the mode and clears the selection.
+- The Routines screen was rebuilt around the Agenda visual language: day toolbar,
+  a seven-day strip with per-day progress, color cards derived from the active
+  palette, expandable activities, explicit routine/activity hierarchy and a
+  "today" shortcut.
+- Horizontal swipes change the selected day in both orientations. The swipe
+  surface sits outside the reorder handles, so drag and drop, long-press delete
+  and day navigation do not compete.
+- No schema migration was needed: `createdAt` already exists since schema v9 and
+  every routine record has it. No new external dependencies were added.
+- `flutter test`: **294 tests passing**; `flutter analyze`: no issues.
+- Build: `flutter build apk --release --split-per-abi`, version **0.5.0+11**.
+  Not installed (no device attached at build time) and not published.

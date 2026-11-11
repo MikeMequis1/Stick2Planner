@@ -156,6 +156,7 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                         _NoteLineRow(
                           line: line,
                           selected: _selectedLines.contains(line.id),
+                          selectionMode: _selectedLines.isNotEmpty,
                           checklist: true,
                           onSelect: () => setState(() {
                             if (_selectedLines.contains(line.id)) {
@@ -267,26 +268,38 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                             )
                           : Row(
                               children: [
-                                Text(
-                                  AppStrings.selectedLines(
-                                    _selectedLines.length,
+                                Expanded(
+                                  child: Text(
+                                    AppStrings.selectedLines(
+                                      _selectedLines.length,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge,
                                   ),
-                                  style: Theme.of(context).textTheme.labelLarge,
                                 ),
-                                Spacer(),
                                 TextButton(
+                                  key: const Key('note-cancel-selection'),
                                   onPressed: () =>
                                       setState(() => _selectedLines.clear()),
-                                  child: Text(AppStrings.clearSelection),
+                                  child: Text(AppStrings.cancel),
                                 ),
-                                SizedBox(width: 8),
-                                FilledButton.icon(
-                                  key: Key('note-create-from-selection'),
-                                  onPressed: () =>
-                                      _createPostItFromSelection(note),
-                                  icon: Icon(Icons.add),
-                                  label: Text(
-                                    AppStrings.createPostItFromSelection,
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: FilledButton.icon(
+                                    key: const Key(
+                                      'note-create-from-selection',
+                                    ),
+                                    onPressed: () =>
+                                        _createPostItFromSelection(note),
+                                    icon: const Icon(Icons.add),
+                                    label: Text(
+                                      AppStrings.createPostItFromSelection,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -320,9 +333,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       await notes.setLineChecked(note, lineId, checked);
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppStrings.noteSaveError)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppStrings.noteSaveError)));
       }
     }
   }
@@ -355,9 +367,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
           .showSnackBar(SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.createPostItError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppStrings.createPostItError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -389,9 +401,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
           .showSnackBar(SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.createPostItError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppStrings.createPostItError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -411,9 +423,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
           .showSnackBar(SnackBar(content: Text(AppStrings.savedMessage)));
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.createPostItError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(AppStrings.createPostItError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -427,9 +439,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
         if (!postIt.isEvent) postIt,
     ];
     if (candidates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.selectPostItEmpty)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AppStrings.selectPostItEmpty)));
       return;
     }
 
@@ -466,14 +477,13 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
     try {
       await planner.linkNote(selected, note);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.statusUpdatedMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(AppStrings.statusUpdatedMessage)));
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppStrings.linkNoteError)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppStrings.linkNoteError)));
       }
     }
   }
@@ -513,9 +523,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
       Navigator.of(context).pop();
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.noteDeleteError)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppStrings.noteDeleteError)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -631,6 +640,7 @@ class _NoteLineRow extends StatelessWidget {
   const _NoteLineRow({
     required this.line,
     required this.selected,
+    required this.selectionMode,
     required this.checklist,
     required this.onSelect,
     required this.onChecked,
@@ -639,6 +649,7 @@ class _NoteLineRow extends StatelessWidget {
 
   final NoteLine line;
   final bool selected;
+  final bool selectionMode;
   final bool checklist;
   final VoidCallback onSelect;
   final ValueChanged<bool> onChecked;
@@ -657,10 +668,11 @@ class _NoteLineRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Semantics(
           button: true,
+          selected: selected,
           hint: AppStrings.selectLinesHint,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: onEdit,
+            onTap: selectionMode ? onSelect : onEdit,
             onLongPress: () {
               HapticFeedback.selectionClick();
               onSelect();

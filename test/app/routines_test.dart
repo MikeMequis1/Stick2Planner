@@ -103,4 +103,67 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('não gera ocorrências antes da criação e preserva createdAt', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    final routines = dependencies.routines;
+
+    final routine = await routines.saveRoutine(
+      name: 'Semana',
+      weekdays: {1},
+      items: const [RoutineItemInput(title: 'Planejar')],
+    );
+    final createdAt = routine.createdAt;
+
+    expect(routines.routinesOn(DateOnly(2026, 11, 2)), isEmpty);
+    expect(routines.routinesOn(DateOnly(2026, 11, 9)), hasLength(1));
+
+    await routines.toggleCompletion(routine.items.first, DateOnly(2026, 11, 2));
+    expect(
+      routines.routines.single.items.first.isCompletedOn(DateOnly(2026, 11, 2)),
+      isFalse,
+    );
+
+    await routines.saveRoutine(
+      id: routine.id,
+      name: 'Semana editada',
+      weekdays: {1, 3},
+      items: const [RoutineItemInput(title: 'Planejar melhor')],
+    );
+    expect(routines.routines.single.createdAt, createdAt);
+  });
+
+  test('reordena e remove atividades persistindo a ordem', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    final routines = dependencies.routines;
+
+    final routine = await routines.saveRoutine(
+      name: 'Ordem',
+      weekdays: {1},
+      items: const [
+        RoutineItemInput(title: 'A'),
+        RoutineItemInput(title: 'B'),
+        RoutineItemInput(title: 'C'),
+      ],
+    );
+    final createdAt = routine.createdAt;
+    final monday = DateOnly(2026, 11, 9);
+    await routines.toggleCompletion(routine.items.first, monday);
+
+    await routines.reorderItems(routine, 0, 2);
+    var current = routines.routines.single;
+    expect(current.items.map((item) => item.title), ['B', 'C', 'A']);
+    expect(current.items.map((item) => item.position), [0, 1, 2]);
+    expect(current.createdAt, createdAt);
+    expect(current.items.last.isCompletedOn(monday), isTrue);
+
+    await routines.removeItem(current, current.items[1]);
+    current = routines.routines.single;
+    expect(current.items.map((item) => item.title), ['B', 'A']);
+    expect(current.items.map((item) => item.position), [0, 1]);
+  });
 }

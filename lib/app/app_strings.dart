@@ -117,8 +117,8 @@ abstract final class AppStrings {
   static String get noteDeleteError =>
       _t('Não foi possível excluir a nota.', 'Could not delete the note.');
   static String get selectLinesHint => _t(
-    'Mantenha pressionada uma linha para selecionar um trecho.',
-    'Press and hold a line to select an excerpt.',
+    'Mantenha pressionada uma linha para iniciar a seleção; depois toque nas outras.',
+    'Press and hold a line to start selecting; then tap the others.',
   );
   static String get createPostItFromSelection =>
       _t('Criar post-it do trecho', 'Create post-it from excerpt');
@@ -726,6 +726,12 @@ abstract final class AppStrings {
   );
   static String get routineEmptyDay =>
       _t('Nenhuma rotina para este dia.', 'No routines for this day.');
+  static String get routineNoItems => _t(
+    'Esta rotina ainda não tem atividades.',
+    'This routine has no activities yet.',
+  );
+  static String routineCreatedOn(String date) =>
+      _language == AppLanguage.en ? 'Created on $date' : 'Criada em $date';
   static String routineProgress(int done, int total) =>
       _language == AppLanguage.en
       ? '$done of $total done'
@@ -747,6 +753,14 @@ abstract final class AppStrings {
   static String get routineSaved => _t('Rotina salva.', 'Routine saved.');
   static String get routineItemRequired =>
       _t('Informe o nome da atividade.', 'Enter the activity name.');
+  static String routineDaySummary(int done, int total) =>
+      _language == AppLanguage.en
+      ? '$done of $total activities done'
+      : '$done de $total atividades concluídas';
+  static String get routineSwipeHint => _t(
+    'Deslize para mudar de dia · arraste pela alça para reordenar.',
+    'Swipe to change day · drag the handle to reorder.',
+  );
   static String weekdayShort(int weekday) => switch (weekday) {
     1 => _t('Seg', 'Mon'),
     2 => _t('Ter', 'Tue'),
@@ -828,4 +842,14 @@ abstract final class AppStrings {
   // Navegação compacta
   static String get configShort => _t('Config', 'Config');
   static String get syncShort => _t('Sync', 'Sync');
+
+  // Listas: arrastar e excluir com pressão contínua
+  static String get dragToReorder =>
+      _t('Arraste para reordenar', 'Drag to reorder');
+  static String get holdToDelete =>
+      _t('Mantenha pressionado para excluir', 'Press and hold to delete');
+  static String get holdToDeleteHint => _t(
+    'O anel completa e o item é excluído ao soltar.',
+    'The ring fills and the item is deleted when you release.',
+  );
 }

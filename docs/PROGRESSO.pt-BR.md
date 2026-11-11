@@ -1482,5 +1482,39 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Build: versão **0.4.1+10**, instalada no tablet (`versionCode 2010`). Não
   publicada, aguardando autorização.
 
+## Data de criação, arrastar e soltar e segurança das listas (2026-11-10)
+
+- `Routine.createdOn` deriva a data local de criação do `createdAt` persistido.
+  `runsOn` agora exige `date >= createdOn`, então rotinas nunca geram ocorrências
+  antes de existirem, inclusive após períodos offline ou sincronização atrasada.
+  Edições preservam o `createdAt` original.
+- Rotinas continuam locais: ainda não existe entidade de rotina no servidor,
+  então nenhum horário de recebimento pode sobrescrever a criação. A documentação
+  de sync registra o requisito de payload/mesclagem para um sync futuro.
+- Linhas de checklist das Notas e atividades das Rotinas agora usam alças de
+  arrastar (`ReorderableListView`) em vez de setas. O item arrastado é elevado, a
+  alça isola o gesto da edição/checkbox e os cards de rotina persistem a nova
+  ordem imediatamente pelo controller. Notas e rotinas já existentes também
+  salvam a ordem ao terminar o arraste; rascunhos novos ainda usam Salvar.
+- A exclusão de itens agora exige pressão contínua. Um indicador circular
+  preenche ao redor do ícone de lixeira; soltar antes cancela e completar exclui
+  sem diálogo extra. É o `HoldToDeleteButton` compartilhado, aplicado às linhas
+  de Notas, às atividades do editor de rotina e às atividades do card.
+- A seleção de trechos da Nota começa com pressão longa na primeira linha;
+  depois disso, tocar nas outras linhas alterna a seleção em vez de abrir o
+  editor. Um botão de fechar na barra de seleção cancela o modo e limpa tudo.
+- A tela de Rotinas foi reconstruída com a linguagem da Agenda: barra de dia,
+  faixa de sete dias com progresso por dia, cards coloridos pela paleta ativa,
+  atividades expansíveis, hierarquia entre rotina e atividade e atalho "Hoje".
+- Gestos horizontais trocam o dia selecionado nas duas orientações. A superfície
+  do gesto fica fora das alças de reordenação, evitando conflito entre arrastar,
+  excluir com pressão e navegar por dia.
+- Nenhuma migração de esquema foi necessária: `createdAt` já existe desde o
+  esquema v9 e todo registro de rotina o possui. Nenhuma dependência externa foi
+  adicionada.
+- `flutter test`: **294 testes aprovados**; `flutter analyze`: sem issues.
+- Build: `flutter build apk --release --split-per-abi`, versão **0.5.0+11**.
+  Não instalada (nenhum dispositivo conectado no build) e não publicada.
+
 
 

@@ -346,6 +346,30 @@ etapas. Cada item: contexto, decisão, consequência.
 - Rotinas ainda não entram no sync nem no backup JSON; lembretes de post-its
   entram nos dois.
 
+## Data de criação da rotina e interações de lista
+
+- `createdAt` é o instante de criação da rotina e nunca é recalculado na edição.
+  As ocorrências são ancoradas na data local de criação (`createdOn`); `runsOn`
+  recusa datas anteriores. Isso é deliberadamente separado dos dias semanais de
+  programação e de uma eventual data de início configurável.
+- Rotinas ainda não têm entidade no servidor, então a sincronização não pode
+  reescrever `createdAt`. Um payload futuro de rotina deve enviar o instante
+  original e mesclar por ele, nunca pelo horário de recebimento.
+- A reordenação é exclusiva da alça (`ReorderableDragStartListener`), para que
+  campos de texto, checkboxes, navegação horizontal por dia e arraste não
+  disputem o mesmo gesto. Cards de rotina persistem na hora; notas e rotinas já
+  existentes também salvam a nova ordem ao terminar o arraste, enquanto
+  rascunhos novos ainda usam o botão Salvar.
+- Excluir um item de lista exige pressão contínua com confirmação circular.
+  Soltar antes cancela; não há diálogo extra porque o gesto já é deliberado.
+- A tela de Rotinas reutiliza a linguagem visual da Agenda (faixa de dias, cards
+  na paleta ativa, tipografia compacta) sem copiar recursos específicos do
+  calendário.
+- A seleção de trechos da Nota usa um modo explícito: pressão longa entra nele,
+  toques alternam linhas e um botão de fechar sai. Assim o toque para editar
+  continua disponível fora da seleção e evita abrir o editor sem querer.
+- Nenhuma migração de esquema foi necessária: `createdAt` já existia desde a v9.
+
 ## Localização
 
 - **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`

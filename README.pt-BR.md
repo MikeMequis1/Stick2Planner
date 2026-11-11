@@ -31,8 +31,9 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
   concluídas pelo ícone junto ao título nos detalhes.
 - **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
   sem data.
-- **Rotinas:** cards semanais com atividades, conclusão independente por dia,
-  seções expansíveis e persistência local.
+- **Rotinas:** quadro semanal por dia com progresso, cards expansíveis,
+  atividades com arrastar e soltar, conclusão independente por ocorrência e
+  ocorrências que nunca antecedem a criação da rotina.
 - **Notificações:** resumo diário e lembretes por item (minutos antes), agendados
   localmente no Android sem internet.
 - **Navegação:** trilho único adaptativo em paisagem (Config/Sync no rodapé) e

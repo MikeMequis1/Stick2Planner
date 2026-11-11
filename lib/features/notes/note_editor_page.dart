@@ -5,6 +5,8 @@ import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/notes_controller.dart';
 import '../../domain/entities/note.dart';
+import '../shared/hold_to_delete_button.dart';
+import '../shared/reorder_helpers.dart';
 
 /// Edita notas de texto como um único Markdown e listas como linhas.
 class NoteEditorPage extends StatefulWidget {
@@ -97,13 +99,39 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     setState(() {});
   }
 
-  void _moveLine(int index, int delta) {
-    final target = index + delta;
-    if (target < 0 || target >= _lines.length) return;
+  void _reorderLines(int oldIndex, int newIndex) {
+    if (oldIndex == newIndex) return;
     setState(() {
-      final line = _lines.removeAt(index);
-      _lines.insert(target, line);
+      final line = _lines.removeAt(oldIndex);
+      _lines.insert(newIndex.clamp(0, _lines.length), line);
     });
+    _persistOrderIfEditing();
+  }
+
+  /// Em uma nota existente a ordem é gravada assim que o arraste termina.
+  /// Rascunhos novos continuam dependendo do botão Salvar.
+  Future<void> _persistOrderIfEditing() async {
+    final existing = widget.existing;
+    if (existing == null || _saving) return;
+    final notes = AppScope.of(context).notes;
+    try {
+      await notes.updateNote(
+        existing,
+        title: _titleController.text,
+        type: _type,
+        markdown: _isText ? _markdownController.text : null,
+        lines: [
+          for (final line in _lines)
+            NoteLineInput(
+              id: line.id,
+              text: line.controller.text,
+              isChecked: line.isChecked,
+            ),
+        ],
+      );
+    } on Object {
+      // Mantém a ordem local; o Salvar mostra o erro de validação/persistência.
+    }
   }
 
   TextSelection _markdownSelection(TextEditingValue value) {
@@ -549,52 +577,57 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             SizedBox(height: 8),
             _buildMarkdownEditor(theme),
           ] else ...[
-            for (var index = 0; index < _lines.length; index++)
-              Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Checkbox(
-                      value: _lines[index].isChecked,
-                      onChanged: (value) => setState(
-                        () => _lines[index].isChecked = value ?? false,
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        key: Key('note-line-$index'),
-                        controller: _lines[index].controller,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          hintText: AppStrings.lineHint,
-                          border: OutlineInputBorder(),
-                          isDense: true,
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              proxyDecorator: reorderProxyDecorator,
+              itemCount: _lines.length,
+              onReorderItem: _reorderLines,
+              itemBuilder: (context, index) {
+                final line = _lines[index];
+                return Padding(
+                  key: ObjectKey(line),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Checkbox(
+                          value: line.isChecked,
+                          onChanged: (value) =>
+                              setState(() => line.isChecked = value ?? false),
                         ),
-                      ),
+                        Expanded(
+                          child: TextField(
+                            key: Key('note-line-$index'),
+                            controller: line.controller,
+                            minLines: 1,
+                            maxLines: 4,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              hintText: AppStrings.lineHint,
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        ReorderHandle(
+                          key: Key('note-line-handle-$index'),
+                          index: index,
+                        ),
+                        HoldToDeleteButton(
+                          key: Key('note-line-delete-$index'),
+                          semanticLabel: AppStrings.holdToDelete,
+                          onDelete: () => _removeLine(index),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: AppStrings.moveUp,
-                      onPressed: index == 0 ? null : () => _moveLine(index, -1),
-                      icon: Icon(Icons.arrow_upward, size: 18),
-                    ),
-                    IconButton(
-                      tooltip: AppStrings.moveDown,
-                      onPressed: index == _lines.length - 1
-                          ? null
-                          : () => _moveLine(index, 1),
-                      icon: Icon(Icons.arrow_downward, size: 18),
-                    ),
-                    IconButton(
-                      tooltip: AppStrings.delete,
-                      onPressed: () => _removeLine(index),
-                      icon: Icon(Icons.delete_outline, size: 18),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
+            ),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(

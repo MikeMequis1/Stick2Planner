@@ -201,7 +201,15 @@ usuário decidir.
 ## Rotinas
 
 - Rotinas e o estado de conclusão por dia são locais nesta versão; não são
-  enviados ao servidor.
+  enviados ao servidor. Portanto não existe data de recebimento no servidor que
+  possa sobrescrever `createdAt`.
+- `createdAt` é o instante de criação do registro e é preservado nas edições.
+  Ocorrências só aparecem a partir da data local de criação; assim um período
+  offline ou um sync atrasado nunca gera atividades anteriores à existência da
+  rotina.
+- Se o sync de rotinas for adicionado depois, o payload deve carregar
+  `createdAt` e a mesclagem deve manter o instante original de criação, não o
+  horário de recebimento.
 - Lembretes de post-it (`reminderMinutes`) viajam no payload do post-it e são
   armazenados de forma opaca pelo servidor.
 

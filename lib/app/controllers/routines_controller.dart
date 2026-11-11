@@ -123,7 +123,42 @@ final class RoutinesController extends ChangeNotifier {
     await refresh();
   }
 
+  /// Reordena atividades de uma rotina e persiste a nova ordem na hora.
+  ///
+  /// [newIndex] já vem ajustado pelo `onReorderItem` do [ReorderableListView].
+  Future<void> reorderItems(Routine routine, int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+    final items = [...routine.items];
+    if (oldIndex < 0 || oldIndex >= items.length) return;
+    final moved = items.removeAt(oldIndex);
+    items.insert(newIndex.clamp(0, items.length), moved);
+    await _saveItems(routine, items);
+  }
+
+  /// Remove uma atividade e persiste a nova ordem imediatamente.
+  Future<void> removeItem(Routine routine, RoutineItem item) async {
+    final items = [
+      for (final current in routine.items)
+        if (current.id != item.id) current,
+    ];
+    if (items.length == routine.items.length) return;
+    await _saveItems(routine, items);
+  }
+
+  Future<void> _saveItems(Routine routine, List<RoutineItem> items) async {
+    final reordered = [
+      for (var index = 0; index < items.length; index++)
+        items[index].copyWith(position: index),
+    ];
+    await _repository.save(
+      routine.copyWith(items: reordered, updatedAt: _clock.now().toUtc()),
+    );
+    await refresh();
+  }
+
   Future<void> toggleCompletion(RoutineItem item, DateOnly date) async {
+    final routine = _routineById(item.routineId);
+    if (routine == null || !routine.runsOn(date)) return;
     final completed = item.isCompletedOn(date);
     await _repository.setCompletion(
       routineItemId: item.id,

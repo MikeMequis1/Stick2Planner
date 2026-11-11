@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/routines_controller.dart';
+import '../../core/date_formatting.dart';
+import '../../core/date_only.dart';
 import '../../domain/entities/routine.dart';
+import '../shared/hold_to_delete_button.dart';
+import '../shared/reorder_helpers.dart';
 
 /// Cria/edita uma rotina e suas atividades.
 class RoutineEditorPage extends StatefulWidget {
@@ -53,13 +57,39 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
     setState(() {});
   }
 
-  void _moveItem(int index, int delta) {
-    final target = index + delta;
-    if (target < 0 || target >= _items.length) return;
+  void _reorderItems(int oldIndex, int newIndex) {
+    if (oldIndex == newIndex) return;
     setState(() {
-      final item = _items.removeAt(index);
-      _items.insert(target, item);
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex.clamp(0, _items.length), item);
     });
+    _persistOrderIfEditing();
+  }
+
+  /// Em uma rotina existente a ordem é gravada assim que o arraste termina.
+  /// Rotinas novas continuam dependendo do botão Salvar.
+  Future<void> _persistOrderIfEditing() async {
+    final existing = widget.existing;
+    if (existing == null || _saving) return;
+    final controller = AppScope.of(context).routines;
+    try {
+      await controller.saveRoutine(
+        id: existing.id,
+        name: _name.text,
+        details: _details.text,
+        weekdays: _weekdays,
+        items: [
+          for (final item in _items)
+            RoutineItemInput(
+              id: item.id,
+              title: item.title.text,
+              details: item.details.text,
+            ),
+        ],
+      );
+    } on Object {
+      // Mantém a ordem local; o Salvar mostra o erro de validação/persistência.
+    }
   }
 
   Future<void> _save() async {
@@ -203,6 +233,31 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
                 ),
             ],
           ),
+          if (widget.existing != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  Icons.history,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  AppStrings.routineCreatedOn(
+                    DateFormats.shortDate(
+                      DateOnly.fromDateTime(
+                        widget.existing!.createdAt.toLocal(),
+                      ),
+                    ),
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
           Row(
             children: [
@@ -220,65 +275,66 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
               ),
             ],
           ),
-          for (var index = 0; index < _items.length; index++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              key: Key('routine-item-title-$index'),
-                              controller: _items[index].title,
-                              decoration: InputDecoration(
-                                labelText: AppStrings.routineItemTitle,
-                                border: const OutlineInputBorder(),
-                                isDense: true,
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: reorderProxyDecorator,
+            itemCount: _items.length,
+            onReorderItem: _reorderItems,
+            itemBuilder: (context, index) {
+              final item = _items[index];
+              return Padding(
+                key: ObjectKey(item),
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                key: Key('routine-item-title-$index'),
+                                controller: item.title,
+                                decoration: InputDecoration(
+                                  labelText: AppStrings.routineItemTitle,
+                                  border: const OutlineInputBorder(),
+                                  isDense: true,
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            tooltip: AppStrings.moveUp,
-                            onPressed: index == 0
-                                ? null
-                                : () => _moveItem(index, -1),
-                            icon: const Icon(Icons.arrow_upward, size: 18),
-                          ),
-                          IconButton(
-                            tooltip: AppStrings.moveDown,
-                            onPressed: index == _items.length - 1
-                                ? null
-                                : () => _moveItem(index, 1),
-                            icon: const Icon(Icons.arrow_downward, size: 18),
-                          ),
-                          IconButton(
-                            tooltip: AppStrings.delete,
-                            onPressed: () => _removeItem(index),
-                            icon: const Icon(Icons.delete_outline, size: 18),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        key: Key('routine-item-details-$index'),
-                        controller: _items[index].details,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          labelText: AppStrings.routineItemDescription,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
+                            ReorderHandle(
+                              key: Key('routine-item-handle-$index'),
+                              index: index,
+                            ),
+                            HoldToDeleteButton(
+                              key: Key('routine-item-delete-$index'),
+                              semanticLabel: AppStrings.holdToDelete,
+                              onDelete: () => _removeItem(index),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        TextField(
+                          key: Key('routine-item-details-$index'),
+                          controller: item.details,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            labelText: AppStrings.routineItemDescription,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
           const SizedBox(height: 80),
         ],
       ),

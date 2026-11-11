@@ -24,7 +24,18 @@ final class Routine {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  bool runsOn(DateOnly date) => weekdays.contains(date.weekday);
+  /// Data local em que a rotina foi criada. A recorrência nunca começa antes
+  /// dela, mesmo que o dispositivo fique offline por vários dias.
+  DateOnly get createdOn => DateOnly.fromDateTime(createdAt.toLocal());
+
+  /// A rotina só ocorre a partir do dia da criação e nos dias escolhidos.
+  ///
+  /// `createdAt` é a data de criação do registro, não uma data de início
+  /// configurável: as duas informações continuam distintas no modelo, mas a
+  /// programação semanal é ancorada na criação para impedir ocorrências
+  /// retroativas.
+  bool runsOn(DateOnly date) =>
+      !date.isBefore(createdOn) && weekdays.contains(date.weekday);
 
   int completedOn(DateOnly date) =>
       items.where((item) => item.isCompletedOn(date)).length;

@@ -345,6 +345,30 @@ stages. Each item: context, decision, consequence.
 - Routines are not part of sync or JSON backups yet; post-it reminders are
   carried in both.
 
+## Routine creation date and list interactions
+
+- `createdAt` is the routine's creation instant and is never recalculated on
+  edit. Occurrences are anchored to its local calendar date (`createdOn`);
+  `runsOn` refuses earlier dates. This is deliberately separate from the weekly
+  scheduling days and from any future configurable start date.
+- Routines still have no server entity, so synchronization cannot rewrite
+  `createdAt`. Any future routine payload must send the original instant and
+  merge by it, not by server receipt time.
+- Reordering is handle-only (`ReorderableDragStartListener`) so text fields,
+  checkboxes, horizontal day navigation and drag do not fight for the same
+  gesture. Routine cards persist immediately; existing notes and routines also
+  autosave the new order when the drag ends, while brand-new drafts still use the
+  Save action.
+- Deleting a list item requires a continuous long press with a circular
+  confirmation. Releasing early cancels; no extra dialog is shown because the
+  gesture is already deliberate.
+- The routine screen reuses the Agenda's visual language (day strip, active
+  palette cards, compact typography) without copying calendar-specific features.
+- Note excerpt selection uses an explicit mode: a long press enters it, taps
+  toggle lines, and a close button leaves it. This keeps tap-to-edit available
+  while selection is off and avoids accidental editor openings while selecting.
+- No schema migration was required: `createdAt` already existed from v9.
+
 ## Localization
 
 - **App:** Portuguese (BR) and English, persisted in `app_settings`. `AppStrings`

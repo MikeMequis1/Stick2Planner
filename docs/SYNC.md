@@ -202,7 +202,15 @@ suspended until the user decides.
 ## Routines
 
 - Routines and their per-day completion states are local-only in this version;
-  they are not sent to the server.
+  they are not sent to the server. Therefore there is no server receipt date that
+  could overwrite `createdAt`.
+- `createdAt` is the routine record creation instant and is preserved on edits.
+  Occurrences are only shown on or after its local calendar date, so an offline
+  gap or a delayed sync can never generate activities before the routine
+  existed.
+- If routine sync is added later, the payload must carry `createdAt` and the
+  merge must keep the older/original creation instant instead of the receipt
+  time.
 - Post-it reminders (`reminderMinutes`) travel inside the post-it payload and are
   stored opaquely by the server.
 
