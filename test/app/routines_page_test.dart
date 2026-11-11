@@ -88,6 +88,45 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('dicas seguem a configuração de animações e transições', (
+    tester,
+  ) async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    final routine = await dependencies.routines.saveRoutine(
+      name: 'Rotina com dicas',
+      weekdays: {1},
+      items: const [RoutineItemInput(title: 'Atividade')],
+    );
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text(AppStrings.routines),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.routineSwipeHint), findsOneWidget);
+    await tester.tap(find.byKey(Key('routine-${routine.id}')));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.dragToReorder), findsOneWidget);
+
+    await dependencies.settings.setAnimationsEnabled(false);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.routineSwipeHint), findsNothing);
+    expect(find.text(AppStrings.dragToReorder), findsNothing);
+
+    await dependencies.settings.setAnimationsEnabled(true);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.routineSwipeHint), findsOneWidget);
+    expect(find.text(AppStrings.dragToReorder), findsOneWidget);
+  });
+
   testWidgets('expande a rotina e reordena atividades pela alça', (
     tester,
   ) async {

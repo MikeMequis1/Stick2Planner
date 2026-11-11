@@ -7,6 +7,7 @@ import '../../data/db/converters.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
 import 'sync_payload.dart';
 
@@ -53,6 +54,13 @@ final class SyncOutboxRecorder {
 
   Future<void> recordTag(Tag tag) =>
       _record(syncEntityTag, tag.id, tagPayload(tag), tag.updatedAt);
+
+  Future<void> recordRoutine(Routine routine, {DateTime? deletedAt}) => _record(
+    syncEntityRoutine,
+    routine.id,
+    routinePayload(routine, deletedAt: deletedAt),
+    deletedAt ?? routine.updatedAt,
+  );
 
   Future<void> _record(
     String entity,

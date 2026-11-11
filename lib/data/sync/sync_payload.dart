@@ -2,6 +2,7 @@ import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
 
 /// Entidades sincronizáveis. Preferências e credenciais ficam locais.
@@ -9,6 +10,7 @@ const syncEntityPostIt = 'postIt';
 const syncEntityNote = 'note';
 const syncEntityHistory = 'history';
 const syncEntityTag = 'tag';
+const syncEntityRoutine = 'routine';
 
 Map<String, Object?> postItPayload(PostIt postIt) => {
   'id': postIt.id,
@@ -151,6 +153,66 @@ Tag tagFromPayload(Map<String, Object?> payload) => Tag(
   deletedAt: _optionalTime(payload, 'deletedAt'),
 );
 
+/// Rotina e atividades como uma unidade atômica.
+///
+/// `deletedAt` é usado no tombstone de exclusão; a rotina em si não guarda o
+/// campo no banco, mas o payload precisa dele para o servidor propagar a remoção.
+Map<String, Object?> routinePayload(Routine routine, {DateTime? deletedAt}) => {
+  'id': routine.id,
+  'name': routine.name,
+  'details': routine.details,
+  'weekdays': routine.weekdays.toList()..sort(),
+  'items': [
+    for (final item in routine.items)
+      {
+        'id': item.id,
+        'title': item.title,
+        'details': item.details,
+        'position': item.position,
+        'completedDates': [
+          for (final date in item.completedDates.toList()..sort())
+            date.toIso8601String(),
+        ],
+      },
+  ],
+  'createdAt': routine.createdAt.toUtc().toIso8601String(),
+  'updatedAt': routine.updatedAt.toUtc().toIso8601String(),
+  'deletedAt': deletedAt?.toUtc().toIso8601String(),
+};
+
+Routine routineFromPayload(Map<String, Object?> payload) {
+  final routineId = _text(payload, 'id');
+  final rawItems = payload['items'];
+  final items = <RoutineItem>[];
+  if (rawItems is List) {
+    for (var index = 0; index < rawItems.length; index++) {
+      final raw = rawItems[index];
+      if (raw is! Map) continue;
+      final item = Map<String, Object?>.from(raw);
+      items.add(
+        RoutineItem(
+          id: _text(item, 'id'),
+          routineId: routineId,
+          title: _text(item, 'title'),
+          details: _optionalText(item, 'details'),
+          position: _optionalInteger(item, 'position', index),
+          completedDates: _dateList(item['completedDates']),
+        ),
+      );
+    }
+  }
+  items.sort((a, b) => a.position.compareTo(b.position));
+  return Routine(
+    id: routineId,
+    name: _text(payload, 'name'),
+    details: _optionalText(payload, 'details'),
+    weekdays: _integerList(payload['weekdays']).toSet(),
+    items: items,
+    createdAt: _time(payload, 'createdAt'),
+    updatedAt: _time(payload, 'updatedAt'),
+  );
+}
+
 String _text(Map<String, Object?> payload, String key) {
   final value = payload[key];
   if (value is String && value.isNotEmpty) return value;
@@ -226,4 +288,26 @@ List<String> _stringList(Object? raw) {
     for (final value in raw)
       if (value is String && value.isNotEmpty) value,
   ];
+}
+
+List<int> _integerList(Object? raw) {
+  if (raw is! List) return const [];
+  return [
+    for (final value in raw)
+      if (value is int) value,
+  ];
+}
+
+Set<DateOnly> _dateList(Object? raw) {
+  if (raw is! List) return const {};
+  final dates = <DateOnly>{};
+  for (final value in raw) {
+    if (value is! String) continue;
+    try {
+      dates.add(DateOnly.parse(value));
+    } on Object {
+      // Ignora data inválida isolada sem perder o restante da rotina.
+    }
+  }
+  return dates;
 }

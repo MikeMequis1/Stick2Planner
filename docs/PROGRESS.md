@@ -1488,9 +1488,12 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   `createdAt`. `runsOn` now requires `date >= createdOn`, so routines never
   produce occurrences before they existed, including after offline gaps or
   delayed synchronization. Edits preserve the original `createdAt`.
-- Routines remain local-only: there is no server routine entity yet, so no
-  receipt timestamp can overwrite the creation instant. The sync docs record the
-  payload/merge requirement for a future routine sync.
+- Routines now sync as a first-class `routine` entity when the server is 0.2.2
+  or newer. The payload carries `createdAt`, activities, completion dates and a
+  deletion tombstone. Older servers keep routine changes in the local outbox so
+  the rest of the sync does not fail.
+- Sync review/statistics include a routines row, and remote routine changes
+  refresh the routines controller immediately.
 - Checklist lines in Notes and activities in Routines now use drag handles
   (`ReorderableListView`) instead of up/down arrows. The drag proxy elevates the
   item, the handle isolates the gesture from text editing/checkboxes, and routine
@@ -1514,6 +1517,26 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   and day navigation do not compete.
 - No schema migration was needed: `createdAt` already exists since schema v9 and
   every routine record has it. No new external dependencies were added.
-- `flutter test`: **294 tests passing**; `flutter analyze`: no issues.
+- `flutter test`: **297 tests passing**; `flutter analyze`: no issues.
 - Build: `flutter build apk --release --split-per-abi`, version **0.5.0+11**.
   Not installed (no device attached at build time) and not published.
+
+## Routine synchronization (0.6.0)
+
+- Added the `routine` sync entity with an atomic payload: routine fields,
+  weekdays, `createdAt`, `updatedAt`, deletion tombstone, activities and their
+  completion dates. `createdAt` is never replaced by server receipt time.
+- Local outbox recording now covers routine create/edit, activity reorder/delete,
+  completion toggles and deletion. Remote apply upserts the routine, replaces its
+  activities and completion rows, and removes the routine on a tombstone.
+- Conflict resolution can create a `[Conflict]` routine copy with fresh routine
+  and activity IDs; keep-local/keep-remote replacement includes routines.
+- Sync review/stats show routines on both sides. Remote pulls refresh the
+  routines controller so the UI updates without reopening the app.
+- The server whitelist and stats now include `routine` (stick2server 0.2.2).
+  The app checks `/v1/health`: below 0.2.2 it keeps routines in the outbox and
+  continues syncing the other entities instead of failing the whole request.
+- Server tests: **16 passing**; Flutter tests: **297 passing**;
+  `flutter analyze`: no issues.
+- Build: `flutter build apk --release --split-per-abi`, version **0.6.0+12**.
+  Live server must run 0.2.2 before routines leave the outbox.

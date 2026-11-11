@@ -6,6 +6,7 @@ import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/sync/sync_engine.dart';
 import 'package:stick2planner/data/sync/sync_models.dart';
 import 'package:stick2planner/data/sync/sync_payload.dart';
@@ -13,6 +14,7 @@ import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
 import 'package:stick2planner/domain/entities/note.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/routine.dart';
 
 final class FakeTransport implements SyncTransport {
   FakeTransport(this.handler);
@@ -409,5 +411,37 @@ void main() {
     expect(copy.lines, hasLength(1));
     expect(copy.lines.single.id, isNot('l1'));
     expect(copy.lines.single.noteId, copy.id);
+  });
+
+  test('servidor antigo mantém rotinas na outbox sem quebrar o sync', () async {
+    final db = openDb();
+    await DriftRoutineRepository(db).save(
+      Routine(
+        id: 'r1',
+        name: 'Manhã',
+        weekdays: const {3},
+        createdAt: t0,
+        updatedAt: t0,
+      ),
+    );
+    final transport = FakeTransport(
+      (call, changes, since) => response(cursor: 1),
+    );
+    final engine = SyncEngine(
+      database: db,
+      transport: transport,
+      state: SyncStateStore(db),
+      now: () => t0,
+      supportsRoutines: false,
+    );
+
+    await engine.run();
+
+    expect(transport.sent.single, isEmpty);
+    expect((await db.select(db.syncOutbox).get()), hasLength(1));
+    expect(
+      (await db.select(db.syncOutbox).get()).single.entity,
+      syncEntityRoutine,
+    );
   });
 }

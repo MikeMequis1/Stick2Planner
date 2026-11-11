@@ -83,6 +83,94 @@ final class SyncApplyService {
     });
   }
 
+  Future<void> applyRoutine(Map<String, Object?> payload, int rev) async {
+    final routineId = payload['id'];
+    if (routineId is! String || routineId.isEmpty) {
+      throw const FormatException('routine.id inválido');
+    }
+    if (payload['deletedAt'] != null) {
+      await _db.transaction(() async {
+        final items = await (_db.select(
+          _db.routineItems,
+        )..where((table) => table.routineId.equals(routineId))).get();
+        for (final item in items) {
+          await (_db.delete(
+            _db.routineCompletions,
+          )..where((table) => table.routineItemId.equals(item.id))).go();
+        }
+        await (_db.delete(
+          _db.routineItems,
+        )..where((table) => table.routineId.equals(routineId))).go();
+        await (_db.delete(
+          _db.routines,
+        )..where((table) => table.id.equals(routineId))).go();
+        await _recordRev(syncEntityRoutine, routineId, rev);
+      });
+      return;
+    }
+
+    final routine = routineFromPayload(payload);
+    await _db.transaction(() async {
+      await _db
+          .into(_db.routines)
+          .insertOnConflictUpdate(
+            RoutinesCompanion(
+              id: Value(routine.id),
+              name: Value(routine.name),
+              details: Value(routine.details),
+              weekdays: Value(routineWeekdayMask(routine.weekdays)),
+              createdAt: Value(dateTimeToStorage(routine.createdAt)),
+              updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
+            ),
+          );
+
+      final existing = await (_db.select(
+        _db.routineItems,
+      )..where((table) => table.routineId.equals(routine.id))).get();
+      final keepIds = {for (final item in routine.items) item.id};
+      for (final row in existing) {
+        if (keepIds.contains(row.id)) continue;
+        await (_db.delete(
+          _db.routineCompletions,
+        )..where((table) => table.routineItemId.equals(row.id))).go();
+        await (_db.delete(
+          _db.routineItems,
+        )..where((table) => table.id.equals(row.id))).go();
+      }
+
+      for (final item in routine.items) {
+        await _db
+            .into(_db.routineItems)
+            .insertOnConflictUpdate(
+              RoutineItemsCompanion(
+                id: Value(item.id),
+                routineId: Value(routine.id),
+                title: Value(item.title),
+                details: Value(item.details),
+                position: Value(item.position),
+                createdAt: Value(dateTimeToStorage(routine.createdAt)),
+                updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
+              ),
+            );
+        await (_db.delete(
+          _db.routineCompletions,
+        )..where((table) => table.routineItemId.equals(item.id))).go();
+        for (final date in item.completedDates) {
+          await _db
+              .into(_db.routineCompletions)
+              .insertOnConflictUpdate(
+                RoutineCompletionsCompanion(
+                  routineItemId: Value(item.id),
+                  date: Value(date),
+                  completedAt: Value(dateTimeToStorage(routine.updatedAt)),
+                ),
+              );
+        }
+      }
+      await _recordRev(syncEntityRoutine, routine.id, rev);
+    });
+  }
+
   Future<void> _recordRev(String entity, String entityId, int rev) {
     return _db
         .into(_db.syncRowStates)

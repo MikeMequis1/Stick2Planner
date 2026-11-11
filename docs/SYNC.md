@@ -201,16 +201,19 @@ suspended until the user decides.
 
 ## Routines
 
-- Routines and their per-day completion states are local-only in this version;
-  they are not sent to the server. Therefore there is no server receipt date that
-  could overwrite `createdAt`.
+- Routines are a first-class sync entity (`routine`) since server **0.2.2**.
+  A routine payload is atomic: name, details, weekdays, `createdAt`,
+  `updatedAt`, deletion tombstone and all activities with their completed dates.
 - `createdAt` is the routine record creation instant and is preserved on edits.
   Occurrences are only shown on or after its local calendar date, so an offline
   gap or a delayed sync can never generate activities before the routine
   existed.
-- If routine sync is added later, the payload must carry `createdAt` and the
-  merge must keep the older/original creation instant instead of the receipt
-  time.
+- Deletion sends a tombstone (`deletedAt` in the payload); other devices remove
+  the routine, its activities and completion rows. Activity completion changes
+  update the routine payload and are re-sent.
+- Older servers keep accepting the previous entities. The app checks `/v1/health`
+  and, below **0.2.2**, keeps routine changes in the local outbox instead of
+  sending an entity the server would reject. The rest of the sync keeps working.
 - Post-it reminders (`reminderMinutes`) travel inside the post-it payload and are
   stored opaquely by the server.
 

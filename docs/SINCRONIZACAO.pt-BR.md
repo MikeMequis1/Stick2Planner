@@ -200,16 +200,19 @@ usuário decidir.
 
 ## Rotinas
 
-- Rotinas e o estado de conclusão por dia são locais nesta versão; não são
-  enviados ao servidor. Portanto não existe data de recebimento no servidor que
-  possa sobrescrever `createdAt`.
+- Rotinas são uma entidade de sync (`routine`) desde o servidor **0.2.2**. O
+  payload é atômico: nome, detalhes, dias da semana, `createdAt`, `updatedAt`,
+  tombstone de exclusão e todas as atividades com suas datas concluídas.
 - `createdAt` é o instante de criação do registro e é preservado nas edições.
   Ocorrências só aparecem a partir da data local de criação; assim um período
   offline ou um sync atrasado nunca gera atividades anteriores à existência da
   rotina.
-- Se o sync de rotinas for adicionado depois, o payload deve carregar
-  `createdAt` e a mesclagem deve manter o instante original de criação, não o
-  horário de recebimento.
+- A exclusão envia um tombstone (`deletedAt` no payload); outros dispositivos
+  removem a rotina, suas atividades e as conclusões. Alterações de conclusão
+  atualizam o payload da rotina e são reenviadas.
+- Servidores antigos continuam aceitando as entidades anteriores. O app consulta
+  `/v1/health` e, abaixo de **0.2.2**, mantém as rotinas na outbox local em vez
+  de enviar uma entidade que o servidor recusaria. O restante do sync continua.
 - Lembretes de post-it (`reminderMinutes`) viajam no payload do post-it e são
   armazenados de forma opaca pelo servidor.
 

@@ -1488,9 +1488,12 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   `runsOn` agora exige `date >= createdOn`, então rotinas nunca geram ocorrências
   antes de existirem, inclusive após períodos offline ou sincronização atrasada.
   Edições preservam o `createdAt` original.
-- Rotinas continuam locais: ainda não existe entidade de rotina no servidor,
-  então nenhum horário de recebimento pode sobrescrever a criação. A documentação
-  de sync registra o requisito de payload/mesclagem para um sync futuro.
+- Rotinas agora sincronizam como entidade `routine` quando o servidor é 0.2.2
+  ou superior. O payload carrega `createdAt`, atividades, datas concluídas e um
+  tombstone de exclusão. Servidores antigos mantêm as rotinas na outbox local
+  para não quebrar o restante do sync.
+- A revisão/estatísticas do sync exibem uma linha de rotinas, e mudanças remotas
+  atualizam o controller de rotinas imediatamente.
 - Linhas de checklist das Notas e atividades das Rotinas agora usam alças de
   arrastar (`ReorderableListView`) em vez de setas. O item arrastado é elevado, a
   alça isola o gesto da edição/checkbox e os cards de rotina persistem a nova
@@ -1512,9 +1515,29 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Nenhuma migração de esquema foi necessária: `createdAt` já existe desde o
   esquema v9 e todo registro de rotina o possui. Nenhuma dependência externa foi
   adicionada.
-- `flutter test`: **294 testes aprovados**; `flutter analyze`: sem issues.
+- `flutter test`: **297 testes aprovados**; `flutter analyze`: sem issues.
 - Build: `flutter build apk --release --split-per-abi`, versão **0.5.0+11**.
   Não instalada (nenhum dispositivo conectado no build) e não publicada.
+
+## Sincronização de Rotinas (0.6.0)
+
+- Adicionada a entidade de sync `routine` com payload atômico: campos da rotina,
+  dias, `createdAt`, `updatedAt`, tombstone de exclusão, atividades e datas de
+  conclusão. `createdAt` nunca é substituído pelo horário de recebimento.
+- A outbox local agora cobre criação/edição de rotina, reordenação/exclusão de
+  atividade, conclusão e exclusão. O apply remoto faz upsert da rotina, substitui
+  atividades/conclusões e remove a rotina em um tombstone.
+- A resolução de conflito pode criar uma cópia `[Conflito]` da rotina com IDs
+  novos; manter local/remoto inclui rotinas.
+- A revisão/estatísticas do sync mostram rotinas dos dois lados. Pulls remotos
+  atualizam o controller de rotinas sem reabrir o app.
+- A whitelist e as estatísticas do servidor incluem `routine` (stick2server
+  0.2.2). O app consulta `/v1/health`: abaixo de 0.2.2 mantém rotinas na outbox e
+  continua sincronizando as demais entidades em vez de falhar a requisição.
+- Testes do servidor: **16 aprovados**; testes Flutter: **297 aprovados**;
+  `flutter analyze`: sem issues.
+- Build: `flutter build apk --release --split-per-abi`, versão **0.6.0+12**.
+  O servidor live precisa estar em 0.2.2 para as rotinas saírem da outbox.
 
 
 

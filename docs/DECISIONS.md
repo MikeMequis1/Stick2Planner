@@ -321,7 +321,8 @@ stages. Each item: context, decision, consequence.
 
 ## Routines and notifications (schema v9)
 
-- Routines are local-only (`routines`, `routine_items`, `routine_completions`).
+- Routines are stored locally (`routines`, `routine_items`,
+  `routine_completions`) and synchronized as one atomic `routine` entity.
   Completion is keyed by `routine_item_id + date`, so each occurrence has an
   independent state; no global completion flag.
 - `post_its.reminder_minutes` stores the lead time; reminders require
@@ -351,9 +352,12 @@ stages. Each item: context, decision, consequence.
   edit. Occurrences are anchored to its local calendar date (`createdOn`);
   `runsOn` refuses earlier dates. This is deliberately separate from the weekly
   scheduling days and from any future configurable start date.
-- Routines still have no server entity, so synchronization cannot rewrite
-  `createdAt`. Any future routine payload must send the original instant and
-  merge by it, not by server receipt time.
+- Routine sync sends the original `createdAt` in the payload; merges never use
+  server receipt time for creation. Deletion is a tombstone and the workbook of
+  activities/completions travels inside the same entity.
+- Servers below 0.2.2 do not accept the entity; the app keeps routine changes in
+  the local outbox and continues syncing the other entities until the server is
+  updated.
 - Reordering is handle-only (`ReorderableDragStartListener`) so text fields,
   checkboxes, horizontal day navigation and drag do not fight for the same
   gesture. Routine cards persist immediately; existing notes and routines also

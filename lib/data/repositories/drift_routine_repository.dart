@@ -6,11 +6,14 @@ import '../../domain/repositories/routine_repository.dart';
 import '../db/app_database.dart';
 import '../db/converters.dart';
 import '../mappers/mappers.dart';
+import '../sync/sync_outbox.dart';
 
 final class DriftRoutineRepository implements RoutineRepository {
-  DriftRoutineRepository(this._db);
+  DriftRoutineRepository(this._db, {SyncOutboxRecorder? outbox})
+    : _outbox = outbox ?? SyncOutboxRecorder(_db);
 
   final AppDatabase _db;
+  final SyncOutboxRecorder _outbox;
 
   @override
   Future<List<Routine>> loadAll() async {
@@ -84,14 +87,21 @@ final class DriftRoutineRepository implements RoutineRepository {
               ),
             );
       }
+      await _outbox.recordRoutine(routine);
     });
   }
 
   @override
   Future<void> delete(String id) {
-    return (_db.delete(
-      _db.routines,
-    )..where((table) => table.id.equals(id))).go();
+    return _db.transaction(() async {
+      final routine = await _loadById(id);
+      await (_db.delete(
+        _db.routines,
+      )..where((table) => table.id.equals(id))).go();
+      if (routine != null) {
+        await _outbox.recordRoutine(routine, deletedAt: DateTime.now().toUtc());
+      }
+    });
   }
 
   @override
@@ -120,6 +130,40 @@ final class DriftRoutineRepository implements RoutineRepository {
             ))
             .go();
       }
+      final item = await (_db.select(
+        _db.routineItems,
+      )..where((table) => table.id.equals(routineItemId))).getSingleOrNull();
+      if (item == null) return;
+      await (_db.update(_db.routines)
+            ..where((table) => table.id.equals(item.routineId)))
+          .write(RoutinesCompanion(updatedAt: Value(dateTimeToStorage(at))));
+      final routine = await _loadById(item.routineId);
+      if (routine != null) await _outbox.recordRoutine(routine);
     });
+  }
+
+  Future<Routine?> _loadById(String id) async {
+    final row = await (_db.select(
+      _db.routines,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+    if (row == null) return null;
+    final items =
+        await (_db.select(_db.routineItems)
+              ..where((table) => table.routineId.equals(id))
+              ..orderBy([(table) => OrderingTerm(expression: table.position)]))
+            .get();
+    final itemIds = [for (final item in items) item.id];
+    final completions = itemIds.isEmpty
+        ? const <RoutineCompletionRow>[]
+        : await (_db.select(
+            _db.routineCompletions,
+          )..where((table) => table.routineItemId.isIn(itemIds))).get();
+    final byItem = <String, Set<DateOnly>>{};
+    for (final completion in completions) {
+      byItem
+          .putIfAbsent(completion.routineItemId, () => <DateOnly>{})
+          .add(completion.date);
+    }
+    return routineFromRows(row, items, byItem);
   }
 }

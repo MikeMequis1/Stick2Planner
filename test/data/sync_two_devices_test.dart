@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/repositories/drift_tag_repository.dart';
 import 'package:stick2planner/data/sync/sync_engine.dart';
 import 'package:stick2planner/data/sync/sync_models.dart';
 import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/routine.dart';
 import 'package:stick2planner/domain/entities/tag.dart';
 
 /// Servidor mínimo em memória, com a mesma semântica de rev/conflito.
@@ -341,4 +343,70 @@ void main() {
     expect(await tagsB.loadAll(), isEmpty);
     expect((await repoB.loadAll()).single.tagIds, isEmpty);
   });
+
+  test(
+    'rotinas, atividades e conclusões convergem preservando createdAt',
+    () async {
+      final server = MemorySyncServer();
+      final dbA = openDb();
+      final dbB = openDb();
+      final repoA = DriftRoutineRepository(dbA);
+      final repoB = DriftRoutineRepository(dbB);
+      final engineA = SyncEngine(
+        database: dbA,
+        transport: DeviceTransport(server, 'A'),
+        state: SyncStateStore(dbA),
+        now: () => t0,
+      );
+      final engineB = SyncEngine(
+        database: dbB,
+        transport: DeviceTransport(server, 'B'),
+        state: SyncStateStore(dbB),
+        now: () => t0,
+      );
+
+      final routine = Routine(
+        id: 'r1',
+        name: 'Manhã',
+        details: 'Antes do trabalho',
+        weekdays: const {3, 4},
+        items: const [
+          RoutineItem(
+            id: 'ri1',
+            routineId: 'r1',
+            title: 'Alongar',
+            position: 0,
+          ),
+          RoutineItem(id: 'ri2', routineId: 'r1', title: 'Ler', position: 1),
+        ],
+        createdAt: t0,
+        updatedAt: t0,
+      );
+      await repoA.save(routine);
+      await engineA.run();
+      await engineB.run();
+
+      final onB = (await repoB.loadAll()).single;
+      expect(onB.createdAt, t0);
+      expect(onB.items.map((item) => item.title), ['Alongar', 'Ler']);
+
+      await repoB.setCompletion(
+        routineItemId: 'ri1',
+        date: DateOnly(2026, 11, 4),
+        completed: true,
+        at: t0.add(const Duration(minutes: 1)),
+      );
+      await engineB.run();
+      await engineA.run();
+
+      final onA = (await repoA.loadAll()).single;
+      expect(onA.createdAt, t0);
+      expect(onA.items.first.isCompletedOn(DateOnly(2026, 11, 4)), isTrue);
+
+      await repoA.delete(routine.id);
+      await engineA.run();
+      await engineB.run();
+      expect(await repoB.loadAll(), isEmpty);
+    },
+  );
 }

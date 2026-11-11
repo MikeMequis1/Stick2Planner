@@ -31,8 +31,8 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
   date; tasks can be completed from the details title icon.
 - **Inbox:** search, status filters, tag filters, sorting and undated post-its.
 - **Routines:** weekly day board with per-day progress, expandable cards,
-  drag-and-drop activities, per-day completion (independent for each occurrence)
-  and occurrences that never predate the routine's creation.
+  drag-and-drop activities, per-day completion (independent for each occurrence),
+  occurrences that never predate the routine's creation, and server sync.
 - **Notifications:** optional daily summary and per-item reminders (minutes
   before), scheduled locally on Android without internet.
 - **Navigation:** adaptive single rail in landscape (Config/Sync at the bottom)

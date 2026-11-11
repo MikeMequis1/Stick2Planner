@@ -83,6 +83,7 @@ final class AppDependencies {
       await planner.refresh();
       await notes.refresh();
       await tags.refresh();
+      await routines.refresh();
     };
     tags.onDeleted = planner.removeTagFromAll;
   }

@@ -119,6 +119,7 @@ final class SyncCounts {
     this.tasks = 0,
     this.history = 0,
     this.tags = 0,
+    this.routines = 0,
     this.deviceLabel = '',
   });
 
@@ -128,11 +129,12 @@ final class SyncCounts {
   final int tasks;
   final int history;
   final int tags;
+  final int routines;
 
   /// Nome do dispositivo pareado, devolvido pelo servidor em `/stats`.
   final String deviceLabel;
 
-  bool get isEmpty => postIts == 0 && notes == 0 && tags == 0;
+  bool get isEmpty => postIts == 0 && notes == 0 && tags == 0 && routines == 0;
 
   /// Compara apenas os dados visíveis; histórico é auditoria e não decide.
   bool hasSameUserData(SyncCounts other) =>
@@ -140,7 +142,8 @@ final class SyncCounts {
       notes == other.notes &&
       events == other.events &&
       tasks == other.tasks &&
-      tags == other.tags;
+      tags == other.tags &&
+      routines == other.routines;
 
   Map<String, Object?> toJson() => {
     'postIts': postIts,
@@ -149,6 +152,7 @@ final class SyncCounts {
     'tasks': tasks,
     'history': history,
     'tags': tags,
+    'routines': routines,
     'deviceLabel': deviceLabel,
   };
 
@@ -159,6 +163,7 @@ final class SyncCounts {
     tasks: _asInt(json['tasks']),
     history: _asInt(json['history']),
     tags: _asInt(json['tags']),
+    routines: _asInt(json['routines']),
     deviceLabel: json['deviceLabel'] is String
         ? json['deviceLabel'] as String
         : '',

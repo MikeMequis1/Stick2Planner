@@ -27,6 +27,7 @@ final class SyncEngine {
     Uuid? uuid,
     DateTime Function()? now,
     this.batchSize = 200,
+    this.supportsRoutines = true,
   }) : _db = database,
        _transport = transport,
        _state = state,
@@ -43,6 +44,10 @@ final class SyncEngine {
   final Uuid _uuid;
   final DateTime Function() _now;
   final int batchSize;
+
+  /// Servidores anteriores à 0.2.2 recusam a entidade `routine`. Nesse caso as
+  /// rotinas ficam na outbox local e o restante do sync continua funcionando.
+  final bool supportsRoutines;
 
   /// Uma rodada completa: push, pull, conflitos e, se preciso, um reenvio.
   Future<SyncReport> run() async {
@@ -86,10 +91,16 @@ final class SyncEngine {
   Future<SyncReport> replaceWithLocal() async {
     final deviceId = await _state.ensureDeviceId();
     final dataset = await SyncDatasetService(_db).snapshot();
+    final entities = supportsRoutines
+        ? dataset
+        : [
+            for (final entity in dataset)
+              if (entity.entity != syncEntityRoutine) entity,
+          ];
     try {
       final result = await _transport.replace(
         deviceId: deviceId,
-        entities: dataset,
+        entities: entities,
       );
       final finishedAt = _now().toUtc();
       await _db.transaction(() async {
@@ -114,7 +125,7 @@ final class SyncEngine {
       await _state.setLastSyncAt(finishedAt);
       await _state.setLastError(null);
       return SyncReport(
-        pushed: dataset.length,
+        pushed: entities.length,
         pulled: 0,
         conflicts: 0,
         copies: 0,
@@ -140,6 +151,11 @@ final class SyncEngine {
         await _db.delete(_db.noteLines).go();
         await _db.delete(_db.notes).go();
         await _db.delete(_db.tags).go();
+        if (supportsRoutines) {
+          await _db.delete(_db.routineCompletions).go();
+          await _db.delete(_db.routineItems).go();
+          await _db.delete(_db.routines).go();
+        }
         await _state.setCursor(0);
 
         for (final change in _sortedSnapshotEntities(snapshot.entities)) {
@@ -155,6 +171,11 @@ final class SyncEngine {
               break;
             case syncEntityTag:
               await _apply.applyTag(change.payload, change.rev);
+              break;
+            case syncEntityRoutine:
+              if (supportsRoutines) {
+                await _apply.applyRoutine(change.payload, change.rev);
+              }
               break;
           }
         }
@@ -182,11 +203,12 @@ final class SyncEngine {
     required bool allowRetry,
   }) async {
     final since = await _state.cursor();
-    final rows =
-        await (_db.select(_db.syncOutbox)
-              ..orderBy([(table) => OrderingTerm(expression: table.updatedAt)])
-              ..limit(batchSize))
-            .get();
+    final pendingQuery = _db.select(_db.syncOutbox)
+      ..orderBy([(table) => OrderingTerm(expression: table.updatedAt)]);
+    if (!supportsRoutines) {
+      pendingQuery.where((table) => table.entity.isNotIn([syncEntityRoutine]));
+    }
+    final rows = await (pendingQuery..limit(batchSize)).get();
     final changes = [for (final row in rows) _toChange(row)];
     final pushedByEntity = {
       for (final row in rows) '${row.entity}\u0000${row.entityId}': row,
@@ -344,6 +366,11 @@ final class SyncEngine {
         await _apply.applyNote(copy, 0);
         await _outbox.recordNote(noteFromPayload(copy));
         return 1;
+      case syncEntityRoutine:
+        final copy = _conflictCopyRoutine(payload);
+        await _apply.applyRoutine(copy, 0);
+        await _outbox.recordRoutine(routineFromPayload(copy));
+        return 1;
       default:
         return 0;
     }
@@ -377,6 +404,21 @@ final class SyncEngine {
               'id': _uuid.v4(),
               'noteId': noteId,
             },
+      ];
+    }
+    return copy;
+  }
+
+  Map<String, Object?> _conflictCopyRoutine(Map<String, Object?> payload) {
+    final copy = Map<String, Object?>.from(payload);
+    copy['id'] = _uuid.v4();
+    copy['name'] = _copyTitle(payload['name'] as String?);
+    final items = payload['items'];
+    if (items is List) {
+      copy['items'] = [
+        for (final item in items)
+          if (item is Map)
+            {...Map<String, Object?>.from(item), 'id': _uuid.v4()},
       ];
     }
     return copy;
@@ -425,6 +467,8 @@ final class SyncEngine {
         await _apply.applyHistory(change.payload, change.rev);
       case syncEntityTag:
         await _apply.applyTag(change.payload, change.rev);
+      case syncEntityRoutine:
+        await _apply.applyRoutine(change.payload, change.rev);
       default:
         throw SyncException('entidade desconhecida ${change.entity}');
     }

@@ -242,11 +242,13 @@ final class SyncCoordinator extends ChangeNotifier {
     notifyListeners();
     try {
       final transport = await _currentTransport();
+      final supportsRoutines = await _serverSupportsRoutines(transport);
       final engine = SyncEngine(
         database: _db,
         transport: transport,
         state: _state,
         now: _now,
+        supportsRoutines: supportsRoutines,
       );
       final report = switch (mode) {
         SyncMode.merge => await engine.run(),
@@ -279,6 +281,23 @@ final class SyncCoordinator extends ChangeNotifier {
     final url = (await _state.serverUrl())!;
     final token = (await _tokens.read())!;
     return _transportFactory(Uri.parse(url), token);
+  }
+
+  /// A entidade `routine` existe a partir do servidor 0.2.2. Em versões
+  /// anteriores ela fica retida na outbox para não invalidar o sync inteiro.
+  Future<bool> _serverSupportsRoutines(SyncTransport transport) async {
+    try {
+      final health = await transport.health();
+      final parts = health.version.split(RegExp(r'[.+-]'));
+      final major = int.tryParse(parts.isNotEmpty ? parts[0] : '') ?? 0;
+      final minor = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+      final patch = int.tryParse(parts.length > 2 ? parts[2] : '') ?? 0;
+      if (major != 0) return major > 0;
+      if (minor != 2) return minor > 2;
+      return patch >= 2;
+    } on Object {
+      return false;
+    }
   }
 
   void handleAppResumed() {

@@ -322,8 +322,9 @@ etapas. Cada item: contexto, decisão, consequência.
 
 ## Rotinas e notificações (esquema v9)
 
-- Rotinas são locais (`routines`, `routine_items`, `routine_completions`). A
-  conclusão usa `routine_item_id + data`, então cada ocorrência tem estado
+- Rotinas são armazenadas localmente (`routines`, `routine_items`,
+  `routine_completions`) e sincronizadas como uma entidade atômica `routine`.
+  A conclusão usa `routine_item_id + data`, então cada ocorrência tem estado
   próprio; não existe conclusão global.
 - `post_its.reminder_minutes` guarda a antecedência; lembretes exigem
   `time_minutes` e item ativo. O reagendamento cancela e reconstrói o conjunto
@@ -352,9 +353,12 @@ etapas. Cada item: contexto, decisão, consequência.
   As ocorrências são ancoradas na data local de criação (`createdOn`); `runsOn`
   recusa datas anteriores. Isso é deliberadamente separado dos dias semanais de
   programação e de uma eventual data de início configurável.
-- Rotinas ainda não têm entidade no servidor, então a sincronização não pode
-  reescrever `createdAt`. Um payload futuro de rotina deve enviar o instante
-  original e mesclar por ele, nunca pelo horário de recebimento.
+- O sync de rotinas envia o `createdAt` original no payload; a mesclagem nunca
+  usa o horário de recebimento como criação. A exclusão é um tombstone e o
+  conjunto de atividades/conclusões viaja na mesma entidade.
+- Servidores abaixo de 0.2.2 não aceitam a entidade; o app mantém as alterações
+  de rotina na outbox local e continua sincronizando as demais entidades até o
+  servidor ser atualizado.
 - A reordenação é exclusiva da alça (`ReorderableDragStartListener`), para que
   campos de texto, checkboxes, navegação horizontal por dia e arraste não
   disputem o mesmo gesto. Cards de rotina persistem na hora; notas e rotinas já

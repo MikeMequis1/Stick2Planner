@@ -90,14 +90,16 @@ class _RoutinesPageState extends State<RoutinesPage> {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final routines = app.routines;
+    final settings = app.settings;
     final today = app.planner.today;
 
     return ListenableBuilder(
-      listenable: routines,
+      listenable: Listenable.merge([routines, settings]),
       builder: (context, _) {
         if (routines.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
+        final showHints = settings.animationsEnabled;
         final date = _selectedDate ?? today;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,9 +113,10 @@ class _RoutinesPageState extends State<RoutinesPage> {
                 behavior: HitTestBehavior.translucent,
                 onHorizontalDragEnd: _onHorizontalDragEnd,
                 child: AnimatedSwitcher(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 260),
+                  duration:
+                      showHints && !MediaQuery.disableAnimationsOf(context)
+                      ? const Duration(milliseconds: 260)
+                      : Duration.zero,
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
                   transitionBuilder: (child, animation) {
@@ -131,7 +134,13 @@ class _RoutinesPageState extends State<RoutinesPage> {
                   },
                   child: KeyedSubtree(
                     key: ValueKey(date.toIso8601String()),
-                    child: _buildDayBoard(context, routines, date, today),
+                    child: _buildDayBoard(
+                      context,
+                      routines,
+                      date,
+                      today,
+                      showHints: showHints,
+                    ),
                   ),
                 ),
               ),
@@ -231,8 +240,9 @@ class _RoutinesPageState extends State<RoutinesPage> {
     BuildContext context,
     RoutinesController controller,
     DateOnly date,
-    DateOnly today,
-  ) {
+    DateOnly today, {
+    required bool showHints,
+  }) {
     final theme = Theme.of(context);
     final dayRoutines = controller.routinesOn(date);
     final total = _dayTotal(controller, date);
@@ -267,13 +277,15 @@ class _RoutinesPageState extends State<RoutinesPage> {
               ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          AppStrings.routineSwipeHint,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+        if (showHints) ...[
+          const SizedBox(height: 6),
+          Text(
+            AppStrings.routineSwipeHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 12),
         if (dayRoutines.isEmpty)
           EmptyState(
@@ -290,6 +302,7 @@ class _RoutinesPageState extends State<RoutinesPage> {
                 date: date,
                 controller: controller,
                 expanded: _expandedRoutines.contains(routine.id),
+                showHints: showHints,
                 onToggleExpanded: () => _toggleExpanded(routine),
                 onEdit: () => _openEditor(routine),
                 onDelete: () => _delete(routine),
@@ -422,6 +435,7 @@ class _RoutineCard extends StatelessWidget {
     required this.date,
     required this.controller,
     required this.expanded,
+    required this.showHints,
     required this.onToggleExpanded,
     required this.onEdit,
     required this.onDelete,
@@ -431,6 +445,7 @@ class _RoutineCard extends StatelessWidget {
   final DateOnly date;
   final RoutinesController controller;
   final bool expanded;
+  final bool showHints;
   final VoidCallback onToggleExpanded;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -446,9 +461,9 @@ class _RoutineCard extends StatelessWidget {
       for (var day = 1; day <= 7; day++)
         if (routine.weekdays.contains(day)) AppStrings.weekdayShort(day),
     ].join(', ');
-    final motion = MediaQuery.disableAnimationsOf(context)
-        ? Duration.zero
-        : const Duration(milliseconds: 220);
+    final motion = showHints && !MediaQuery.disableAnimationsOf(context)
+        ? const Duration(milliseconds: 220)
+        : Duration.zero;
 
     return Material(
       color: scheme.secondaryContainer,
@@ -616,17 +631,18 @@ class _RoutineCard extends StatelessWidget {
                             );
                           },
                         ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                        child: Text(
-                          AppStrings.dragToReorder,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSecondaryContainer.withValues(
-                              alpha: 0.65,
+                      if (showHints)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                          child: Text(
+                            AppStrings.dragToReorder,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.onSecondaryContainer.withValues(
+                                alpha: 0.65,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   )
                 : const SizedBox(width: double.infinity),

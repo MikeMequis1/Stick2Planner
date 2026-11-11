@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../core/date_only.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/converters.dart';
 import '../../data/mappers/mappers.dart';
@@ -35,6 +36,7 @@ final class SyncDatasetService {
     final tagCount = (await (_db.select(
       _db.tags,
     )..where((table) => table.deletedAt.isNull())).get()).length;
+    final routineCount = (await _db.select(_db.routines).get()).length;
     return SyncCounts(
       postIts: postItRows.length,
       notes: noteCount,
@@ -42,6 +44,7 @@ final class SyncDatasetService {
       tasks: tasks,
       history: historyCount,
       tags: tagCount,
+      routines: routineCount,
     );
   }
 
@@ -54,10 +57,25 @@ final class SyncDatasetService {
     )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
     final historyRows = await _db.select(_db.postItHistoryEntries).get();
     final tagRows = await _db.select(_db.tags).get();
+    final routineRows = await _db.select(_db.routines).get();
+    final routineItemRows = await (_db.select(
+      _db.routineItems,
+    )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
+    final routineCompletionRows = await _db
+        .select(_db.routineCompletions)
+        .get();
 
     final linesByNote = <String, List<NoteLineRow>>{};
     for (final row in lineRows) {
       linesByNote.putIfAbsent(row.noteId, () => []).add(row);
+    }
+    final itemsByRoutine = <String, List<RoutineItemRow>>{};
+    for (final row in routineItemRows) {
+      itemsByRoutine.putIfAbsent(row.routineId, () => []).add(row);
+    }
+    final completionsByItem = <String, Set<DateOnly>>{};
+    for (final row in routineCompletionRows) {
+      completionsByItem.putIfAbsent(row.routineItemId, () => {}).add(row.date);
     }
 
     return [
@@ -92,6 +110,20 @@ final class SyncDatasetService {
           tagPayload(tagFromRow(row)),
           dateTimeFromStorage(row.updatedAt),
           row.deletedAt != null,
+        ),
+      for (final row in routineRows)
+        _entity(
+          syncEntityRoutine,
+          row.id,
+          routinePayload(
+            routineFromRows(
+              row,
+              itemsByRoutine[row.id] ?? const [],
+              completionsByItem,
+            ),
+          ),
+          dateTimeFromStorage(row.updatedAt),
+          false,
         ),
     ];
   }
