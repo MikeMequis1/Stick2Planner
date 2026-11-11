@@ -53,6 +53,7 @@ final class SyncEngine {
   Future<SyncReport> run() async {
     final deviceId = await _state.ensureDeviceId();
     try {
+      await _outbox.queueUnsyncedRoutines();
       final first = await _runRound(deviceId, allowRetry: true);
       var pushed = first.pushed;
       var pulled = first.pulled;

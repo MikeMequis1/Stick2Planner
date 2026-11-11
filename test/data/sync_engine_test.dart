@@ -4,11 +4,13 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
+import 'package:stick2planner/data/db/converters.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
 import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/sync/sync_engine.dart';
 import 'package:stick2planner/data/sync/sync_models.dart';
+import 'package:stick2planner/data/sync/sync_outbox.dart';
 import 'package:stick2planner/data/sync/sync_payload.dart';
 import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
@@ -443,5 +445,29 @@ void main() {
       (await db.select(db.syncOutbox).get()).single.entity,
       syncEntityRoutine,
     );
+  });
+
+  test('rotina criada antes da 0.6 entra na outbox sem duplicar', () async {
+    final db = openDb();
+    await db
+        .into(db.routines)
+        .insert(
+          RoutinesCompanion.insert(
+            id: 'legacy-routine',
+            name: 'Rotina antiga',
+            createdAt: dateTimeToStorage(t0),
+            updatedAt: dateTimeToStorage(t0),
+          ),
+        );
+    final outbox = SyncOutboxRecorder(db);
+
+    expect(await outbox.queueUnsyncedRoutines(), 1);
+    final queued = await db.select(db.syncOutbox).get();
+    expect(queued, hasLength(1));
+    expect(queued.single.entity, syncEntityRoutine);
+    expect(queued.single.entityId, 'legacy-routine');
+
+    expect(await outbox.queueUnsyncedRoutines(), 0);
+    expect(await db.select(db.syncOutbox).get(), hasLength(1));
   });
 }

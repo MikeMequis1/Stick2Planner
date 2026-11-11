@@ -1515,7 +1515,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Nenhuma migração de esquema foi necessária: `createdAt` já existe desde o
   esquema v9 e todo registro de rotina o possui. Nenhuma dependência externa foi
   adicionada.
-- `flutter test`: **297 testes aprovados**; `flutter analyze`: sem issues.
+- `flutter test`: **298 testes aprovados**; `flutter analyze`: sem issues.
 - Build: `flutter build apk --release --split-per-abi`, versão **0.5.0+11**.
   Não instalada (nenhum dispositivo conectado no build) e não publicada.
 
@@ -1538,6 +1538,17 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   `flutter analyze`: sem issues.
 - Build: `flutter build apk --release --split-per-abi`, versão **0.6.0+12**.
   O servidor live precisa estar em 0.2.2 para as rotinas saírem da outbox.
+
+## Backfill da outbox de Rotinas (0.6.1)
+
+- Rotinas criadas antes da 0.6.0 não tinham linha na outbox, então atualizar o
+  app não bastava para enviá-las. `SyncOutboxRecorder.queueUnsyncedRoutines`
+  agora roda no início de cada sync e enfileira toda rotina sem outbox e sem
+  revisão de servidor, sem duplicar alterações existentes.
+- Isso cobre a rotina já existente no tablet após instalar a 0.6.1.
+- `flutter test`: **298 testes aprovados**; `flutter analyze`: sem issues.
+- Build: versão **0.6.1+13**.
+- O servidor live precisa estar em 0.2.2 para aceitar o envio das rotinas.
 
 
 

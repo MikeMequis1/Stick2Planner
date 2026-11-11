@@ -2,8 +2,10 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/canonical_json.dart';
+import '../../core/date_only.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/converters.dart';
+import '../mappers/mappers.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
@@ -61,6 +63,55 @@ final class SyncOutboxRecorder {
     routinePayload(routine, deletedAt: deletedAt),
     deletedAt ?? routine.updatedAt,
   );
+
+  /// Enfileira rotinas locais que ainda não têm outbox nem estado de sync.
+  ///
+  /// Instalações anteriores à 0.6.0 criavam rotinas sem gravar outbox. Sem este
+  /// passo, uma rotina antiga nunca seria enviada até ser editada.
+  Future<int> queueUnsyncedRoutines() async {
+    final rows = await _db.select(_db.routines).get();
+    if (rows.isEmpty) return 0;
+
+    final queued = {
+      for (final row in await (_db.select(
+        _db.syncOutbox,
+      )..where((table) => table.entity.equals(syncEntityRoutine))).get())
+        row.entityId,
+    };
+    final synced = {
+      for (final row in await (_db.select(
+        _db.syncRowStates,
+      )..where((table) => table.entity.equals(syncEntityRoutine))).get())
+        row.entityId,
+    };
+    final itemRows = await (_db.select(
+      _db.routineItems,
+    )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
+    final completionRows = await _db.select(_db.routineCompletions).get();
+
+    final itemsByRoutine = <String, List<RoutineItemRow>>{};
+    for (final row in itemRows) {
+      itemsByRoutine.putIfAbsent(row.routineId, () => []).add(row);
+    }
+    final completionsByItem = <String, Set<DateOnly>>{};
+    for (final row in completionRows) {
+      completionsByItem.putIfAbsent(row.routineItemId, () => {}).add(row.date);
+    }
+
+    var count = 0;
+    for (final row in rows) {
+      if (queued.contains(row.id) || synced.contains(row.id)) continue;
+      await recordRoutine(
+        routineFromRows(
+          row,
+          itemsByRoutine[row.id] ?? const [],
+          completionsByItem,
+        ),
+      );
+      count++;
+    }
+    return count;
+  }
 
   Future<void> _record(
     String entity,

@@ -1517,7 +1517,7 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   and day navigation do not compete.
 - No schema migration was needed: `createdAt` already exists since schema v9 and
   every routine record has it. No new external dependencies were added.
-- `flutter test`: **297 tests passing**; `flutter analyze`: no issues.
+- `flutter test`: **298 tests passing**; `flutter analyze`: no issues.
 - Build: `flutter build apk --release --split-per-abi`, version **0.5.0+11**.
   Not installed (no device attached at build time) and not published.
 
@@ -1540,3 +1540,14 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   `flutter analyze`: no issues.
 - Build: `flutter build apk --release --split-per-abi`, version **0.6.0+12**.
   Live server must run 0.2.2 before routines leave the outbox.
+
+## Routine outbox backfill (0.6.1)
+
+- Routines created before 0.6.0 had no outbox row, so updating the app was not
+  enough to upload them. `SyncOutboxRecorder.queueUnsyncedRoutines` now runs at
+  the start of each sync and enqueues every routine that has neither an outbox
+  entry nor a server revision, without duplicating existing changes.
+- This covers the tablet's existing routine after installing 0.6.1.
+- `flutter test`: **298 tests passing**; `flutter analyze`: no issues.
+- Build: version **0.6.1+13**.
+- Live server must be running 0.2.2 for routine uploads to be accepted.
