@@ -1517,7 +1517,7 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   and day navigation do not compete.
 - No schema migration was needed: `createdAt` already exists since schema v9 and
   every routine record has it. No new external dependencies were added.
-- `flutter test`: **298 tests passing**; `flutter analyze`: no issues.
+- `flutter test`: **299 tests passing**; `flutter analyze`: no issues.
 - Build: `flutter build apk --release --split-per-abi`, version **0.5.0+11**.
   Not installed (no device attached at build time) and not published.
 
@@ -1548,6 +1548,17 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   the start of each sync and enqueues every routine that has neither an outbox
   entry nor a server revision, without duplicating existing changes.
 - This covers the tablet's existing routine after installing 0.6.1.
-- `flutter test`: **298 tests passing**; `flutter analyze`: no issues.
+- `flutter test`: **299 tests passing**; `flutter analyze`: no issues.
 - Build: version **0.6.1+13**.
 - Live server must be running 0.2.2 for routine uploads to be accepted.
+
+## Orphan history fix (0.6.2)
+
+- A historical sync error was `SqliteException(787)` inserting into
+  `post_it_history_entries`: the referenced post-it no longer existed locally.
+  The failed transaction rolled back every pulled change, including routines.
+- `applyHistory` now checks the parent post-it and skips an orphan audit entry
+  while still recording its revision. This unblocks routine sync without
+  fabricating post-its or losing valid history.
+- `flutter test`: **299 tests passing**; `flutter analyze`: no issues.
+- Build: version **0.6.2+14**. Live server now reports 0.2.2.

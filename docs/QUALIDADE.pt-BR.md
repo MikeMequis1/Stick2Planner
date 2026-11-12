@@ -117,6 +117,6 @@ dart test
 ## Resultado
 
 - `flutter analyze`: sem issues.
-- `flutter test`: 298 testes aprovados.
+- `flutter test`: 299 testes aprovados.
 - `dart analyze` / `dart test` no servidor: sem issues; 16 testes aprovados.
 - `flutter build apk --release --split-per-abi`: aprovado e instalado no celular.

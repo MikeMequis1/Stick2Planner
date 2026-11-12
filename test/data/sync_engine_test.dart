@@ -16,6 +16,7 @@ import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
 import 'package:stick2planner/domain/entities/note.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/post_it_history.dart';
 import 'package:stick2planner/domain/entities/routine.dart';
 
 final class FakeTransport implements SyncTransport {
@@ -445,6 +446,52 @@ void main() {
       (await db.select(db.syncOutbox).get()).single.entity,
       syncEntityRoutine,
     );
+  });
+
+  test('histórico órfão não bloqueia a aplicação de rotinas', () async {
+    final db = openDb();
+    final remoteRoutine = Routine(
+      id: 'remote-routine',
+      name: 'Remota',
+      weekdays: const {3},
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    final transport = FakeTransport(
+      (call, changes, since) => response(
+        changes: [
+          SyncRemoteChange(
+            entity: syncEntityHistory,
+            entityId: 'orphan-history',
+            rev: 1,
+            deleted: false,
+            updatedAt: t0,
+            payload: historyPayload(
+              PostItHistoryEntry(
+                id: 'orphan-history',
+                postItId: 'missing-post-it',
+                action: PostItHistoryAction.deleted,
+                createdAt: t0,
+              ),
+            ),
+          ),
+          SyncRemoteChange(
+            entity: syncEntityRoutine,
+            entityId: remoteRoutine.id,
+            rev: 1,
+            deleted: false,
+            updatedAt: t0,
+            payload: routinePayload(remoteRoutine),
+          ),
+        ],
+        cursor: 2,
+      ),
+    );
+
+    await engineFor(db, transport).run();
+
+    expect(await DriftRoutineRepository(db).loadAll(), hasLength(1));
+    expect(await db.select(db.postItHistoryEntries).get(), isEmpty);
   });
 
   test('rotina criada antes da 0.6 entra na outbox sem duplicar', () async {

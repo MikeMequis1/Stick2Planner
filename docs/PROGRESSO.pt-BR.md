@@ -1515,7 +1515,7 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - Nenhuma migração de esquema foi necessária: `createdAt` já existe desde o
   esquema v9 e todo registro de rotina o possui. Nenhuma dependência externa foi
   adicionada.
-- `flutter test`: **298 testes aprovados**; `flutter analyze`: sem issues.
+- `flutter test`: **299 testes aprovados**; `flutter analyze`: sem issues.
 - Build: `flutter build apk --release --split-per-abi`, versão **0.5.0+11**.
   Não instalada (nenhum dispositivo conectado no build) e não publicada.
 
@@ -1546,9 +1546,21 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   agora roda no início de cada sync e enfileira toda rotina sem outbox e sem
   revisão de servidor, sem duplicar alterações existentes.
 - Isso cobre a rotina já existente no tablet após instalar a 0.6.1.
-- `flutter test`: **298 testes aprovados**; `flutter analyze`: sem issues.
+- `flutter test`: **299 testes aprovados**; `flutter analyze`: sem issues.
 - Build: versão **0.6.1+13**.
 - O servidor live precisa estar em 0.2.2 para aceitar o envio das rotinas.
+
+## Correção de histórico órfão (0.6.2)
+
+- Havia um erro antigo de sync: `SqliteException(787)` ao inserir em
+  `post_it_history_entries` porque o post-it referenciado não existia mais
+  localmente. A transação falhava e desfazia todas as mudanças puxadas, incluindo
+  as rotinas.
+- `applyHistory` agora verifica o post-it pai e ignora uma entrada órfã,
+  registrando a revisão mesmo assim. Isso libera o sync de rotinas sem inventar
+  post-its nem perder histórico válido.
+- `flutter test`: **299 testes aprovados**; `flutter analyze`: sem issues.
+- Build: versão **0.6.2+14**. O servidor live agora responde 0.2.2.
 
 
 

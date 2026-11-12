@@ -52,9 +52,16 @@ final class SyncApplyService {
   Future<void> applyHistory(Map<String, Object?> payload, int rev) async {
     final entry = historyFromPayload(payload);
     await _db.transaction(() async {
-      await _db
-          .into(_db.postItHistoryEntries)
-          .insertOnConflictUpdate(postItHistoryToCompanion(entry));
+      final parent = await (_db.select(
+        _db.postIts,
+      )..where((table) => table.id.equals(entry.postItId))).getSingleOrNull();
+      // Histórico órfão (post-it removido por substituição de conjunto ou
+      // ausente nesta página) não pode violar a FK e bloquear o sync inteiro.
+      if (parent != null) {
+        await _db
+            .into(_db.postItHistoryEntries)
+            .insertOnConflictUpdate(postItHistoryToCompanion(entry));
+      }
       await _recordRev(syncEntityHistory, entry.id, rev);
     });
   }
