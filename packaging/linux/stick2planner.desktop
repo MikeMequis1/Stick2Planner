@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Stick2Planner
+GenericName=Visual Planner
+Comment=Offline-first visual planner for calendar, inbox and notes
+Comment[pt_BR]=Planner visual offline-first para agenda, caixinha e notas
+Exec=stick2planner
+Icon=stick2planner
+Terminal=false
+Categories=Office;Calendar;
+Keywords=planner;calendar;notes;tasks;
+StartupNotify=true
+StartupWMClass=com.mikemequis1.planner
