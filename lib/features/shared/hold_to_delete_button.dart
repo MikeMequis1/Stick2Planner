@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_strings.dart';
+import '../../core/platform_support.dart';
 
 /// Botão de exclusão que só dispara depois de um pressionamento contínuo.
 ///
@@ -68,6 +69,29 @@ class _HoldToDeleteButtonState extends State<HoldToDeleteButton>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final label = widget.semanticLabel ?? AppStrings.holdToDelete;
+    if (isDesktopTargetPlatform) {
+      return Tooltip(
+        message: label,
+        child: Semantics(
+          button: true,
+          label: label,
+          child: SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              tooltip: label,
+              onPressed: widget.onDelete,
+              icon: Icon(
+                Icons.delete_outline,
+                size: widget.size * 0.45,
+                color: scheme.error,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Semantics(

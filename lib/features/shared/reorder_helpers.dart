@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_strings.dart';
+import '../../core/platform_support.dart';
 
 /// Alça exclusiva para iniciar a reordenação de um item.
 ///
@@ -14,13 +15,16 @@ class ReorderHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final label = isDesktopTargetPlatform
+        ? AppStrings.dragToReorderDesktop
+        : AppStrings.dragToReorder;
     return ReorderableDragStartListener(
       index: index,
       child: Tooltip(
-        message: AppStrings.dragToReorder,
+        message: label,
         child: Semantics(
           button: true,
-          label: AppStrings.dragToReorder,
+          label: label,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(

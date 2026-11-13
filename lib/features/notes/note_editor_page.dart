@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/notes_controller.dart';
+import '../../core/platform_support.dart';
 import '../../domain/entities/note.dart';
 import '../shared/hold_to_delete_button.dart';
 import '../shared/reorder_helpers.dart';
@@ -480,6 +482,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     setState(() => _saving = true);
     final notes = AppScope.of(context).notes;
     try {
@@ -529,123 +532,165 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.existing == null ? AppStrings.newNote : AppStrings.editNote,
-        ),
-        actions: [
-          TextButton(
-            key: Key('note-save'),
-            onPressed: _saving ? null : _save,
-            child: Text(AppStrings.save),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).maybePop(),
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true): _save,
+        const SingleActivator(LogicalKeyboardKey.enter, control: true): _save,
+        const SingleActivator(LogicalKeyboardKey.keyB, control: true): () {
+          if (_isText && _markdownFocus.hasFocus) {
+            _wrapMarkdown('**', '**', 'negrito');
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.keyI, control: true): () {
+          if (_isText && _markdownFocus.hasFocus) {
+            _wrapMarkdown('*', '*', 'itálico');
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): () {
+          if (_isText && _markdownFocus.hasFocus) {
+            _wrapMarkdown(
+              '[',
+              '](https://)',
+              AppStrings.markdownLinkPlaceholder,
+            );
+          }
+        },
+        const SingleActivator(
+          LogicalKeyboardKey.keyP,
+          control: true,
+          shift: true,
+        ): () {
+          if (_isText) {
+            setState(() => _showPreview = !_showPreview);
+          }
+        },
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.existing == null ? AppStrings.newNote : AppStrings.editNote,
           ),
-        ],
-      ),
-      body: ListView(
-        padding: EdgeInsets.all(16),
-        children: [
-          TextField(
-            key: Key('note-title'),
-            controller: _titleController,
-            maxLength: 120,
-            decoration: InputDecoration(
-              labelText: AppStrings.noteTitle,
-              border: OutlineInputBorder(),
-              counterText: '',
-            ),
-          ),
-          SizedBox(height: 16),
-          SegmentedButton<NoteType>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: NoteType.text,
-                label: Text(AppStrings.noteTypeText),
-              ),
-              ButtonSegment(
-                value: NoteType.checklist,
-                label: Text(AppStrings.noteTypeChecklist),
-              ),
-            ],
-            selected: {_type},
-            onSelectionChanged: (selection) => _changeType(selection.first),
-          ),
-          SizedBox(height: 16),
-          if (_isText) ...[
-            ExcludeFocus(child: _buildMarkdownToolbar(theme)),
-            SizedBox(height: 8),
-            _buildMarkdownEditor(theme),
-          ] else ...[
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              proxyDecorator: reorderProxyDecorator,
-              itemCount: _lines.length,
-              onReorderItem: _reorderLines,
-              itemBuilder: (context, index) {
-                final line = _lines[index];
-                return Padding(
-                  key: ObjectKey(line),
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Checkbox(
-                          value: line.isChecked,
-                          onChanged: (value) =>
-                              setState(() => line.isChecked = value ?? false),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            key: Key('note-line-$index'),
-                            controller: line.controller,
-                            minLines: 1,
-                            maxLines: 4,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              hintText: AppStrings.lineHint,
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        ReorderHandle(
-                          key: Key('note-line-handle-$index'),
-                          index: index,
-                        ),
-                        HoldToDeleteButton(
-                          key: Key('note-line-delete-$index'),
-                          semanticLabel: AppStrings.holdToDelete,
-                          onDelete: () => _removeLine(index),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: Key('note-add-line'),
-                onPressed: _addLine,
-                icon: Icon(Icons.add),
-                label: Text(AppStrings.addLine),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              AppStrings.selectLinesHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+          actions: [
+            TextButton(
+              key: Key('note-save'),
+              onPressed: _saving ? null : _save,
+              child: Text(AppStrings.save),
             ),
           ],
-        ],
+        ),
+        body: ListView(
+          padding: EdgeInsets.all(16),
+          children: [
+            TextField(
+              key: Key('note-title'),
+              controller: _titleController,
+              autofocus: isDesktopTargetPlatform,
+              maxLength: 120,
+              decoration: InputDecoration(
+                labelText: AppStrings.noteTitle,
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+            SizedBox(height: 16),
+            SegmentedButton<NoteType>(
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(
+                  value: NoteType.text,
+                  label: Text(AppStrings.noteTypeText),
+                ),
+                ButtonSegment(
+                  value: NoteType.checklist,
+                  label: Text(AppStrings.noteTypeChecklist),
+                ),
+              ],
+              selected: {_type},
+              onSelectionChanged: (selection) => _changeType(selection.first),
+            ),
+            SizedBox(height: 16),
+            if (_isText) ...[
+              ExcludeFocus(
+                excluding: !isDesktopTargetPlatform,
+                child: _buildMarkdownToolbar(theme),
+              ),
+              SizedBox(height: 8),
+              _buildMarkdownEditor(theme),
+            ] else ...[
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                proxyDecorator: reorderProxyDecorator,
+                itemCount: _lines.length,
+                onReorderItem: _reorderLines,
+                itemBuilder: (context, index) {
+                  final line = _lines[index];
+                  return Padding(
+                    key: ObjectKey(line),
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Checkbox(
+                            value: line.isChecked,
+                            onChanged: (value) =>
+                                setState(() => line.isChecked = value ?? false),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              key: Key('note-line-$index'),
+                              controller: line.controller,
+                              minLines: 1,
+                              maxLines: 4,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                hintText: AppStrings.lineHint,
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          ReorderHandle(
+                            key: Key('note-line-handle-$index'),
+                            index: index,
+                          ),
+                          HoldToDeleteButton(
+                            key: Key('note-line-delete-$index'),
+                            semanticLabel: AppStrings.holdToDelete,
+                            onDelete: () => _removeLine(index),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: Key('note-add-line'),
+                  onPressed: _addLine,
+                  icon: Icon(Icons.add),
+                  label: Text(AppStrings.addLine),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                isDesktopTargetPlatform
+                    ? AppStrings.selectLinesHintDesktop
+                    : AppStrings.selectLinesHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

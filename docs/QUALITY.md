@@ -37,6 +37,7 @@ sync, backup, web page and phone adjustments).
 | Web | login, session, live QR, devices, rename/revoke, PT/EN, portrait/landscape |
 | UI | schedule, inbox, notes, editor, details, links, backup, About |
 | Layout | 1280×800, 800×1280, 780×360, 360×780, 500×800 and 1.3× text |
+| Desktop | Windows x64, Linux x64, 1280×800 default / 900×600 minimum, shortcuts, adaptive sheets/dialogs |
 | Device | Android tablet 3200×2136 and phone 1080×2340, dark theme |
 | Load | 200 post-its in the schedule |
 | Offline | without a server the app stays local; `INTERNET` only for optional sync |
@@ -93,6 +94,13 @@ sync, backup, web page and phone adjustments).
   remains available.
 - Periodic WorkManager is best-effort; the system may postpone execution.
 - Inbox filters are not persisted across restarts.
+- Desktop QR camera scanning and scheduled local notifications are Android-only;
+  desktop pairs with the manual code. WorkManager periodic sync is Android-only.
+- Linux secure storage requires a running Secret Service/keyring.
+- Windows builds require Flutter plugin symlink support (Developer Mode or an
+  elevated terminal) and the Microsoft Visual C++ runtime.
+- The Windows data path keeps the legacy `com.example` company metadata so
+  existing `%APPDATA%` data is not moved. See `docs/DESKTOP.md`.
 
 ## Size and performance
 
@@ -109,6 +117,12 @@ flutter analyze
 flutter test
 flutter build apk --release --split-per-abi
 
+# On Windows
+pwsh -File scripts/build_windows.ps1
+
+# On Linux
+bash scripts/build_linux.sh
+
 cd stick2server
 dart analyze
 dart test
@@ -116,7 +130,21 @@ dart test
 
 ## Result
 
+Desktop migration validation (2026-11-12):
+
 - `flutter analyze`: no issues.
-- `flutter test`: 299 tests passed.
-- `dart analyze` / `dart test` in the server: no issues; 16 tests passed.
-- `flutter build apk --release --split-per-abi`: passed and installed on the phone.
+- `flutter test`: 304 tests passed, including the database migration/connection
+  suite and five desktop interaction tests (shortcuts, Ctrl+S save, right-click
+  context menu, explicit desktop delete and desktop pairing without QR).
+- `flutter build apk --release`: passed; universal APK generated.
+- Linux: `scripts/build_linux.sh` completed in WSL Ubuntu 26.04 with Flutter
+  3.47.9. Generated the portable bundle/tar.gz, `stick2planner_0.6.2+14_amd64.deb`
+  and `Stick2Planner-0.6.2-linux-x64.AppImage`.
+- Windows: `flutter build windows --release` passed after enabling Developer
+  Mode and installing the Visual Studio C++ desktop workload. The portable ZIP
+  and an unsigned MSIX were generated. The ZIP is directly usable; the unsigned
+  MSIX requires signing (or a development-only unsigned-namespace publisher).
+- Android data compatibility: schema v9 and `planner.sqlite` are unchanged; all
+  migration and rollback tests passed.
+- Server tests were not re-run in this migration; their previous result remains
+  16 tests passed.

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/services.dart';
+
 import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/routines_controller.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../domain/entities/routine.dart';
 import '../shared/hold_to_delete_button.dart';
 import '../shared/reorder_helpers.dart';
@@ -93,6 +96,7 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final controller = AppScope.of(context).routines;
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
@@ -165,178 +169,187 @@ class _RoutineEditorPageState extends State<RoutineEditorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.existing == null
-              ? AppStrings.routineNew
-              : AppStrings.routineEdit,
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).maybePop(),
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true): _save,
+        const SingleActivator(LogicalKeyboardKey.enter, control: true): _save,
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.existing == null
+                ? AppStrings.routineNew
+                : AppStrings.routineEdit,
+          ),
+          actions: [
+            if (widget.existing != null)
+              IconButton(
+                key: const Key('routine-delete'),
+                tooltip: AppStrings.delete,
+                onPressed: _saving ? null : _delete,
+                icon: const Icon(Icons.delete_outline),
+              ),
+            TextButton(
+              key: const Key('routine-save'),
+              onPressed: _saving ? null : _save,
+              child: Text(AppStrings.save),
+            ),
+          ],
         ),
-        actions: [
-          if (widget.existing != null)
-            IconButton(
-              key: const Key('routine-delete'),
-              tooltip: AppStrings.delete,
-              onPressed: _saving ? null : _delete,
-              icon: const Icon(Icons.delete_outline),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextField(
+              key: const Key('routine-name'),
+              controller: _name,
+              autofocus: isDesktopTargetPlatform,
+              maxLength: 80,
+              decoration: InputDecoration(
+                labelText: AppStrings.routineName,
+                border: const OutlineInputBorder(),
+                counterText: '',
+              ),
             ),
-          TextButton(
-            key: const Key('routine-save'),
-            onPressed: _saving ? null : _save,
-            child: Text(AppStrings.save),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            key: const Key('routine-name'),
-            controller: _name,
-            maxLength: 80,
-            decoration: InputDecoration(
-              labelText: AppStrings.routineName,
-              border: const OutlineInputBorder(),
-              counterText: '',
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('routine-details'),
+              controller: _details,
+              minLines: 1,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: AppStrings.routineDescription,
+                border: const OutlineInputBorder(),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('routine-details'),
-            controller: _details,
-            minLines: 1,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: AppStrings.routineDescription,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(AppStrings.routineDays, style: theme.textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              for (var day = 1; day <= 7; day++)
-                FilterChip(
-                  key: Key('routine-day-$day'),
-                  label: Text(AppStrings.weekdayShort(day)),
-                  selected: _weekdays.contains(day),
-                  onSelected: (selected) => setState(() {
-                    if (selected) {
-                      _weekdays.add(day);
-                    } else {
-                      _weekdays.remove(day);
-                    }
-                  }),
-                ),
-            ],
-          ),
-          if (widget.existing != null) ...[
-            const SizedBox(height: 10),
-            Row(
+            const SizedBox(height: 16),
+            Text(AppStrings.routineDays, style: theme.textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
-                Icon(
-                  Icons.history,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  AppStrings.routineCreatedOn(
-                    DateFormats.shortDate(
-                      DateOnly.fromDateTime(
-                        widget.existing!.createdAt.toLocal(),
-                      ),
-                    ),
+                for (var day = 1; day <= 7; day++)
+                  FilterChip(
+                    key: Key('routine-day-$day'),
+                    label: Text(AppStrings.weekdayShort(day)),
+                    selected: _weekdays.contains(day),
+                    onSelected: (selected) => setState(() {
+                      if (selected) {
+                        _weekdays.add(day);
+                      } else {
+                        _weekdays.remove(day);
+                      }
+                    }),
                   ),
-                  style: theme.textTheme.bodySmall?.copyWith(
+              ],
+            ),
+            if (widget.existing != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    Icons.history,
+                    size: 16,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
+                  const SizedBox(width: 6),
+                  Text(
+                    AppStrings.routineCreatedOn(
+                      DateFormats.shortDate(
+                        DateOnly.fromDateTime(
+                          widget.existing!.createdAt.toLocal(),
+                        ),
+                      ),
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    AppStrings.routineActivities,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                TextButton.icon(
+                  key: const Key('routine-add-item'),
+                  onPressed: _addItem,
+                  icon: const Icon(Icons.add),
+                  label: Text(AppStrings.routineAddItem),
                 ),
               ],
             ),
-          ],
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  AppStrings.routineActivities,
-                  style: theme.textTheme.titleSmall,
-                ),
-              ),
-              TextButton.icon(
-                key: const Key('routine-add-item'),
-                onPressed: _addItem,
-                icon: const Icon(Icons.add),
-                label: Text(AppStrings.routineAddItem),
-              ),
-            ],
-          ),
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            buildDefaultDragHandles: false,
-            proxyDecorator: reorderProxyDecorator,
-            itemCount: _items.length,
-            onReorderItem: _reorderItems,
-            itemBuilder: (context, index) {
-              final item = _items[index];
-              return Padding(
-                key: ObjectKey(item),
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                key: Key('routine-item-title-$index'),
-                                controller: item.title,
-                                decoration: InputDecoration(
-                                  labelText: AppStrings.routineItemTitle,
-                                  border: const OutlineInputBorder(),
-                                  isDense: true,
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              proxyDecorator: reorderProxyDecorator,
+              itemCount: _items.length,
+              onReorderItem: _reorderItems,
+              itemBuilder: (context, index) {
+                final item = _items[index];
+                return Padding(
+                  key: ObjectKey(item),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  key: Key('routine-item-title-$index'),
+                                  controller: item.title,
+                                  decoration: InputDecoration(
+                                    labelText: AppStrings.routineItemTitle,
+                                    border: const OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
                                 ),
                               ),
-                            ),
-                            ReorderHandle(
-                              key: Key('routine-item-handle-$index'),
-                              index: index,
-                            ),
-                            HoldToDeleteButton(
-                              key: Key('routine-item-delete-$index'),
-                              semanticLabel: AppStrings.holdToDelete,
-                              onDelete: () => _removeItem(index),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          key: Key('routine-item-details-$index'),
-                          controller: item.details,
-                          maxLines: 2,
-                          decoration: InputDecoration(
-                            labelText: AppStrings.routineItemDescription,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
+                              ReorderHandle(
+                                key: Key('routine-item-handle-$index'),
+                                index: index,
+                              ),
+                              HoldToDeleteButton(
+                                key: Key('routine-item-delete-$index'),
+                                semanticLabel: AppStrings.holdToDelete,
+                                onDelete: () => _removeItem(index),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          TextField(
+                            key: Key('routine-item-details-$index'),
+                            controller: item.details,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              labelText: AppStrings.routineItemDescription,
+                              border: const OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 80),
-        ],
+                );
+              },
+            ),
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
     );
   }

@@ -8,10 +8,15 @@ import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../shared/desktop_context_menu.dart';
+import 'adaptive_draggable.dart';
 import 'day_preview_registry.dart';
+import 'post_it_context_menu.dart';
 import 'post_it_drag_data.dart';
 import 'post_it_presentation.dart';
 import 'post_it_tile.dart';
+
+enum _DayContextAction { newTask, newEvent, openDay }
 
 /// Célula de um dia: alvo de soltura, cartões arrastáveis e overflow.
 class DayCell extends StatelessWidget {
@@ -80,91 +85,96 @@ class DayCell extends StatelessWidget {
           if (isSelected) AppStrings.selectedDay,
         ].join(' · ');
 
-        return Semantics(
-          container: true,
-          button: true,
-          label: dayLabel,
-          onTap: onTap,
-          child: _DayTapRegion(
-            date: day.date,
-            items: items,
-            itemsFor: itemsFor,
-            today: today,
+        return DesktopContextMenuRegion(
+          onOpen: (position) => _showContextMenu(context, position),
+          child: Semantics(
+            container: true,
+            button: true,
+            label: dayLabel,
             onTap: onTap,
-            onQuickCreateTask: onQuickCreateTask,
-            onQuickCreateEvent: onQuickCreateEvent,
-            child: Padding(
-              padding: const EdgeInsets.all(1.5),
-              child: AnimatedScale(
-                scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
-                duration: motion,
-                curve: Curves.easeOutCubic,
-                child: AnimatedContainer(
-                  key: isPast
-                      ? Key('day-past-${day.date.toIso8601String()}')
-                      : null,
+            child: _DayTapRegion(
+              date: day.date,
+              items: items,
+              itemsFor: itemsFor,
+              today: today,
+              onTap: onTap,
+              onQuickCreateTask: onQuickCreateTask,
+              onQuickCreateEvent: onQuickCreateEvent,
+              child: Padding(
+                padding: const EdgeInsets.all(1.5),
+                child: AnimatedScale(
+                  scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
                   duration: motion,
-                  curve: Curves.easeOut,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: isDropTarget
-                        ? scheme.primaryContainer.withValues(alpha: 0.45)
-                        : (isSelected
-                              ? scheme.primaryContainer.withValues(alpha: 0.28)
-                              : (isPast
-                                    ? pastTint
-                                    : (muted
-                                          ? scheme.surfaceContainerLowest
-                                          : scheme.surface))),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: borderColor,
-                      width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
-                    ),
-                    boxShadow: isSelected || isDropTarget
-                        ? [
-                            BoxShadow(
-                              color: scheme.primary.withValues(
-                                alpha: isDropTarget ? 0.32 : 0.18,
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedContainer(
+                    key: isPast
+                        ? Key('day-past-${day.date.toIso8601String()}')
+                        : null,
+                    duration: motion,
+                    curve: Curves.easeOut,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: isDropTarget
+                          ? scheme.primaryContainer.withValues(alpha: 0.45)
+                          : (isSelected
+                                ? scheme.primaryContainer.withValues(
+                                    alpha: 0.28,
+                                  )
+                                : (isPast
+                                      ? pastTint
+                                      : (muted
+                                            ? scheme.surfaceContainerLowest
+                                            : scheme.surface))),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: borderColor,
+                        width: isDropTarget ? 2 : (isSelected ? 1.8 : 0.6),
+                      ),
+                      boxShadow: isSelected || isDropTarget
+                          ? [
+                              BoxShadow(
+                                color: scheme.primary.withValues(
+                                  alpha: isDropTarget ? 0.32 : 0.18,
+                                ),
+                                blurRadius: isDropTarget ? 16 : 10,
                               ),
-                              blurRadius: isDropTarget ? 16 : 10,
+                            ]
+                          : const [],
+                    ),
+                    padding: EdgeInsets.all(compact ? 1 : 4),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final tight = constraints.maxHeight < 24;
+                        final showHeader = constraints.maxHeight >= 12;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (showHeader)
+                              _DayHeader(
+                                date: day.date,
+                                isSelected: isSelected,
+                                isToday: isToday,
+                                muted: muted,
+                                isPast: isPast,
+                                compact: compact || tight,
+                                dense: tight,
+                              ),
+                            Expanded(
+                              child: _DayContent(
+                                date: day.date,
+                                today: today,
+                                items: items,
+                                compact: compact || tight,
+                                focusedPostItId: focusedPostItId,
+                                onPostItTap: onPostItTap,
+                                onShowAll: onShowAll,
+                                onReorderTo: onReorderTo,
+                              ),
                             ),
-                          ]
-                        : const [],
-                  ),
-                  padding: EdgeInsets.all(compact ? 1 : 4),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final tight = constraints.maxHeight < 24;
-                      final showHeader = constraints.maxHeight >= 12;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (showHeader)
-                            _DayHeader(
-                              date: day.date,
-                              isSelected: isSelected,
-                              isToday: isToday,
-                              muted: muted,
-                              isPast: isPast,
-                              compact: compact || tight,
-                              dense: tight,
-                            ),
-                          Expanded(
-                            child: _DayContent(
-                              date: day.date,
-                              today: today,
-                              items: items,
-                              compact: compact || tight,
-                              focusedPostItId: focusedPostItId,
-                              onPostItTap: onPostItTap,
-                              onShowAll: onShowAll,
-                              onReorderTo: onReorderTo,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -173,6 +183,44 @@ class DayCell extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Offset globalPosition,
+  ) async {
+    final action = await showDesktopContextMenu<_DayContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _DayContextAction.newTask,
+          key: Key('day-menu-task'),
+          child: Text(AppStrings.newTask),
+        ),
+        PopupMenuItem(
+          value: _DayContextAction.newEvent,
+          key: Key('day-menu-event'),
+          child: Text(AppStrings.newEvent),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _DayContextAction.openDay,
+          key: Key('day-menu-open'),
+          child: Text(AppStrings.openDay),
+        ),
+      ],
+    );
+    switch (action) {
+      case _DayContextAction.newTask:
+        onQuickCreateTask(day.date);
+      case _DayContextAction.newEvent:
+        onQuickCreateEvent(day.date);
+      case _DayContextAction.openDay:
+        onShowAll();
+      case null:
+        break;
+    }
   }
 }
 
@@ -697,28 +745,33 @@ class _DraggableItem extends StatelessWidget {
           onTap: onTap,
         );
 
-        return LongPressDraggable<PostItDragData>(
-          data: PostItDragData(postIt),
-          delay: const Duration(milliseconds: 200),
-          dragAnchorStrategy: recordingDragAnchorStrategy,
-          feedback: _DragFeedback(postIt: postIt, compact: compact),
-          childWhenDragging: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 1, end: 0.35),
-            duration: const Duration(milliseconds: 160),
-            builder: (context, opacity, child) =>
-                Opacity(opacity: opacity, child: child),
-            child: tile,
+        return DesktopContextMenuRegion(
+          onOpen: (position) => showPostItContextMenuAt(
+            context,
+            postIt,
+            globalPosition: position,
           ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeOut,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              border: candidateData.isNotEmpty
-                  ? Border.all(color: theme.colorScheme.primary, width: 2)
-                  : null,
+          child: AdaptivePostItDraggable(
+            data: PostItDragData(postIt),
+            feedback: _DragFeedback(postIt: postIt, compact: compact),
+            childWhenDragging: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1, end: 0.35),
+              duration: const Duration(milliseconds: 160),
+              builder: (context, opacity, child) =>
+                  Opacity(opacity: opacity, child: child),
+              child: tile,
             ),
-            child: tile,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: candidateData.isNotEmpty
+                    ? Border.all(color: theme.colorScheme.primary, width: 2)
+                    : null,
+              ),
+              child: tile,
+            ),
           ),
         );
       },

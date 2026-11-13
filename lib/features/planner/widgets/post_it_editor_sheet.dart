@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/app_scope.dart';
 import '../../../app/app_strings.dart';
 import '../../../app/controllers/planner_controller.dart';
 import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
+import '../../../core/platform_support.dart';
 import '../../../domain/entities/post_it.dart';
 import '../../../domain/entities/tag.dart';
 import '../../../domain/usecases/validate_post_it.dart';
+import '../../shared/adaptive_modal.dart';
 import '../../tags/tag_presentation.dart';
 import '../../tags/tags_page.dart';
 import 'post_it_presentation.dart';
@@ -26,6 +29,7 @@ Future<void> showPostItEditorSheet(
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
+    constraints: adaptiveSheetConstraints(context),
     builder: (sheetContext) => PostItEditorSheet(
       controller: controller,
       initialDate: initialDate,
@@ -392,6 +396,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     setState(() {
       _saving = true;
       _errors = const [];
@@ -478,285 +483,298 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     final availableHeight = MediaQuery.sizeOf(context).height - bottomInset;
     final availableTags = AppScope.of(context).tags.tags;
 
-    return AnimatedPadding(
-      duration: Duration(milliseconds: 150),
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: availableHeight * 0.95),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.existing == null
-                    ? AppStrings.newPostIt
-                    : AppStrings.editPostIt,
-                style: theme.textTheme.titleLarge,
-              ),
-              SizedBox(height: 16),
-              if (_isRecurring)
-                InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: AppStrings.fieldType,
-                    border: OutlineInputBorder(),
-                  ),
-                  child: Text(AppStrings.recurringType),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    for (final type in PostItType.values)
-                      ChoiceChip(
-                        key: Key('editor-type-${type.name}'),
-                        avatar: Icon(postItTypeIcon(type), size: 18),
-                        label: Text(switch (type) {
-                          PostItType.task => AppStrings.taskType,
-                          PostItType.event => AppStrings.eventType,
-                          PostItType.recurringTodo => AppStrings.recurringShort,
-                        }),
-                        selected: _type == type,
-                        showCheckmark: false,
-                        onSelected: (_) => _changeType(type),
-                      ),
-                  ],
-                ),
-              SizedBox(height: 8),
-              _typeDescriptionCard(theme),
-              SizedBox(height: 16),
-              TextField(
-                key: Key('editor-title'),
-                controller: _titleController,
-                maxLength: 120,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: AppStrings.fieldTitle,
-                  border: OutlineInputBorder(),
-                  counterText: '',
-                ),
-              ),
-              SizedBox(height: 12),
-              TextField(
-                key: Key('editor-details'),
-                controller: _detailsController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: AppStrings.fieldDetails,
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-              ),
-              _tagsSection(availableTags),
-              if (_isResolved)
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.lock_clock_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            AppStrings.resolvedFieldsHidden,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else if (!_isRecurringType) ...[
-                SizedBox(height: 8),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).maybePop(),
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true): _save,
+        const SingleActivator(LogicalKeyboardKey.enter, control: true): _save,
+      },
+      child: AnimatedPadding(
+        duration: Duration(milliseconds: 150),
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: availableHeight * 0.95),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  _isEvent ? AppStrings.fieldStartDate : AppStrings.fieldDate,
-                  style: theme.textTheme.labelMedium,
+                  widget.existing == null
+                      ? AppStrings.newPostIt
+                      : AppStrings.editPostIt,
+                  style: theme.textTheme.titleLarge,
                 ),
-                SizedBox(height: 4),
-                if (!_isEvent)
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(AppStrings.fieldNoDate),
-                    value: _startDate == null,
-                    onChanged: (withoutDate) {
-                      setState(() {
-                        _startDate = withoutDate ? null : (widget.initialDate);
-                      });
-                    },
-                  ),
-                if (_isEvent || _startDate != null)
-                  _DateField(
-                    key: Key('editor-start-date'),
-                    label: AppStrings.fieldStartDate,
-                    date: _startDate,
-                    onTap: _pickStartDate,
-                  ),
-                if (_isEvent) ...[
-                  SizedBox(height: 8),
-                  _DateField(
-                    key: Key('editor-end-date'),
-                    label: AppStrings.fieldEndDate,
-                    date: _endDate ?? _startDate,
-                    onTap: _pickEndDate,
-                  ),
-                ],
-                if (_isEvent || _type == PostItType.task) ...[
-                  SizedBox(height: 8),
-                  Row(
+                SizedBox(height: 16),
+                if (_isRecurring)
+                  InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: AppStrings.fieldType,
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(AppStrings.recurringType),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          key: const Key('editor-time'),
-                          onPressed: _pickTime,
-                          icon: const Icon(Icons.schedule),
-                          label: Text(
-                            _time == null
-                                ? AppStrings.eventTimeAdd
-                                : '${AppStrings.eventTime}: '
-                                      '${DateFormats.clockTime(_time!.hour * 60 + _time!.minute)}',
-                          ),
-                        ),
-                      ),
-                      if (_time != null)
-                        IconButton(
-                          key: const Key('editor-time-clear'),
-                          tooltip: AppStrings.eventTimeClear,
-                          onPressed: () => setState(() {
-                            _time = null;
-                            _reminderMinutes = null;
+                      for (final type in PostItType.values)
+                        ChoiceChip(
+                          key: Key('editor-type-${type.name}'),
+                          avatar: Icon(postItTypeIcon(type), size: 18),
+                          label: Text(switch (type) {
+                            PostItType.task => AppStrings.taskType,
+                            PostItType.event => AppStrings.eventType,
+                            PostItType.recurringTodo =>
+                              AppStrings.recurringShort,
                           }),
-                          icon: const Icon(Icons.close),
+                          selected: _type == type,
+                          showCheckmark: false,
+                          onSelected: (_) => _changeType(type),
                         ),
                     ],
                   ),
-                  if (_time != null) ...[
+                SizedBox(height: 8),
+                _typeDescriptionCard(theme),
+                SizedBox(height: 16),
+                TextField(
+                  key: Key('editor-title'),
+                  controller: _titleController,
+                  autofocus: isDesktopTargetPlatform,
+                  maxLength: 120,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: AppStrings.fieldTitle,
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  key: Key('editor-details'),
+                  controller: _detailsController,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    labelText: AppStrings.fieldDetails,
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                _tagsSection(availableTags),
+                if (_isResolved)
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.lock_clock_outlined,
+                            size: 20,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              AppStrings.resolvedFieldsHidden,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (!_isRecurringType) ...[
+                  SizedBox(height: 8),
+                  Text(
+                    _isEvent ? AppStrings.fieldStartDate : AppStrings.fieldDate,
+                    style: theme.textTheme.labelMedium,
+                  ),
+                  SizedBox(height: 4),
+                  if (!_isEvent)
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(AppStrings.fieldNoDate),
+                      value: _startDate == null,
+                      onChanged: (withoutDate) {
+                        setState(() {
+                          _startDate = withoutDate
+                              ? null
+                              : (widget.initialDate);
+                        });
+                      },
+                    ),
+                  if (_isEvent || _startDate != null)
+                    _DateField(
+                      key: Key('editor-start-date'),
+                      label: AppStrings.fieldStartDate,
+                      date: _startDate,
+                      onTap: _pickStartDate,
+                    ),
+                  if (_isEvent) ...[
+                    SizedBox(height: 8),
+                    _DateField(
+                      key: Key('editor-end-date'),
+                      label: AppStrings.fieldEndDate,
+                      date: _endDate ?? _startDate,
+                      onTap: _pickEndDate,
+                    ),
+                  ],
+                  if (_isEvent || _type == PostItType.task) ...[
                     SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(
-                          Icons.notifications_active_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        SizedBox(width: 8),
                         Expanded(
-                          child: DropdownButton<int?>(
-                            key: const Key('editor-reminder'),
-                            isExpanded: true,
-                            value: _reminderMinutes,
-                            hint: Text(AppStrings.reminderNone),
-                            items: [
-                              DropdownMenuItem<int?>(
-                                value: null,
-                                child: Text(AppStrings.reminderNone),
-                              ),
-                              for (final minutes in <int>{
-                                5,
-                                10,
-                                15,
-                                30,
-                                60,
-                                ?_reminderMinutes,
-                              })
-                                DropdownMenuItem<int?>(
-                                  value: minutes,
-                                  child: Text(
-                                    AppStrings.reminderMinutes(minutes),
-                                  ),
-                                ),
-                            ],
-                            onChanged: (value) =>
-                                setState(() => _reminderMinutes = value),
+                          child: OutlinedButton.icon(
+                            key: const Key('editor-time'),
+                            onPressed: _pickTime,
+                            icon: const Icon(Icons.schedule),
+                            label: Text(
+                              _time == null
+                                  ? AppStrings.eventTimeAdd
+                                  : '${AppStrings.eventTime}: '
+                                        '${DateFormats.clockTime(_time!.hour * 60 + _time!.minute)}',
+                            ),
                           ),
                         ),
+                        if (_time != null)
+                          IconButton(
+                            key: const Key('editor-time-clear'),
+                            tooltip: AppStrings.eventTimeClear,
+                            onPressed: () => setState(() {
+                              _time = null;
+                              _reminderMinutes = null;
+                            }),
+                            icon: const Icon(Icons.close),
+                          ),
                       ],
                     ),
-                  ],
-                ],
-                if (_isEvent) ...[
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    secondary: const Icon(Icons.edit_outlined),
-                    title: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      children: [
-                        Text(AppStrings.fieldHighlight),
-                        IconButton(
-                          key: const Key('editor-done-info'),
-                          tooltip: AppStrings.doneInfo,
-                          visualDensity: VisualDensity.compact,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                          padding: EdgeInsets.zero,
-                          onPressed: _showDoneInfo,
-                          icon: Icon(
-                            Icons.info_outline,
-                            size: 16,
+                    if (_time != null) ...[
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.notifications_active_outlined,
+                            size: 20,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
-                        ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButton<int?>(
+                              key: const Key('editor-reminder'),
+                              isExpanded: true,
+                              value: _reminderMinutes,
+                              hint: Text(AppStrings.reminderNone),
+                              items: [
+                                DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text(AppStrings.reminderNone),
+                                ),
+                                for (final minutes in <int>{
+                                  5,
+                                  10,
+                                  15,
+                                  30,
+                                  60,
+                                  ?_reminderMinutes,
+                                })
+                                  DropdownMenuItem<int?>(
+                                    value: minutes,
+                                    child: Text(
+                                      AppStrings.reminderMinutes(minutes),
+                                    ),
+                                  ),
+                              ],
+                              onChanged: (value) =>
+                                  setState(() => _reminderMinutes = value),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                  if (_isEvent) ...[
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.edit_outlined),
+                      title: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        children: [
+                          Text(AppStrings.fieldHighlight),
+                          IconButton(
+                            key: const Key('editor-done-info'),
+                            tooltip: AppStrings.doneInfo,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                            onPressed: _showDoneInfo,
+                            icon: Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                      value: _isHighlight,
+                      onChanged: (value) =>
+                          setState(() => _isHighlight = value),
+                    ),
+                    _recurrenceSection(),
+                  ],
+                ],
+                if (_errors.isNotEmpty) ...[
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final error in _errors)
+                          Text(
+                            error,
+                            style: TextStyle(
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                          ),
                       ],
                     ),
-                    value: _isHighlight,
-                    onChanged: (value) => setState(() => _isHighlight = value),
                   ),
-                  _recurrenceSection(),
                 ],
-              ],
-              if (_errors.isNotEmpty) ...[
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final error in _errors)
-                        Text(
-                          error,
-                          style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
-                          ),
-                        ),
-                    ],
-                  ),
+                SizedBox(height: 16),
+                FilledButton.icon(
+                  key: Key('editor-save'),
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(Icons.save_outlined),
+                  label: Text(AppStrings.save),
+                ),
+                TextButton(
+                  onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                  child: Text(AppStrings.cancel),
                 ),
               ],
-              SizedBox(height: 16),
-              FilledButton.icon(
-                key: Key('editor-save'),
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(Icons.save_outlined),
-                label: Text(AppStrings.save),
-              ),
-              TextButton(
-                onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                child: Text(AppStrings.cancel),
-              ),
-            ],
+            ),
           ),
         ),
       ),

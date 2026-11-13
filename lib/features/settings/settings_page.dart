@@ -6,9 +6,12 @@ import '../../app/app_strings.dart';
 import '../../app/theme/app_palette.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../data/backup/backup_document.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/sync/sync_models.dart';
+import '../shared/desktop_dialog_shortcuts.dart';
+import '../shell/shell_shortcuts.dart';
 import 'about_page.dart';
 import '../tags/tags_page.dart';
 import 'connection_test_page.dart';
@@ -69,201 +72,239 @@ class _SettingsPageState extends State<SettingsPage> {
               16,
               16 + MediaQuery.viewPaddingOf(context).bottom,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  AppStrings.settingsAppearance,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          AppStrings.settingsTheme,
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        SizedBox(height: 8),
-                        SegmentedButton<ThemeMode>(
-                          key: Key('settings-theme'),
-                          showSelectedIcon: false,
-                          segments: [
-                            ButtonSegment(
-                              value: ThemeMode.system,
-                              label: Text(AppStrings.settingsThemeSystem),
-                            ),
-                            ButtonSegment(
-                              value: ThemeMode.light,
-                              label: Text(AppStrings.settingsThemeLight),
-                            ),
-                            ButtonSegment(
-                              value: ThemeMode.dark,
-                              label: Text(AppStrings.settingsThemeDark),
-                            ),
-                          ],
-                          selected: {settings.themeMode},
-                          onSelectionChanged: (selection) =>
-                              settings.setThemeMode(selection.first),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          AppStrings.settingsLanguage,
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        SizedBox(height: 8),
-                        SegmentedButton<AppLanguage>(
-                          key: Key('settings-language'),
-                          showSelectedIcon: false,
-                          segments: [
-                            for (final language in AppLanguage.values)
-                              ButtonSegment(
-                                value: language,
-                                label: Text(language.label),
-                              ),
-                          ],
-                          selected: {settings.language},
-                          onSelectionChanged: (selection) =>
-                              settings.setLanguage(selection.first),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          AppStrings.settingsPalette,
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          AppStrings.settingsPaletteHelp,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final palette in AppPalette.values)
-                              _PaletteOption(
-                                palette: palette,
-                                selected: settings.palette == palette,
-                                onTap: () => settings.setPalette(palette),
-                              ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
-                        SwitchListTile(
-                          key: Key('settings-animations'),
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(AppStrings.settingsAnimations),
-                          subtitle: Text(AppStrings.settingsAnimationsHelp),
-                          value: settings.animationsEnabled,
-                          onChanged: settings.setAnimationsEnabled,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  AppStrings.settingsAgendaBehavior,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        key: Key('settings-keep-awake'),
-                        title: Text(AppStrings.settingsKeepAwake),
-                        subtitle: Text(AppStrings.settingsKeepAwakeHelp),
-                        value: settings.keepScreenAwake,
-                        onChanged: settings.setKeepScreenAwake,
-                      ),
-                      Divider(height: 1),
-                      SwitchListTile(
-                        key: Key('settings-hints'),
-                        title: Text(AppStrings.settingsHints),
-                        subtitle: Text(AppStrings.settingsHintsHelp),
-                        value: settings.showCalendarHints,
-                        onChanged: settings.setShowCalendarHints,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24),
-                Text(
-                  AppStrings.settingsTags,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: ListTile(
-                    key: const Key('settings-tags'),
-                    leading: const Icon(Icons.sell_outlined),
-                    title: Text(AppStrings.settingsTags),
-                    subtitle: Text(AppStrings.settingsTagsHelp),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => const TagsPage(),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 24),
-                Text(
-                  AppStrings.settingsNotifications,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: const _NotificationsSection(),
-                ),
-                SizedBox(height: 24),
-                Column(
-                  key: _syncKey,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 920),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      AppStrings.settingsSync,
+                      AppStrings.settingsAppearance,
                       style: theme.textTheme.titleSmall,
                     ),
                     SizedBox(height: 8),
-                    const _SyncSection(),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Text(
-                  AppStrings.settingsBackup,
-                  style: theme.textTheme.titleSmall,
-                ),
-                SizedBox(height: 8),
-                const _BackupSection(),
-                SizedBox(height: 24),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: ListTile(
-                    key: const Key('settings-about'),
-                    leading: const Icon(Icons.info_outline),
-                    title: Text(AppStrings.settingsAbout),
-                    subtitle: Text(AppStrings.settingsAboutHelp),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => const AboutPage(),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              AppStrings.settingsTheme,
+                              style: theme.textTheme.labelLarge,
+                            ),
+                            SizedBox(height: 8),
+                            SegmentedButton<ThemeMode>(
+                              key: Key('settings-theme'),
+                              showSelectedIcon: false,
+                              segments: [
+                                ButtonSegment(
+                                  value: ThemeMode.system,
+                                  label: Text(AppStrings.settingsThemeSystem),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.light,
+                                  label: Text(AppStrings.settingsThemeLight),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.dark,
+                                  label: Text(AppStrings.settingsThemeDark),
+                                ),
+                              ],
+                              selected: {settings.themeMode},
+                              onSelectionChanged: (selection) =>
+                                  settings.setThemeMode(selection.first),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              AppStrings.settingsLanguage,
+                              style: theme.textTheme.labelLarge,
+                            ),
+                            SizedBox(height: 8),
+                            SegmentedButton<AppLanguage>(
+                              key: Key('settings-language'),
+                              showSelectedIcon: false,
+                              segments: [
+                                for (final language in AppLanguage.values)
+                                  ButtonSegment(
+                                    value: language,
+                                    label: Text(language.label),
+                                  ),
+                              ],
+                              selected: {settings.language},
+                              onSelectionChanged: (selection) =>
+                                  settings.setLanguage(selection.first),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              AppStrings.settingsPalette,
+                              style: theme.textTheme.labelLarge,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              AppStrings.settingsPaletteHelp,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final palette in AppPalette.values)
+                                  _PaletteOption(
+                                    palette: palette,
+                                    selected: settings.palette == palette,
+                                    onTap: () => settings.setPalette(palette),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            SwitchListTile(
+                              key: Key('settings-animations'),
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(AppStrings.settingsAnimations),
+                              subtitle: Text(AppStrings.settingsAnimationsHelp),
+                              value: settings.animationsEnabled,
+                              onChanged: settings.setAnimationsEnabled,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    Text(
+                      AppStrings.settingsAgendaBehavior,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          SwitchListTile(
+                            key: Key('settings-keep-awake'),
+                            title: Text(AppStrings.settingsKeepAwake),
+                            subtitle: Text(AppStrings.settingsKeepAwakeHelp),
+                            value: settings.keepScreenAwake,
+                            onChanged: settings.setKeepScreenAwake,
+                          ),
+                          Divider(height: 1),
+                          SwitchListTile(
+                            key: Key('settings-hints'),
+                            title: Text(AppStrings.settingsHints),
+                            subtitle: Text(
+                              isDesktopTargetPlatform
+                                  ? AppStrings.settingsHintsHelpDesktop
+                                  : AppStrings.settingsHintsHelp,
+                            ),
+                            value: settings.showCalendarHints,
+                            onChanged: settings.setShowCalendarHints,
+                          ),
+                          if (isDesktopTargetPlatform) ...[
+                            Divider(height: 1),
+                            ListTile(
+                              key: const Key('settings-desktop-shortcuts'),
+                              leading: const Icon(Icons.keyboard_outlined),
+                              title: Text(AppStrings.settingsDesktopShortcuts),
+                              subtitle: Text(
+                                AppStrings.settingsDesktopShortcutsHelp,
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => showKeyboardShortcutsDialog(context),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      AppStrings.settingsTags,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        key: const Key('settings-tags'),
+                        leading: const Icon(Icons.sell_outlined),
+                        title: Text(AppStrings.settingsTags),
+                        subtitle: Text(AppStrings.settingsTagsHelp),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => const TagsPage(),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      AppStrings.settingsNotifications,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    SizedBox(height: 8),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: supportsAndroidNotifications
+                          ? const _NotificationsSection()
+                          : ListTile(
+                              key: const Key(
+                                'settings-notifications-unsupported',
+                              ),
+                              leading: const Icon(
+                                Icons.notifications_off_outlined,
+                              ),
+                              title: Text(AppStrings.settingsNotifications),
+                              subtitle: Text(
+                                AppStrings.notificationsUnsupported,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                    ),
+                    SizedBox(height: 24),
+                    Column(
+                      key: _syncKey,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          AppStrings.settingsSync,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        SizedBox(height: 8),
+                        const _SyncSection(),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      AppStrings.settingsBackup,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    SizedBox(height: 8),
+                    const _BackupSection(),
+                    SizedBox(height: 24),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        key: const Key('settings-about'),
+                        leading: const Icon(Icons.info_outline),
+                        title: Text(AppStrings.settingsAbout),
+                        subtitle: Text(AppStrings.settingsAboutHelp),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => const AboutPage(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -1087,47 +1128,55 @@ class _PairingDialogState extends State<_PairingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppStrings.syncPairTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(AppStrings.syncPairHelp),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('sync-pair-code'),
-            controller: _controller,
-            minLines: 2,
-            maxLines: 4,
-            decoration: InputDecoration(
-              labelText: AppStrings.syncPairCodeHint,
-              border: const OutlineInputBorder(),
+    void confirm() => Navigator.of(context).pop(_controller.text.trim());
+    return DesktopDialogShortcuts(
+      onConfirm: confirm,
+      onCancel: () => Navigator.of(context).pop(),
+      child: AlertDialog(
+        title: Text(AppStrings.syncPairTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(AppStrings.syncPairHelp),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('sync-pair-code'),
+              controller: _controller,
+              autofocus: isDesktopTargetPlatform,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: AppStrings.syncPairCodeHint,
+                border: const OutlineInputBorder(),
+              ),
             ),
+            if (supportsQrScanning) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('sync-pair-scan'),
+                  onPressed: _scan,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: Text(AppStrings.syncScanQr),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppStrings.cancel),
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              key: const Key('sync-pair-scan'),
-              onPressed: _scan,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: Text(AppStrings.syncScanQr),
-            ),
+          FilledButton(
+            key: const Key('sync-pair-confirm'),
+            onPressed: confirm,
+            child: Text(AppStrings.syncPair),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppStrings.cancel),
-        ),
-        FilledButton(
-          key: const Key('sync-pair-confirm'),
-          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: Text(AppStrings.syncPair),
-        ),
-      ],
     );
   }
 }
@@ -1151,51 +1200,57 @@ class _PaletteOption extends StatelessWidget {
         ? Colors.white
         : Colors.black87;
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        key: Key('settings-palette-${palette.name}'),
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: palette.label,
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          width: 132,
-          height: 76,
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: palette.linearGradient(brightness),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outlineVariant,
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  palette.label,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+        child: InkWell(
+          key: Key('settings-palette-${palette.name}'),
+          borderRadius: BorderRadius.circular(12),
+          focusColor: theme.colorScheme.primary.withValues(alpha: 0.18),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            width: 132,
+            height: 76,
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: palette.linearGradient(brightness),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outlineVariant,
+                width: selected ? 2 : 1,
               ),
-              if (selected)
+            ),
+            child: Stack(
+              children: [
                 Align(
-                  alignment: Alignment.topRight,
-                  child: Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: theme.colorScheme.primary,
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    palette.label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-            ],
+                if (selected)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

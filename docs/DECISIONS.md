@@ -71,10 +71,28 @@ stages. Each item: context, decision, consequence.
 - Domain errors (`PostItValidationError`) are translated to pt-BR messages
   in the form; saving only happens after validation.
 
+## Desktop targets
+
+- **Context:** the same planner must run on Windows and Linux without forking
+  the Dart UI, business rules, drift schema or Android behaviour.
+- **Decision:** desktop is an additional Flutter target. A small
+  `core/platform_support.dart` exposes runtime capability checks; only optional
+  native integrations are conditional. Post-its/events use
+  `LongPressDraggable` on touch and plain `Draggable` on desktop. Dialogs and
+  bottom sheets get desktop width limits; the native runners set the initial
+  and minimum window sizes. Data continues in `getApplicationSupportDirectory()`
+  with the existing `planner.sqlite` file and schema v9.
+- **Consequence:** no data migration and no duplicate persistence layer.
+  `mobile_scanner` and `workmanager` remain Android-only at runtime and are
+  hidden/disabled on desktop. Windows keeps the legacy `Runner.rc` company name
+  so the application support directory is not moved. Packaging scripts only
+  bundle release output; they never strip runtime libraries.
+
 ## Moving, reordering and resizing
 
-- Dragging the body uses `LongPressDraggable` (avoids accidental drag while
-  scrolling); cells and cards are `DragTarget`s.
+- Dragging the body uses `LongPressDraggable` on touch (avoids accidental drag
+  while scrolling) and immediate `Draggable` on desktop; cells and cards are
+  `DragTarget`s.
 - Moving an event preserves `durationInDays`; moving a task changes the single
   date. Reindexing of source/destination and history are written in one
   transaction (`saveBatch`).

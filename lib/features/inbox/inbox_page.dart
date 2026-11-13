@@ -9,6 +9,9 @@ import '../../domain/entities/tag.dart';
 import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
 import '../planner/widgets/post_it_tile.dart';
+import '../shared/adaptive_modal.dart';
+import '../shared/desktop_context_menu.dart';
+import '../shared/desktop_dialog_shortcuts.dart';
 import '../shared/empty_state.dart';
 import '../tags/tag_presentation.dart';
 import '../tags/tags_page.dart';
@@ -18,6 +21,8 @@ enum _InboxFilter { all, active, done, cancelled, undated }
 enum _InboxSort { date, updated, title }
 
 enum _InboxMenuAction { openInAgenda, done, reopen, cancel }
+
+enum _InboxContextAction { open, agenda, tags, done, reopen, cancel }
 
 /// Repositório central de post-its, incluindo os sem data.
 class InboxPage extends StatefulWidget {
@@ -147,6 +152,7 @@ class _InboxPageState extends State<InboxPage> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      constraints: adaptiveSheetConstraints(context),
       builder: (sheetContext) =>
           _TagSelectorSheet(postIt: postIt, tags: available),
     );
@@ -398,110 +404,176 @@ class _InboxRow extends StatelessWidget {
     final isPostponed = planner.isPostponed(postIt);
     final tagsById = AppScope.of(context).tags.byIdMap;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 52,
-                child: PostItTile(
-                  key: Key('inbox-postit-${postIt.id}'),
-                  postIt: postIt,
-                  compact: false,
-                  isPostponed: isPostponed,
-                  onTap: onTap,
-                  onLongPress: onLongPress,
-                ),
-              ),
-            ),
-            PopupMenuButton<_InboxMenuAction>(
-              key: Key('inbox-menu-${postIt.id}'),
-              tooltip: AppStrings.statusMenu,
-              onSelected: (action) {
-                switch (action) {
-                  case _InboxMenuAction.openInAgenda:
-                    onOpenAgenda();
-                  case _InboxMenuAction.done:
-                    onStatus(PostItStatus.done);
-                  case _InboxMenuAction.reopen:
-                    onStatus(PostItStatus.active);
-                  case _InboxMenuAction.cancel:
-                    onStatus(PostItStatus.cancelled);
-                }
-              },
-              itemBuilder: (context) => [
-                if (postIt.startDate != null)
-                  PopupMenuItem(
-                    value: _InboxMenuAction.openInAgenda,
-                    child: Text(AppStrings.openInAgenda),
-                  ),
-                if (postIt.status == PostItStatus.active)
-                  PopupMenuItem(
-                    value: _InboxMenuAction.done,
-                    child: Text(AppStrings.statusDoneAction),
-                  )
-                else
-                  PopupMenuItem(
-                    value: _InboxMenuAction.reopen,
-                    child: Text(AppStrings.statusReopenAction),
-                  ),
-                if (postIt.status != PostItStatus.cancelled)
-                  PopupMenuItem(
-                    value: _InboxMenuAction.cancel,
-                    child: Text(AppStrings.statusCancelAction),
-                  ),
-              ],
-            ),
-          ],
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 8, top: 2),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 2,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    return DesktopContextMenuRegion(
+      onOpen: (position) => _showContextMenu(context, position),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Text(
-                postItDateLabel(postIt),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                '· ${postItTypeLabel(postIt)}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (postIt.isRecurring && postIt.status == PostItStatus.active)
-                Text(
-                  isPostponed && postIt.startDate != null
-                      ? '· ${AppStrings.postponedUntil} '
-                            '${DateFormats.shortDate(postIt.startDate!)}'
-                      : '· ${AppStrings.advancesDaily}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: PostItTile(
+                    key: Key('inbox-postit-${postIt.id}'),
+                    postIt: postIt,
+                    compact: false,
+                    isPostponed: isPostponed,
+                    onTap: onTap,
+                    onLongPress: onLongPress,
                   ),
                 ),
+              ),
+              PopupMenuButton<_InboxMenuAction>(
+                key: Key('inbox-menu-${postIt.id}'),
+                tooltip: AppStrings.statusMenu,
+                onSelected: (action) {
+                  switch (action) {
+                    case _InboxMenuAction.openInAgenda:
+                      onOpenAgenda();
+                    case _InboxMenuAction.done:
+                      onStatus(PostItStatus.done);
+                    case _InboxMenuAction.reopen:
+                      onStatus(PostItStatus.active);
+                    case _InboxMenuAction.cancel:
+                      onStatus(PostItStatus.cancelled);
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (postIt.startDate != null)
+                    PopupMenuItem(
+                      value: _InboxMenuAction.openInAgenda,
+                      child: Text(AppStrings.openInAgenda),
+                    ),
+                  if (postIt.status == PostItStatus.active)
+                    PopupMenuItem(
+                      value: _InboxMenuAction.done,
+                      child: Text(AppStrings.statusDoneAction),
+                    )
+                  else
+                    PopupMenuItem(
+                      value: _InboxMenuAction.reopen,
+                      child: Text(AppStrings.statusReopenAction),
+                    ),
+                  if (postIt.status != PostItStatus.cancelled)
+                    PopupMenuItem(
+                      value: _InboxMenuAction.cancel,
+                      child: Text(AppStrings.statusCancelAction),
+                    ),
+                ],
+              ),
             ],
           ),
-        ),
-        if (postIt.tagIds.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 8, top: 4),
+            padding: EdgeInsets.only(left: 8, top: 2),
             child: Wrap(
-              spacing: 6,
-              runSpacing: 4,
+              spacing: 8,
+              runSpacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                for (final tagId in postIt.tagIds)
-                  if (tagsById[tagId] != null) TagChip(tag: tagsById[tagId]!),
+                Text(
+                  postItDateLabel(postIt),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  '· ${postItTypeLabel(postIt)}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (postIt.isRecurring && postIt.status == PostItStatus.active)
+                  Text(
+                    isPostponed && postIt.startDate != null
+                        ? '· ${AppStrings.postponedUntil} '
+                              '${DateFormats.shortDate(postIt.startDate!)}'
+                        : '· ${AppStrings.advancesDaily}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
               ],
             ),
+          ),
+          if (postIt.tagIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 8, top: 4),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final tagId in postIt.tagIds)
+                    if (tagsById[tagId] != null) TagChip(tag: tagsById[tagId]!),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Offset globalPosition,
+  ) async {
+    final action = await showDesktopContextMenu<_InboxContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _InboxContextAction.open,
+          key: Key('inbox-context-open'),
+          child: Text(AppStrings.showPostItDetails),
+        ),
+        PopupMenuItem(
+          value: _InboxContextAction.tags,
+          key: Key('inbox-context-tags'),
+          child: Text(AppStrings.tagManage),
+        ),
+        if (postIt.startDate != null)
+          PopupMenuItem(
+            value: _InboxContextAction.agenda,
+            key: Key('inbox-context-agenda'),
+            child: Text(AppStrings.openInAgenda),
+          ),
+        const PopupMenuDivider(),
+        if (postIt.status == PostItStatus.active)
+          PopupMenuItem(
+            value: _InboxContextAction.done,
+            key: Key('inbox-context-done'),
+            child: Text(AppStrings.statusDoneAction),
+          )
+        else
+          PopupMenuItem(
+            value: _InboxContextAction.reopen,
+            key: Key('inbox-context-reopen'),
+            child: Text(AppStrings.statusReopenAction),
+          ),
+        if (postIt.status != PostItStatus.cancelled)
+          PopupMenuItem(
+            value: _InboxContextAction.cancel,
+            key: Key('inbox-context-cancel'),
+            child: Text(AppStrings.statusCancelAction),
           ),
       ],
     );
+    switch (action) {
+      case _InboxContextAction.open:
+        onTap();
+      case _InboxContextAction.tags:
+        onLongPress();
+      case _InboxContextAction.agenda:
+        onOpenAgenda();
+      case _InboxContextAction.done:
+        onStatus(PostItStatus.done);
+      case _InboxContextAction.reopen:
+        onStatus(PostItStatus.active);
+      case _InboxContextAction.cancel:
+        onStatus(PostItStatus.cancelled);
+      case null:
+        break;
+    }
   }
 }
 
@@ -524,73 +596,79 @@ class _TagSelectorSheetState extends State<_TagSelectorSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(AppStrings.tagSelectTitle, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              widget.postIt.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    return DesktopDialogShortcuts(
+      onCancel: () => Navigator.of(context).pop(),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                AppStrings.tagSelectTitle,
+                style: theme.textTheme.titleLarge,
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              AppStrings.tagSelectHelp,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  key: const Key('inbox-tag-selector'),
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final tag in widget.tags)
-                      TagChip(
-                        key: Key('inbox-tag-select-${tag.id}'),
-                        tag: tag,
-                        selected: _selected.contains(tag.id),
-                        onTap: () => setState(() {
-                          if (!_selected.remove(tag.id)) {
-                            _selected.add(tag.id);
-                          }
-                        }),
-                      ),
-                  ],
+              const SizedBox(height: 4),
+              Text(
+                widget.postIt.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(AppStrings.cancel),
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.tagSelectHelp,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  key: const Key('inbox-tag-save'),
-                  onPressed: () => Navigator.of(context).pop([
-                    for (final tag in widget.tags)
-                      if (_selected.contains(tag.id)) tag.id,
-                  ]),
-                  child: Text(AppStrings.save),
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    key: const Key('inbox-tag-selector'),
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final tag in widget.tags)
+                        TagChip(
+                          key: Key('inbox-tag-select-${tag.id}'),
+                          tag: tag,
+                          selected: _selected.contains(tag.id),
+                          onTap: () => setState(() {
+                            if (!_selected.remove(tag.id)) {
+                              _selected.add(tag.id);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(AppStrings.cancel),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    key: const Key('inbox-tag-save'),
+                    onPressed: () => Navigator.of(context).pop([
+                      for (final tag in widget.tags)
+                        if (_selected.contains(tag.id)) tag.id,
+                    ]),
+                    child: Text(AppStrings.save),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

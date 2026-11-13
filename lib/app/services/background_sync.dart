@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../../core/platform_support.dart';
 import '../../data/db/app_database.dart';
 import '../../data/sync/sync_engine.dart';
 import '../../data/sync/sync_state_store.dart';
@@ -45,7 +45,7 @@ void syncCallbackDispatcher() {
 
 /// Registra a sincronização periódica (mínimo de 15 min no Android).
 Future<void> scheduleBackgroundSync() async {
-  if (!Platform.isAndroid) return;
+  if (!supportsBackgroundSync) return;
   try {
     await Workmanager().initialize(syncCallbackDispatcher);
     await Workmanager().registerPeriodicTask(

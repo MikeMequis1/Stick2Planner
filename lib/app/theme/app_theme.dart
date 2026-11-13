@@ -40,6 +40,12 @@ abstract final class AppTheme {
         backgroundColor: scheme.surfaceContainerLow,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
+      // Em desktop os diálogos ficam centralizados com largura legível em vez
+      // de acompanhar janelas muito largas. No celular o limite não é atingido.
+      dialogTheme: DialogThemeData(
+        constraints: const BoxConstraints(maxWidth: 640),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant),
     );
   }

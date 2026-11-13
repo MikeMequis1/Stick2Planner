@@ -8,8 +8,11 @@ import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/calendar/event_bar_layout.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../shared/desktop_context_menu.dart';
+import 'adaptive_draggable.dart';
 import 'day_cell.dart';
 import 'event_bar.dart';
+import 'post_it_context_menu.dart';
 import 'post_it_drag_data.dart';
 
 /// Linha da grade: faixa de eventos multi-dia + células de dia.
@@ -357,50 +360,55 @@ class _WeekRowState extends State<WeekRow> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          AnimatedScale(
-            scale: resizingThisEdge ? 1.03 : 1,
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutCubic,
-            child: LongPressDraggable<PostItDragData>(
-              data: PostItDragData(postIt),
-              maxSimultaneousDrags: recurring ? 0 : null,
-              delay: const Duration(milliseconds: 200),
-              onDragStarted: () => widget.onEventDragActive?.call(true),
-              onDragEnd: (_) => widget.onEventDragActive?.call(false),
-              onDraggableCanceled: (_, _) =>
-                  widget.onEventDragActive?.call(false),
-              dragAnchorStrategy: recordingDragAnchorStrategy,
-              feedback: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.86, end: 1),
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutBack,
-                builder: (context, scale, child) =>
-                    Transform.scale(scale: scale, child: child),
-                child: Material(
-                  color: Colors.transparent,
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 220,
-                    height: barHeight,
-                    child: EventBar(
-                      postIt: postIt,
-                      continuesBefore: false,
-                      continuesAfter: false,
-                      showTitle: true,
-                      compact: widget.compact,
+          DesktopContextMenuRegion(
+            onOpen: (position) => showPostItContextMenuAt(
+              context,
+              postIt,
+              globalPosition: position,
+            ),
+            child: AnimatedScale(
+              scale: resizingThisEdge ? 1.03 : 1,
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOutCubic,
+              child: AdaptivePostItDraggable(
+                data: PostItDragData(postIt),
+                maxSimultaneousDrags: recurring ? 0 : null,
+                onDragStarted: () => widget.onEventDragActive?.call(true),
+                onDragEnd: (_) => widget.onEventDragActive?.call(false),
+                onDraggableCanceled: () =>
+                    widget.onEventDragActive?.call(false),
+                feedback: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.86, end: 1),
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) =>
+                      Transform.scale(scale: scale, child: child),
+                  child: Material(
+                    color: Colors.transparent,
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 220,
+                      height: barHeight,
+                      child: EventBar(
+                        postIt: postIt,
+                        continuesBefore: false,
+                        continuesAfter: false,
+                        showTitle: true,
+                        compact: widget.compact,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              childWhenDragging: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 1, end: 0.25),
-                duration: const Duration(milliseconds: 180),
-                builder: (context, opacity, child) =>
-                    Opacity(opacity: opacity, child: child),
+                childWhenDragging: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 1, end: 0.25),
+                  duration: const Duration(milliseconds: 180),
+                  builder: (context, opacity, child) =>
+                      Opacity(opacity: opacity, child: child),
+                  child: bar,
+                ),
                 child: bar,
               ),
-              child: bar,
             ),
           ),
           if (!recurring && !segment.continuesBefore)

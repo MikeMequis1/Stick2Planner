@@ -1,8 +1,5 @@
 // ignore_for_file: prefer_initializing_formals
 
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -11,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../core/clock.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/routine.dart';
 import '../app_strings.dart';
@@ -129,7 +127,7 @@ final class AppNotificationService {
   bool _exactAllowed = false;
   String? _lastError;
 
-  bool get isSupported => !kIsWeb && Platform.isAndroid;
+  bool get isSupported => supportsAndroidNotifications;
   bool get isReady => _ready;
   bool get exactAllowed => _exactAllowed;
   String? get lastError => _lastError;

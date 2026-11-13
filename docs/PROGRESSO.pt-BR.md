@@ -1564,3 +1564,24 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 
 
 
+
+## Revisão do release desktop (pendente)
+
+- O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release
+  existente **v0.6.2**; nenhuma versão/tag nova foi criada.
+- Os assets Linux **não** serão publicados na v0.6.2. Alvo Linux, bundle, `.deb`
+  e AppImage permanecem na árvore para o próximo commit.
+- Revisar o build Windows em uma máquina limpa com Windows 10/11: extrair o ZIP,
+  abrir todas as telas só com mouse e só com teclado, testar menus de contexto,
+  `Ctrl+S`/`Ctrl+Enter`, `Esc`, `Ctrl+Tab`, `Alt+←/→`, `Ctrl++/-`, seleção de
+  checklist com Ctrl/Shift e exclusão explícita no desktop.
+- Verificar redimensionamento em 900×600 e 1280×800, DPI 100%/150%, tema
+  claro/escuro e pt-BR/en. Fechar e reabrir para confirmar a preservação do banco.
+- Validar exportação/importação de backup e o caminho de dados do Windows
+  `%APPDATA%\com.example\Stick2Planner`.
+- Decidir se o MSIX será assinado para instalação normal ou se apenas o ZIP
+  portátil será distribuído.
+- Pendências do projeto: notificações agendadas no desktop, validação do Secret
+  Service/keyring no Linux, metadados AppStream para o AppImage, assinatura do
+  AppImage, teste visual em Linux real e instalação do release Android em um
+  aparelho.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../app/app_strings.dart';
+import '../../core/platform_support.dart';
 
 /// Leitor do QR de pareamento; devolve o conteúdo bruto via `Navigator.pop`.
 class QrScanPage extends StatefulWidget {
@@ -27,6 +28,24 @@ class _QrScanPageState extends State<QrScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Desktop não possui implementação do leitor de câmera; o pareamento
+    // continua disponível pelo código manual na mesma tela.
+    if (!supportsQrScanning) {
+      return Scaffold(
+        appBar: AppBar(title: Text(AppStrings.syncScanQr)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              AppStrings.syncScanUnavailable,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(AppStrings.syncScanQr)),
       body: Stack(

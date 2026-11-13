@@ -1,5 +1,5 @@
 name: stick2planner
-description: "Stick2Planner - planner visual offline-first para tablets Android."
+description: "Stick2Planner - planner visual offline-first para Android, Windows e Linux."
 publish_to: 'none'
 
 version: 0.6.2+14

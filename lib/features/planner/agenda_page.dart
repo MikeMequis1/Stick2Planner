@@ -5,6 +5,7 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/app_settings_controller.dart';
 import '../../app/controllers/planner_controller.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../domain/calendar/agenda_view_mode.dart';
 import '../../domain/calendar/calendar_period.dart';
 import '../../domain/calendar/event_recurrence.dart';
@@ -286,7 +287,9 @@ class _AgendaPageState extends State<AgendaPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    AppStrings.calendarHint,
+                    isDesktopTargetPlatform
+                        ? AppStrings.calendarHintDesktop
+                        : AppStrings.calendarHint,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelSmall?.copyWith(

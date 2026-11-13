@@ -71,10 +71,30 @@ etapas. Cada item: contexto, decisão, consequência.
 - Erros do domínio (`PostItValidationError`) são traduzidos para mensagens
   pt-BR no formulário; o salvamento só ocorre após validação.
 
+## Alvos desktop
+
+- **Contexto:** o mesmo planner precisa rodar em Windows e Linux sem duplicar a
+  interface Dart, as regras de negócio, o esquema drift ou o comportamento
+  Android.
+- **Decisão:** desktop é um alvo Flutter adicional. Um pequeno
+  `core/platform_support.dart` expõe verificações de capacidade em tempo de
+  execução; somente integrações nativas opcionais são condicionais. Post-its e
+  eventos usam `LongPressDraggable` no toque e `Draggable` imediato no desktop.
+  Diálogos e folhas recebem largura máxima; os runners nativos definem tamanho
+  inicial e mínimo. Os dados continuam em `getApplicationSupportDirectory()`,
+  com o mesmo `planner.sqlite` e esquema v9.
+- **Consequência:** nenhuma migração de dados e nenhuma camada de persistência
+  paralela. `mobile_scanner` e `workmanager` continuam exclusivos do Android em
+  tempo de execução e ficam ocultos/desativados no desktop. O Windows mantém o
+  nome de empresa legado do `Runner.rc` para não mover o diretório de dados.
+  Os scripts de empacotamento copiam a saída de release; nunca removem
+  bibliotecas de runtime.
+
 ## Movimentação, reordenação e redimensionamento
 
-- Arrastar o corpo usa `LongPressDraggable` (evita arraste acidental ao
-  rolar); células e cartões são `DragTarget`.
+- Arrastar o corpo usa `LongPressDraggable` no toque (evita arraste acidental
+  ao rolar) e `Draggable` imediato no desktop; células e cartões são
+  `DragTarget`.
 - Mover evento preserva `durationInDays`; mover tarefa altera a data única.
   Reindexação de origem/destino e histórico são gravados em uma transação
   (`saveBatch`).

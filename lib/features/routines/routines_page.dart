@@ -5,11 +5,17 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/routines_controller.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../domain/entities/routine.dart';
+import '../shared/desktop_context_menu.dart';
 import '../shared/empty_state.dart';
 import '../shared/hold_to_delete_button.dart';
 import '../shared/reorder_helpers.dart';
 import 'routine_editor_page.dart';
+
+enum _RoutineContextAction { edit, delete }
+
+enum _RoutineItemContextAction { toggle, delete }
 
 /// Rotinas semanais com conclusão independente por data.
 ///
@@ -465,191 +471,225 @@ class _RoutineCard extends StatelessWidget {
         ? const Duration(milliseconds: 220)
         : Duration.zero;
 
-    return Material(
-      color: scheme.secondaryContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: scheme.onSecondaryContainer.withValues(alpha: 0.12),
+    return DesktopContextMenuRegion(
+      onOpen: (position) => _showContextMenu(context, position),
+      child: Material(
+        color: scheme.secondaryContainer,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: scheme.onSecondaryContainer.withValues(alpha: 0.12),
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            key: Key('routine-${routine.id}'),
-            onTap: onToggleExpanded,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 6, 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: scheme.onSecondaryContainer.withValues(
-                        alpha: 0.12,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              key: Key('routine-${routine.id}'),
+              onTap: onToggleExpanded,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 6, 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: scheme.onSecondaryContainer.withValues(
+                          alpha: 0.12,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.event_repeat_outlined,
-                      color: scheme.onSecondaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          routine.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: scheme.onSecondaryContainer,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          [
-                            if (weekdays.isNotEmpty) weekdays,
-                            if (routine.details != null) routine.details!,
-                          ].join(' · '),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSecondaryContainer.withValues(
-                              alpha: 0.75,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 4,
-                                  backgroundColor: scheme.onSecondaryContainer
-                                      .withValues(alpha: 0.18),
-                                  color: scheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              AppStrings.routineProgress(done, total),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: scheme.onSecondaryContainer,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      PopupMenuButton<String>(
-                        key: Key('routine-menu-${routine.id}'),
-                        tooltip: AppStrings.actions,
-                        iconColor: scheme.onSecondaryContainer,
-                        onSelected: (value) {
-                          if (value == 'edit') onEdit();
-                          if (value == 'delete') onDelete();
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: Text(AppStrings.edit),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text(AppStrings.delete),
-                          ),
-                        ],
-                      ),
-                      Icon(
-                        expanded ? Icons.expand_less : Icons.expand_more,
+                      child: Icon(
+                        Icons.event_repeat_outlined,
                         color: scheme.onSecondaryContainer,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: motion,
-            alignment: Alignment.topCenter,
-            child: expanded
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Divider(
-                        height: 1,
-                        color: scheme.onSecondaryContainer.withValues(
-                          alpha: 0.18,
-                        ),
-                      ),
-                      if (routine.items.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            AppStrings.routineNoItems,
-                            style: theme.textTheme.bodySmall?.copyWith(
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            routine.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
                               color: scheme.onSecondaryContainer,
                             ),
                           ),
-                        )
-                      else
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          buildDefaultDragHandles: false,
-                          proxyDecorator: reorderProxyDecorator,
-                          itemCount: routine.items.length,
-                          onReorderItem: (oldIndex, newIndex) => controller
-                              .reorderItems(routine, oldIndex, newIndex),
-                          itemBuilder: (context, index) {
-                            final item = routine.items[index];
-                            return _RoutineItemRow(
-                              key: ValueKey(item.id),
-                              item: item,
-                              date: date,
-                              index: index,
-                              controller: controller,
-                              routine: routine,
-                            );
-                          },
-                        ),
-                      if (showHints)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                          child: Text(
-                            AppStrings.dragToReorder,
-                            style: theme.textTheme.labelSmall?.copyWith(
+                          const SizedBox(height: 2),
+                          Text(
+                            [
+                              if (weekdays.isNotEmpty) weekdays,
+                              if (routine.details != null) routine.details!,
+                            ].join(' · '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
                               color: scheme.onSecondaryContainer.withValues(
-                                alpha: 0.65,
+                                alpha: 0.75,
                               ),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progress,
+                                    minHeight: 4,
+                                    backgroundColor: scheme.onSecondaryContainer
+                                        .withValues(alpha: 0.18),
+                                    color: scheme.onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                AppStrings.routineProgress(done, total),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: scheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        PopupMenuButton<String>(
+                          key: Key('routine-menu-${routine.id}'),
+                          tooltip: AppStrings.actions,
+                          iconColor: scheme.onSecondaryContainer,
+                          onSelected: (value) {
+                            if (value == 'edit') onEdit();
+                            if (value == 'delete') onDelete();
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text(AppStrings.edit),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(AppStrings.delete),
+                            ),
+                          ],
                         ),
-                    ],
-                  )
-                : const SizedBox(width: double.infinity),
-          ),
-        ],
+                        Icon(
+                          expanded ? Icons.expand_less : Icons.expand_more,
+                          color: scheme.onSecondaryContainer,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: motion,
+              alignment: Alignment.topCenter,
+              child: expanded
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Divider(
+                          height: 1,
+                          color: scheme.onSecondaryContainer.withValues(
+                            alpha: 0.18,
+                          ),
+                        ),
+                        if (routine.items.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              AppStrings.routineNoItems,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSecondaryContainer,
+                              ),
+                            ),
+                          )
+                        else
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            proxyDecorator: reorderProxyDecorator,
+                            itemCount: routine.items.length,
+                            onReorderItem: (oldIndex, newIndex) => controller
+                                .reorderItems(routine, oldIndex, newIndex),
+                            itemBuilder: (context, index) {
+                              final item = routine.items[index];
+                              return _RoutineItemRow(
+                                key: ValueKey(item.id),
+                                item: item,
+                                date: date,
+                                index: index,
+                                controller: controller,
+                                routine: routine,
+                              );
+                            },
+                          ),
+                        if (showHints)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                            child: Text(
+                              isDesktopTargetPlatform
+                                  ? AppStrings.dragToReorderDesktop
+                                  : AppStrings.dragToReorder,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSecondaryContainer.withValues(
+                                  alpha: 0.65,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Offset globalPosition,
+  ) async {
+    final action = await showDesktopContextMenu<_RoutineContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _RoutineContextAction.edit,
+          child: Text(AppStrings.edit),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _RoutineContextAction.delete,
+          child: Text(AppStrings.delete),
+        ),
+      ],
+    );
+    switch (action) {
+      case _RoutineContextAction.edit:
+        onEdit();
+      case _RoutineContextAction.delete:
+        onDelete();
+      case null:
+        break;
+    }
   }
 }
 
@@ -674,58 +714,95 @@ class _RoutineItemRow extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final completed = item.isCompletedOn(date);
-    return Material(
-      color: scheme.surfaceContainerHigh.withValues(alpha: 0.55),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Checkbox(
-            key: Key('routine-item-${item.id}-${date.toIso8601String()}'),
-            value: completed,
-            onChanged: (_) => controller.toggleCompletion(item, date),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: completed
-                          ? scheme.onSurfaceVariant
-                          : scheme.onSurface,
-                      decoration: completed
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  if (item.details != null)
+    return DesktopContextMenuRegion(
+      onOpen: (position) => _showContextMenu(context, position),
+      child: Material(
+        color: scheme.surfaceContainerHigh.withValues(alpha: 0.55),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Checkbox(
+              key: Key('routine-item-${item.id}-${date.toIso8601String()}'),
+              value: completed,
+              onChanged: (_) => controller.toggleCompletion(item, date),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      item.details!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      item.title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: completed
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface,
+                        decoration: completed
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
                       ),
                     ),
-                ],
+                    if (item.details != null)
+                      Text(
+                        item.details!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          ReorderHandle(
-            key: Key('routine-item-handle-${item.id}'),
-            index: index,
-          ),
-          HoldToDeleteButton(
-            key: Key('routine-item-delete-${item.id}'),
-            semanticLabel: AppStrings.holdToDelete,
-            onDelete: () => controller.removeItem(routine, item),
-          ),
-        ],
+            ReorderHandle(
+              key: Key('routine-item-handle-${item.id}'),
+              index: index,
+            ),
+            HoldToDeleteButton(
+              key: Key('routine-item-delete-${item.id}'),
+              semanticLabel: AppStrings.holdToDelete,
+              onDelete: () => controller.removeItem(routine, item),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Offset globalPosition,
+  ) async {
+    final completed = item.isCompletedOn(date);
+    final action = await showDesktopContextMenu<_RoutineItemContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _RoutineItemContextAction.toggle,
+          child: Text(
+            completed
+                ? AppStrings.statusReopenAction
+                : AppStrings.statusDoneAction,
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: _RoutineItemContextAction.delete,
+          child: Text(AppStrings.delete),
+        ),
+      ],
+    );
+    switch (action) {
+      case _RoutineItemContextAction.toggle:
+        await controller.toggleCompletion(item, date);
+      case _RoutineItemContextAction.delete:
+        await controller.removeItem(routine, item);
+      case null:
+        break;
+    }
   }
 }

@@ -120,6 +120,13 @@ abstract final class AppStrings {
     'Mantenha pressionada uma linha para iniciar a seleção; depois toque nas outras.',
     'Press and hold a line to start selecting; then tap the others.',
   );
+  static String get selectLinesHintDesktop => _t(
+    'Ctrl+clique seleciona uma linha; Shift+clique seleciona um intervalo. Esc limpa.',
+    'Ctrl+click selects a line; Shift+click selects a range. Esc clears.',
+  );
+  static String get copyMarkdown => _t('Copiar Markdown', 'Copy Markdown');
+  static String get markdownCopied =>
+      _t('Markdown copiado.', 'Markdown copied.');
   static String get createPostItFromSelection =>
       _t('Criar post-it do trecho', 'Create post-it from excerpt');
   static String get clearSelection => _t('Limpar seleção', 'Clear selection');
@@ -138,6 +145,9 @@ abstract final class AppStrings {
   static String get postItWithoutDate =>
       _t('Este post-it não tem data definida.', 'This post-it has no date.');
   static String get showPostItDetails => _t('Ver detalhes', 'View details');
+  static String get openDay => _t('Abrir dia', 'Open day');
+  static String get newTask => _t('Nova tarefa', 'New task');
+  static String get newEvent => _t('Novo evento', 'New event');
   static String get noteSnapshots =>
       _t('Trechos desta nota', 'Excerpts from this note');
   static String get selectNote => _t('Selecionar nota', 'Select note');
@@ -316,6 +326,16 @@ abstract final class AppStrings {
     'Mostra a dica de gestos e a contagem de post-its sem data.',
     'Shows gesture hints and the undated post-it count.',
   );
+  static String get settingsHintsHelpDesktop => _t(
+    'Mostra dicas de mouse/teclado e a contagem de post-its sem data.',
+    'Shows mouse/keyboard hints and the undated post-it count.',
+  );
+  static String get settingsDesktopShortcuts =>
+      _t('Atalhos do desktop', 'Desktop shortcuts');
+  static String get settingsDesktopShortcutsHelp => _t(
+    'Comandos de teclado e mouse para criar, editar e navegar.',
+    'Keyboard and mouse commands for creating, editing and navigating.',
+  );
   static String get settingsSync =>
       _t('Conexão e sincronização', 'Connection and sync');
   static String get syncConnection =>
@@ -424,6 +444,10 @@ abstract final class AppStrings {
     'Câmera indisponível. Use o código manual.',
     'Camera unavailable. Use the manual code.',
   );
+  static String get syncScanUnavailable => _t(
+    'A leitura de QR pela câmera está disponível no aplicativo Android. Cole o código de pareamento manualmente.',
+    'Camera QR scanning is available in the Android app. Paste the pairing code manually.',
+  );
   static String get syncDisconnect =>
       _t('Desconectar deste servidor', 'Disconnect from this server');
   static String get syncDisconnectConfirm => _t(
@@ -440,8 +464,8 @@ abstract final class AppStrings {
   static String get aboutTitle =>
       _t('Sobre o Stick2Planner', 'About Stick2Planner');
   static String get aboutDescription => _t(
-    'Planner visual offline-first para Android. Agenda, Caixinha e notas Markdown ficam no aparelho; a sincronização entre dispositivos é opcional e usa um servidor próprio.',
-    'Offline-first visual planner for Android. Calendar, inbox and Markdown notes stay on the device; syncing between devices is optional and uses your own server.',
+    'Planner visual offline-first para Android, Windows e Linux. Agenda, Caixinha e notas Markdown ficam no aparelho; a sincronização entre dispositivos é opcional e usa um servidor próprio.',
+    'Offline-first visual planner for Android, Windows and Linux. Calendar, inbox and Markdown notes stay on the device; syncing between devices is optional and uses your own server.',
   );
   static String aboutVersion(String version) =>
       _language == AppLanguage.en ? 'Version $version' : 'Versão $version';
@@ -451,6 +475,49 @@ abstract final class AppStrings {
       _t('MikeMequis1 no GitHub', 'MikeMequis1 on GitHub');
   static String get aboutLinkFailed =>
       _t('Não foi possível abrir o link.', 'Could not open the link.');
+  static String get keyboardShortcutsTitle =>
+      _t('Atalhos de teclado', 'Keyboard shortcuts');
+  static String get keyboardShortcutsHelp => _t(
+    'Atalhos disponíveis na janela principal do desktop.',
+    'Shortcuts available in the desktop main window.',
+  );
+  static String get shortcutSections => _t(
+    'Ir para Agenda, Caixinha, Notas ou Rotinas',
+    'Go to Agenda, Inbox, Notes or Routines',
+  );
+  static String get shortcutNewItem =>
+      _t('Criar item na seção atual', 'Create an item in the current section');
+  static String get shortcutSettings =>
+      _t('Abrir Configurações', 'Open Settings');
+  static String get shortcutSync => _t('Abrir Sincronização', 'Open Sync');
+  static String get shortcutPreviousPeriod =>
+      _t('Período anterior', 'Previous period');
+  static String get shortcutNextPeriod => _t('Próximo período', 'Next period');
+  static String get shortcutToday => _t('Ir para hoje', 'Go to today');
+  static String get shortcutHelp =>
+      _t('Mostrar esta lista de atalhos', 'Show this shortcut list');
+  static String get shortcutNextSection =>
+      _t('Próxima seção / seção anterior', 'Next section / previous section');
+  static String get shortcutDayNavigation =>
+      _t('Dia anterior / próximo dia', 'Previous day / next day');
+  static String get shortcutMode =>
+      _t('Aumentar / reduzir dias visíveis', 'Increase / reduce visible days');
+  static String get shortcutSave =>
+      _t('Salvar no editor ou diálogo', 'Save in the editor or dialog');
+  static String get shortcutMarkdown => _t(
+    'Negrito / itálico / link no Markdown',
+    'Bold / italic / link in Markdown',
+  );
+  static String get shortcutContextMenu =>
+      _t('Abrir menu de contexto do item', 'Open the item context menu');
+  static String get shortcutLineSelection => _t(
+    'Selecionar linha / intervalo de linhas',
+    'Select a line / a range of lines',
+  );
+  static String get shortcutDelete => _t(
+    'Excluir item selecionado (com confirmação)',
+    'Delete selected item (with confirmation)',
+  );
   static String get settingsLanguage =>
       _t('Idioma da interface', 'Interface language');
   static String get settingsLanguageHelp =>
@@ -603,6 +670,10 @@ abstract final class AppStrings {
   static String get calendarHint => _t(
     'Toque: selecionar · 2/3 toques: tarefa/evento · segure: prévia · deslize: período/dias',
     'Tap: select · 2/3 taps: task/event · hold: preview · swipe: period/days',
+  );
+  static String get calendarHintDesktop => _t(
+    'Clique: selecionar · clique direito: tarefa/evento/abrir dia · Ctrl+setas: período · Ctrl+/-: dias visíveis · arraste: mover',
+    'Click: select · right-click: task/event/open day · Ctrl+arrows: period · Ctrl+/-: visible days · drag: move',
   );
   static String get todayBadge => _t('hoje', 'today');
   static String get continuation => _t('continua', 'continues');
@@ -779,6 +850,10 @@ abstract final class AppStrings {
     'Resumo diário e lembretes locais, sem internet.',
     'Daily summary and local reminders, no internet required.',
   );
+  static String get notificationsUnsupported => _t(
+    'Notificações locais agendadas estão disponíveis no aplicativo Android. O planner continua funcionando offline nas demais plataformas.',
+    'Scheduled local notifications are available in the Android app. The planner still works offline on other platforms.',
+  );
   static String get notificationsEnabled =>
       _t('Ativar notificações', 'Enable notifications');
   static String get notificationsEnabledHelp => _t(
@@ -847,6 +922,10 @@ abstract final class AppStrings {
   // Listas: arrastar e excluir com pressão contínua
   static String get dragToReorder =>
       _t('Arraste para reordenar', 'Drag to reorder');
+  static String get dragToReorderDesktop => _t(
+    'Arraste a alça ou use Alt+↑/↓ para reordenar',
+    'Drag the handle or use Alt+↑/↓ to reorder',
+  );
   static String get holdToDelete =>
       _t('Mantenha pressionado para excluir', 'Press and hold to delete');
   static String get holdToDeleteHint => _t(

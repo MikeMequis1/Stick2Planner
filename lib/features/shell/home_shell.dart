@@ -5,12 +5,14 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/app_navigation_controller.dart';
 import '../../app/services/sync_coordinator.dart';
 import '../inbox/inbox_page.dart';
+import '../notes/note_editor_page.dart';
 import '../notes/notes_page.dart';
 import '../planner/agenda_page.dart';
 import '../planner/widgets/post_it_editor_sheet.dart';
 import '../routines/routine_editor_page.dart';
 import '../routines/routines_page.dart';
 import '../settings/settings_page.dart';
+import 'shell_shortcuts.dart';
 
 /// Casca de navegação adaptativa.
 ///
@@ -91,6 +93,54 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ).push<bool>(MaterialPageRoute(builder: (_) => const RoutineEditorPage()));
   }
 
+  Future<void> _createForCurrentSection() async {
+    final section = AppScope.of(context).navigation.section;
+    final navigator = Navigator.of(context);
+    switch (section) {
+      case AppSection.agenda:
+      case AppSection.inbox:
+        _openNewPostIt();
+      case AppSection.notes:
+        await navigator.push<void>(
+          MaterialPageRoute(builder: (_) => NoteEditorPage()),
+        );
+      case AppSection.routines:
+        await navigator.push<bool>(
+          MaterialPageRoute(builder: (_) => const RoutineEditorPage()),
+        );
+    }
+  }
+
+  void _shiftPeriod(int direction) {
+    final planner = AppScope.of(context).planner;
+    final mode = planner.modeFor(MediaQuery.orientationOf(context));
+    if (direction < 0) {
+      planner.previousPeriod(mode);
+    } else {
+      planner.nextPeriod(mode);
+    }
+  }
+
+  void _goToToday() {
+    AppScope.of(context).planner.goToToday();
+  }
+
+  void _cycleSection(int delta) {
+    final values = AppSection.values;
+    final current = AppScope.of(context).navigation.section.index;
+    _select((current + delta + values.length) % values.length);
+  }
+
+  void _shiftSelectedDay(int delta) {
+    final planner = AppScope.of(context).planner;
+    planner.selectDate(planner.selectedDate.addDays(delta));
+  }
+
+  void _changeMode(int delta) {
+    final planner = AppScope.of(context).planner;
+    planner.cycleMode(delta, MediaQuery.orientationOf(context));
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -108,110 +158,126 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         final index = navigation.section.index;
         final destinations = _railDestinations();
         final visual = _syncVisual(sync);
-        return Scaffold(
-          resizeToAvoidBottomInset: false,
-          body: SafeArea(
-            child: useRail
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      NavigationRail(
-                        minWidth: 84,
-                        selectedIndex: index,
-                        onDestinationSelected: _select,
-                        labelType: height < 600
-                            ? NavigationRailLabelType.none
-                            : NavigationRailLabelType.all,
-                        trailingAtBottom: true,
-                        destinations: destinations,
-                        trailing: Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                key: const Key('open-sync-settings'),
-                                tooltip: visual.tooltip,
-                                onPressed: _openSyncSettings,
-                                icon: Icon(visual.icon, color: visual.color),
-                              ),
-                              IconButton(
-                                key: const Key('open-settings'),
-                                tooltip: AppStrings.settings,
-                                onPressed: _openSettings,
-                                icon: const Icon(Icons.settings_outlined),
-                              ),
-                            ],
+        return ShellShortcutScope(
+          onSection: (section) => _select(section.index),
+          onNewItem: _createForCurrentSection,
+          onSettings: _openSettings,
+          onSyncSettings: _openSyncSettings,
+          onPreviousPeriod: () => _shiftPeriod(-1),
+          onNextPeriod: () => _shiftPeriod(1),
+          onToday: _goToToday,
+          onNextSection: () => _cycleSection(1),
+          onPreviousSection: () => _cycleSection(-1),
+          onPreviousDay: () => _shiftSelectedDay(-1),
+          onNextDay: () => _shiftSelectedDay(1),
+          onDecreaseMode: () => _changeMode(-1),
+          onIncreaseMode: () => _changeMode(1),
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: SafeArea(
+              child: useRail
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        NavigationRail(
+                          minWidth: 84,
+                          selectedIndex: index,
+                          onDestinationSelected: _select,
+                          labelType: height < 600
+                              ? NavigationRailLabelType.none
+                              : NavigationRailLabelType.all,
+                          trailingAtBottom: true,
+                          destinations: destinations,
+                          trailing: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  key: const Key('open-sync-settings'),
+                                  tooltip: visual.tooltip,
+                                  onPressed: _openSyncSettings,
+                                  icon: Icon(visual.icon, color: visual.color),
+                                ),
+                                IconButton(
+                                  key: const Key('open-settings'),
+                                  tooltip: AppStrings.settings,
+                                  onPressed: _openSettings,
+                                  icon: const Icon(Icons.settings_outlined),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                        const VerticalDivider(width: 1),
+                        Expanded(
+                          child: IndexedStack(index: index, children: _pages),
+                        ),
+                      ],
+                    )
+                  : IndexedStack(index: index, children: _pages),
+            ),
+            bottomNavigationBar: useRail
+                ? null
+                : NavigationBar(
+                    selectedIndex: index,
+                    labelBehavior:
+                        NavigationDestinationLabelBehavior.alwaysShow,
+                    onDestinationSelected: (value) {
+                      if (value == 4) {
+                        _openSettings();
+                      } else if (value == 5) {
+                        _openSyncSettings();
+                      } else {
+                        _select(value);
+                      }
+                    },
+                    destinations: [
+                      for (var i = 0; i < AppSection.values.length; i++)
+                        NavigationDestination(
+                          key: Key('nav-${AppSection.values[i].name}'),
+                          icon: Icon(_sectionIcon(AppSection.values[i])),
+                          selectedIcon: Icon(
+                            _sectionIcon(AppSection.values[i], selected: true),
+                          ),
+                          label: _sectionLabel(AppSection.values[i]),
+                        ),
+                      NavigationDestination(
+                        key: const Key('open-settings'),
+                        icon: const Icon(Icons.settings_outlined),
+                        label: AppStrings.configShort,
                       ),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        child: IndexedStack(index: index, children: _pages),
+                      NavigationDestination(
+                        key: const Key('open-sync-settings'),
+                        icon: Icon(visual.icon, color: visual.color),
+                        label: AppStrings.syncShort,
                       ),
                     ],
-                  )
-                : IndexedStack(index: index, children: _pages),
-          ),
-          bottomNavigationBar: useRail
-              ? null
-              : NavigationBar(
-                  selectedIndex: index,
-                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                  onDestinationSelected: (value) {
-                    if (value == 4) {
-                      _openSettings();
-                    } else if (value == 5) {
-                      _openSyncSettings();
-                    } else {
-                      _select(value);
-                    }
-                  },
-                  destinations: [
-                    for (var i = 0; i < AppSection.values.length; i++)
-                      NavigationDestination(
-                        key: Key('nav-${AppSection.values[i].name}'),
-                        icon: Icon(_sectionIcon(AppSection.values[i])),
-                        selectedIcon: Icon(
-                          _sectionIcon(AppSection.values[i], selected: true),
-                        ),
-                        label: _sectionLabel(AppSection.values[i]),
+                  ),
+            floatingActionButton: switch (navigation.section) {
+              AppSection.agenda || AppSection.inbox =>
+                isShort || isCompact
+                    ? FloatingActionButton.small(
+                        key: const Key('add-post-it'),
+                        tooltip: AppStrings.newPostIt,
+                        onPressed: _openNewPostIt,
+                        child: const Icon(Icons.add),
+                      )
+                    : FloatingActionButton.extended(
+                        key: const Key('add-post-it'),
+                        onPressed: _openNewPostIt,
+                        icon: const Icon(Icons.add),
+                        label: Text(AppStrings.newPostIt),
                       ),
-                    NavigationDestination(
-                      key: const Key('open-settings'),
-                      icon: const Icon(Icons.settings_outlined),
-                      label: AppStrings.configShort,
-                    ),
-                    NavigationDestination(
-                      key: const Key('open-sync-settings'),
-                      icon: Icon(visual.icon, color: visual.color),
-                      label: AppStrings.syncShort,
-                    ),
-                  ],
-                ),
-          floatingActionButton: switch (navigation.section) {
-            AppSection.agenda || AppSection.inbox =>
-              isShort || isCompact
-                  ? FloatingActionButton.small(
-                      key: const Key('add-post-it'),
-                      tooltip: AppStrings.newPostIt,
-                      onPressed: _openNewPostIt,
-                      child: const Icon(Icons.add),
-                    )
-                  : FloatingActionButton.extended(
-                      key: const Key('add-post-it'),
-                      onPressed: _openNewPostIt,
-                      icon: const Icon(Icons.add),
-                      label: Text(AppStrings.newPostIt),
-                    ),
-            AppSection.routines => FloatingActionButton.extended(
-              key: const Key('add-routine'),
-              onPressed: _openNewRoutine,
-              icon: const Icon(Icons.add),
-              label: Text(AppStrings.routineNew),
-            ),
-            AppSection.notes => null,
-          },
+              AppSection.routines => FloatingActionButton.extended(
+                key: const Key('add-routine'),
+                onPressed: _openNewRoutine,
+                icon: const Icon(Icons.add),
+                label: Text(AppStrings.routineNew),
+              ),
+              AppSection.notes => null,
+            },
+          ),
         );
       },
     );

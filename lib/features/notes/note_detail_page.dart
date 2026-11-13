@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -7,10 +9,12 @@ import '../../app/app_strings.dart';
 import '../../app/controllers/notes_controller.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
+import '../../core/platform_support.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../planner/widgets/post_it_navigation.dart';
 import '../planner/widgets/post_it_presentation.dart';
+import '../shared/desktop_dialog_shortcuts.dart';
 import '../shared/empty_state.dart';
 import 'note_editor_page.dart';
 
@@ -25,7 +29,45 @@ class NoteDetailPage extends StatefulWidget {
 
 class _NoteDetailPageState extends State<NoteDetailPage> {
   final Set<String> _selectedLines = {};
+  String? _selectionAnchor;
   bool _busy = false;
+
+  String get _selectionHint => isDesktopTargetPlatform
+      ? AppStrings.selectLinesHintDesktop
+      : AppStrings.selectLinesHint;
+
+  void _toggleLineSelection(Note note, int index) {
+    setState(() {
+      final line = note.lines[index];
+      if (!_selectedLines.add(line.id)) {
+        _selectedLines.remove(line.id);
+      }
+      _selectionAnchor = line.id;
+    });
+  }
+
+  void _selectLineRange(Note note, int index) {
+    setState(() {
+      final anchorId = _selectionAnchor;
+      final anchorIndex = anchorId == null
+          ? index
+          : note.lines.indexWhere((line) => line.id == anchorId);
+      final start = math.min(anchorIndex < 0 ? index : anchorIndex, index);
+      final end = math.max(anchorIndex < 0 ? index : anchorIndex, index);
+      _selectedLines.addAll(
+        note.lines.getRange(start, end + 1).map((line) => line.id),
+      );
+      _selectionAnchor ??= note.lines[index].id;
+    });
+  }
+
+  void _clearSelection() {
+    if (_selectedLines.isEmpty) return;
+    setState(() {
+      _selectedLines.clear();
+      _selectionAnchor = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,258 +98,287 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
             if (postIt.noteId == null && postIt.sourceNoteId == note.id) postIt,
         ];
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(note.title),
-            actions: [
-              IconButton(
-                key: Key('note-edit'),
-                tooltip: AppStrings.edit,
-                onPressed: () => _edit(note),
-                icon: Icon(Icons.edit_outlined),
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): () {
+              if (_selectedLines.isNotEmpty) {
+                _clearSelection();
+              } else {
+                Navigator.of(context).maybePop();
+              }
+            },
+          },
+          child: Focus(
+            autofocus: isDesktopTargetPlatform,
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(note.title),
+                actions: [
+                  IconButton(
+                    key: Key('note-edit'),
+                    tooltip: AppStrings.edit,
+                    onPressed: () => _edit(note),
+                    icon: Icon(Icons.edit_outlined),
+                  ),
+                  IconButton(
+                    key: Key('note-delete'),
+                    tooltip: AppStrings.deleteNote,
+                    onPressed: _busy
+                        ? null
+                        : () => _delete(note, linkedPostIts),
+                    icon: Icon(Icons.delete_outline),
+                  ),
+                ],
               ),
-              IconButton(
-                key: Key('note-delete'),
-                tooltip: AppStrings.deleteNote,
-                onPressed: _busy ? null : () => _delete(note, linkedPostIts),
-                icon: Icon(Icons.delete_outline),
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.all(20),
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+              body: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.all(20),
                       children: [
-                        Chip(
-                          avatar: Icon(
-                            note.type == NoteType.checklist
-                                ? Icons.checklist
-                                : Icons.notes,
-                            size: 18,
-                          ),
-                          label: Text(
-                            note.type == NoteType.checklist
-                                ? AppStrings.noteTypeChecklist
-                                : AppStrings.noteTypeMarkdown,
-                          ),
-                        ),
-                        Chip(
-                          label: Text(
-                            DateFormats.shortDate(
-                              DateOnly.fromDateTime(note.updatedAt),
-                            ),
-                          ),
-                        ),
-                        if (linkedPostIts.isNotEmpty)
-                          Chip(
-                            avatar: Icon(Icons.link, size: 18),
-                            label: Text(
-                              AppStrings.linkedPostItsCount(
-                                linkedPostIts.length,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Chip(
+                              avatar: Icon(
+                                note.type == NoteType.checklist
+                                    ? Icons.checklist
+                                    : Icons.notes,
+                                size: 18,
+                              ),
+                              label: Text(
+                                note.type == NoteType.checklist
+                                    ? AppStrings.noteTypeChecklist
+                                    : AppStrings.noteTypeMarkdown,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          key: Key('note-create-task'),
-                          onPressed: _busy
-                              ? null
-                              : () => _createTaskFromNote(note),
-                          icon: Icon(Icons.add_task),
-                          label: Text(AppStrings.createTaskFromNote),
-                        ),
-                        OutlinedButton.icon(
-                          key: Key('note-link-post-it'),
-                          onPressed: _busy ? null : () => _linkToPostIt(note),
-                          icon: Icon(Icons.link),
-                          label: Text(AppStrings.linkToPostIt),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    if (note.type == NoteType.text)
-                      _MarkdownNoteBody(
-                        markdown: note.markdown ?? note.plainText,
-                        onEdit: () => _edit(note),
-                        onCreateSnapshot: _busy
-                            ? null
-                            : () => _createSnapshotFromMarkdown(note),
-                      )
-                    else if (note.lines.isEmpty)
-                      EmptyState(
-                        icon: Icons.notes,
-                        title: AppStrings.noLines,
-                        message: AppStrings.selectLinesHint,
-                      )
-                    else
-                      for (final line in note.lines)
-                        _NoteLineRow(
-                          line: line,
-                          selected: _selectedLines.contains(line.id),
-                          selectionMode: _selectedLines.isNotEmpty,
-                          checklist: true,
-                          onSelect: () => setState(() {
-                            if (_selectedLines.contains(line.id)) {
-                              _selectedLines.remove(line.id);
-                            } else {
-                              _selectedLines.add(line.id);
-                            }
-                          }),
-                          onChecked: (value) =>
-                              _toggleLine(notes, note, line.id, value),
-                          onEdit: () => _edit(note),
-                        ),
-                    if (note.type == NoteType.checklist &&
-                        note.lines.isNotEmpty) ...[
-                      SizedBox(height: 8),
-                      Text(
-                        AppStrings.selectLinesHint,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    if (linkedPostIts.isNotEmpty) ...[
-                      SizedBox(height: 24),
-                      Text(
-                        AppStrings.noteLinkedPostIts,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      SizedBox(height: 8),
-                      for (final postIt in linkedPostIts)
-                        Card(
-                          margin: EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            key: Key('note-linked-postit-${postIt.id}'),
-                            leading: Icon(Icons.sticky_note_2_outlined),
-                            title: Text(postIt.title),
-                            subtitle: Text(
-                              '${postItTypeLabel(postIt)} · '
-                              '${postItDateLabel(postIt)}',
-                            ),
-                            trailing: _PostItActions(
-                              postIt: postIt,
-                              prefix: 'note-linked',
-                            ),
-                            onTap: () => openPostItDetailsById(
-                              context,
-                              postItId: postIt.id,
-                              goToAgenda: false,
-                            ),
-                          ),
-                        ),
-                    ],
-                    if (snapshotPostIts.isNotEmpty) ...[
-                      SizedBox(height: 24),
-                      Text(
-                        AppStrings.noteSnapshots,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      SizedBox(height: 8),
-                      for (final postIt in snapshotPostIts)
-                        Card(
-                          margin: EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            key: Key('note-snapshot-${postIt.id}'),
-                            leading: Icon(Icons.content_copy_outlined),
-                            title: Text(postIt.title),
-                            subtitle: Text(
-                              '${AppStrings.noteExcerptChip} · '
-                              '${postItDateLabel(postIt)}',
-                            ),
-                            trailing: _PostItActions(
-                              postIt: postIt,
-                              prefix: 'note-snapshot',
-                            ),
-                            onTap: () => openPostItDetailsById(
-                              context,
-                              postItId: postIt.id,
-                              goToAgenda: false,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-              if (note.type == NoteType.checklist && note.lines.isNotEmpty)
-                Material(
-                  elevation: _selectedLines.isEmpty ? 0 : 8,
-                  child: SafeArea(
-                    top: false,
-                    child: Container(
-                      constraints: BoxConstraints(minHeight: 64),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: _selectedLines.isEmpty
-                          ? Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                AppStrings.selectLinesHint,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                            Chip(
+                              label: Text(
+                                DateFormats.shortDate(
+                                  DateOnly.fromDateTime(note.updatedAt),
+                                ),
                               ),
-                            )
-                          : Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    AppStrings.selectedLines(
-                                      _selectedLines.length,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge,
-                                  ),
-                                ),
-                                TextButton(
-                                  key: const Key('note-cancel-selection'),
-                                  onPressed: () =>
-                                      setState(() => _selectedLines.clear()),
-                                  child: Text(AppStrings.cancel),
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: FilledButton.icon(
-                                    key: const Key(
-                                      'note-create-from-selection',
-                                    ),
-                                    onPressed: () =>
-                                        _createPostItFromSelection(note),
-                                    icon: const Icon(Icons.add),
-                                    label: Text(
-                                      AppStrings.createPostItFromSelection,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
+                            if (linkedPostIts.isNotEmpty)
+                              Chip(
+                                avatar: Icon(Icons.link, size: 18),
+                                label: Text(
+                                  AppStrings.linkedPostItsCount(
+                                    linkedPostIts.length,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              key: Key('note-create-task'),
+                              onPressed: _busy
+                                  ? null
+                                  : () => _createTaskFromNote(note),
+                              icon: Icon(Icons.add_task),
+                              label: Text(AppStrings.createTaskFromNote),
+                            ),
+                            OutlinedButton.icon(
+                              key: Key('note-link-post-it'),
+                              onPressed: _busy
+                                  ? null
+                                  : () => _linkToPostIt(note),
+                              icon: Icon(Icons.link),
+                              label: Text(AppStrings.linkToPostIt),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        if (note.type == NoteType.text)
+                          _MarkdownNoteBody(
+                            markdown: note.markdown ?? note.plainText,
+                            onEdit: () => _edit(note),
+                            onCreateSnapshot: _busy
+                                ? null
+                                : () => _createSnapshotFromMarkdown(note),
+                          )
+                        else if (note.lines.isEmpty)
+                          EmptyState(
+                            icon: Icons.notes,
+                            title: AppStrings.noLines,
+                            message: _selectionHint,
+                          )
+                        else
+                          for (
+                            var index = 0;
+                            index < note.lines.length;
+                            index++
+                          )
+                            _NoteLineRow(
+                              line: note.lines[index],
+                              index: index,
+                              selected: _selectedLines.contains(
+                                note.lines[index].id,
+                              ),
+                              selectionMode: _selectedLines.isNotEmpty,
+                              checklist: true,
+                              onSelect: () => _toggleLineSelection(note, index),
+                              onRangeSelect: () =>
+                                  _selectLineRange(note, index),
+                              onChecked: (value) => _toggleLine(
+                                notes,
+                                note,
+                                note.lines[index].id,
+                                value,
+                              ),
+                              onEdit: () => _edit(note),
+                            ),
+                        if (note.type == NoteType.checklist &&
+                            note.lines.isNotEmpty) ...[
+                          SizedBox(height: 8),
+                          Text(
+                            _selectionHint,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                        if (linkedPostIts.isNotEmpty) ...[
+                          SizedBox(height: 24),
+                          Text(
+                            AppStrings.noteLinkedPostIts,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          SizedBox(height: 8),
+                          for (final postIt in linkedPostIts)
+                            Card(
+                              margin: EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                key: Key('note-linked-postit-${postIt.id}'),
+                                leading: Icon(Icons.sticky_note_2_outlined),
+                                title: Text(postIt.title),
+                                subtitle: Text(
+                                  '${postItTypeLabel(postIt)} · '
+                                  '${postItDateLabel(postIt)}',
+                                ),
+                                trailing: _PostItActions(
+                                  postIt: postIt,
+                                  prefix: 'note-linked',
+                                ),
+                                onTap: () => openPostItDetailsById(
+                                  context,
+                                  postItId: postIt.id,
+                                  goToAgenda: false,
+                                ),
+                              ),
+                            ),
+                        ],
+                        if (snapshotPostIts.isNotEmpty) ...[
+                          SizedBox(height: 24),
+                          Text(
+                            AppStrings.noteSnapshots,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          SizedBox(height: 8),
+                          for (final postIt in snapshotPostIts)
+                            Card(
+                              margin: EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                key: Key('note-snapshot-${postIt.id}'),
+                                leading: Icon(Icons.content_copy_outlined),
+                                title: Text(postIt.title),
+                                subtitle: Text(
+                                  '${AppStrings.noteExcerptChip} · '
+                                  '${postItDateLabel(postIt)}',
+                                ),
+                                trailing: _PostItActions(
+                                  postIt: postIt,
+                                  prefix: 'note-snapshot',
+                                ),
+                                onTap: () => openPostItDetailsById(
+                                  context,
+                                  postItId: postIt.id,
+                                  goToAgenda: false,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
                     ),
                   ),
-                ),
-            ],
+                  if (note.type == NoteType.checklist && note.lines.isNotEmpty)
+                    Material(
+                      elevation: _selectedLines.isEmpty ? 0 : 8,
+                      child: SafeArea(
+                        top: false,
+                        child: Container(
+                          constraints: BoxConstraints(minHeight: 64),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: _selectedLines.isEmpty
+                              ? Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    _selectionHint,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                )
+                              : Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        AppStrings.selectedLines(
+                                          _selectedLines.length,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      key: const Key('note-cancel-selection'),
+                                      onPressed: () => setState(
+                                        () => _selectedLines.clear(),
+                                      ),
+                                      child: Text(AppStrings.cancel),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: FilledButton.icon(
+                                        key: const Key(
+                                          'note-create-from-selection',
+                                        ),
+                                        onPressed: () =>
+                                            _createPostItFromSelection(note),
+                                        icon: const Icon(Icons.add),
+                                        label: Text(
+                                          AppStrings.createPostItFromSelection,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -563,6 +634,20 @@ class _MarkdownNoteBody extends StatelessWidget {
               icon: Icon(Icons.content_copy, size: 18),
               label: Text(AppStrings.createPostItFromMarkdown),
             ),
+            OutlinedButton.icon(
+              key: Key('note-copy-markdown'),
+              onPressed: isEmpty
+                  ? null
+                  : () async {
+                      await Clipboard.setData(ClipboardData(text: markdown));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(AppStrings.markdownCopied)),
+                      );
+                    },
+              icon: Icon(Icons.copy_all_outlined, size: 18),
+              label: Text(AppStrings.copyMarkdown),
+            ),
           ],
         ),
         SizedBox(height: 12),
@@ -639,21 +724,42 @@ class _PostItActions extends StatelessWidget {
 class _NoteLineRow extends StatelessWidget {
   const _NoteLineRow({
     required this.line,
+    required this.index,
     required this.selected,
     required this.selectionMode,
     required this.checklist,
     required this.onSelect,
+    required this.onRangeSelect,
     required this.onChecked,
     required this.onEdit,
   });
 
   final NoteLine line;
+  final int index;
   final bool selected;
   final bool selectionMode;
   final bool checklist;
   final VoidCallback onSelect;
+  final VoidCallback onRangeSelect;
   final ValueChanged<bool> onChecked;
   final VoidCallback onEdit;
+
+  void _handleTap() {
+    if (!isDesktopTargetPlatform) {
+      selectionMode ? onSelect() : onEdit();
+      return;
+    }
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isShiftPressed) {
+      onRangeSelect();
+    } else if (keyboard.isControlPressed || keyboard.isMetaPressed) {
+      onSelect();
+    } else if (selectionMode) {
+      onSelect();
+    } else {
+      onEdit();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -669,10 +775,12 @@ class _NoteLineRow extends StatelessWidget {
         child: Semantics(
           button: true,
           selected: selected,
-          hint: AppStrings.selectLinesHint,
+          hint: isDesktopTargetPlatform
+              ? AppStrings.selectLinesHintDesktop
+              : AppStrings.selectLinesHint,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: selectionMode ? onSelect : onEdit,
+            onTap: _handleTap,
             onLongPress: () {
               HapticFeedback.selectionClick();
               onSelect();
@@ -746,69 +854,76 @@ class _SnapshotDialogState extends State<_SnapshotDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppStrings.createPostItFromSelection),
-      content: SizedBox(
-        width: 520.0.clamp(0, MediaQuery.sizeOf(context).width * 0.85),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              key: Key('snapshot-title'),
-              controller: _titleController,
-              maxLength: 120,
-              decoration: InputDecoration(
-                labelText: AppStrings.fieldTitle,
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-            SizedBox(height: 12),
-            Text(
-              AppStrings.noteExcerptTitle,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            SizedBox(height: 4),
-            Container(
-              constraints: BoxConstraints(maxHeight: 180),
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SingleChildScrollView(
-                child: Text(
-                  widget.excerpt,
-                  style: Theme.of(context).textTheme.bodyMedium,
+    void confirm() {
+      final title = _titleController.text.trim();
+      if (title.isEmpty) return;
+      Navigator.of(context).pop(title);
+    }
+
+    return DesktopDialogShortcuts(
+      onConfirm: confirm,
+      onCancel: () => Navigator.of(context).pop(),
+      child: AlertDialog(
+        title: Text(AppStrings.createPostItFromSelection),
+        content: SizedBox(
+          width: 520.0.clamp(0, MediaQuery.sizeOf(context).width * 0.85),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: Key('snapshot-title'),
+                controller: _titleController,
+                autofocus: isDesktopTargetPlatform,
+                maxLength: 120,
+                decoration: InputDecoration(
+                  labelText: AppStrings.fieldTitle,
+                  border: OutlineInputBorder(),
+                  counterText: '',
                 ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              AppStrings.noteSnapshotHint,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              SizedBox(height: 12),
+              Text(
+                AppStrings.noteExcerptTitle,
+                style: Theme.of(context).textTheme.labelLarge,
               ),
-            ),
-          ],
+              SizedBox(height: 4),
+              Container(
+                constraints: BoxConstraints(maxHeight: 180),
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    widget.excerpt,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                AppStrings.noteSnapshotHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            key: Key('confirm-snapshot'),
+            onPressed: confirm,
+            child: Text(AppStrings.createPostItFromSelection),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppStrings.cancel),
-        ),
-        FilledButton(
-          key: Key('confirm-snapshot'),
-          onPressed: () {
-            final title = _titleController.text.trim();
-            if (title.isEmpty) return;
-            Navigator.of(context).pop(title);
-          },
-          child: Text(AppStrings.createPostItFromSelection),
-        ),
-      ],
     );
   }
 }
@@ -884,76 +999,81 @@ class _MarkdownSnapshotDialogState extends State<_MarkdownSnapshotDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AlertDialog(
-      title: Text(AppStrings.createPostItFromMarkdown),
-      content: SizedBox(
-        width: 560.0.clamp(0, MediaQuery.sizeOf(context).width * 0.85),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                key: Key('snapshot-title'),
-                controller: _titleController,
-                maxLength: 120,
-                decoration: InputDecoration(
-                  labelText: AppStrings.fieldTitle,
-                  border: OutlineInputBorder(),
-                  counterText: '',
+    return DesktopDialogShortcuts(
+      onConfirm: _confirm,
+      onCancel: () => Navigator.of(context).pop(),
+      child: AlertDialog(
+        title: Text(AppStrings.createPostItFromMarkdown),
+        content: SizedBox(
+          width: 560.0.clamp(0, MediaQuery.sizeOf(context).width * 0.85),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  key: Key('snapshot-title'),
+                  controller: _titleController,
+                  autofocus: isDesktopTargetPlatform,
+                  maxLength: 120,
+                  decoration: InputDecoration(
+                    labelText: AppStrings.fieldTitle,
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
                 ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                AppStrings.snapshotSelectionHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                SizedBox(height: 12),
+                Text(
+                  AppStrings.snapshotSelectionHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                key: Key('snapshot-markdown'),
-                controller: _contentController,
-                readOnly: true,
-                minLines: 8,
-                maxLines: 14,
-                keyboardType: TextInputType.multiline,
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
+                SizedBox(height: 8),
+                TextField(
+                  key: Key('snapshot-markdown'),
+                  controller: _contentController,
+                  readOnly: true,
+                  minLines: 8,
+                  maxLines: 14,
+                  keyboardType: TextInputType.multiline,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
                 ),
-              ),
-              SizedBox(height: 4),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  key: Key('snapshot-whole-note'),
-                  onPressed: _selectWholeNote,
-                  child: Text(AppStrings.selectWholeNote),
+                SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    key: Key('snapshot-whole-note'),
+                    onPressed: _selectWholeNote,
+                    child: Text(AppStrings.selectWholeNote),
+                  ),
                 ),
-              ),
-              Text(
-                AppStrings.noteSnapshotHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                Text(
+                  AppStrings.noteSnapshotHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            key: Key('confirm-markdown-snapshot'),
+            onPressed: _confirm,
+            child: Text(AppStrings.createPostItFromSelection),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppStrings.cancel),
-        ),
-        FilledButton(
-          key: Key('confirm-markdown-snapshot'),
-          onPressed: _confirm,
-          child: Text(AppStrings.createPostItFromSelection),
-        ),
-      ],
     );
   }
 }

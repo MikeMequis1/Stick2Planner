@@ -5,9 +5,12 @@ import '../../app/app_strings.dart';
 import '../../core/date_formatting.dart';
 import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
+import '../shared/desktop_context_menu.dart';
 import '../shared/empty_state.dart';
 import 'note_detail_page.dart';
 import 'note_editor_page.dart';
+
+enum _NoteContextAction { open, edit, delete }
 
 /// Caderno privado, independente dos post-its.
 class NotesPage extends StatelessWidget {
@@ -65,28 +68,31 @@ class NotesPage extends StatelessWidget {
                             SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final note = items[index];
-                          return Card(
-                            margin: EdgeInsets.zero,
-                            child: ListTile(
-                              key: Key('note-${note.id}'),
-                              leading: Icon(
-                                note.type == NoteType.checklist
-                                    ? Icons.checklist
-                                    : Icons.notes,
-                              ),
-                              title: Text(note.title),
-                              subtitle: Text(
-                                note.type == NoteType.text
-                                    ? '${AppStrings.markdownLabel} · '
-                                          '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}'
-                                    : '${note.lines.length} ${AppStrings.noteLines} · '
-                                          '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
-                              ),
-                              trailing: Icon(Icons.chevron_right),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (context) => NoteDetailPage(
-                                    noteId: note.id,
+                          return DesktopContextMenuRegion(
+                            onOpen: (position) =>
+                                _showContextMenu(context, note, position),
+                            child: Card(
+                              margin: EdgeInsets.zero,
+                              child: ListTile(
+                                key: Key('note-${note.id}'),
+                                leading: Icon(
+                                  note.type == NoteType.checklist
+                                      ? Icons.checklist
+                                      : Icons.notes,
+                                ),
+                                title: Text(note.title),
+                                subtitle: Text(
+                                  note.type == NoteType.text
+                                      ? '${AppStrings.markdownLabel} · '
+                                            '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}'
+                                      : '${note.lines.length} ${AppStrings.noteLines} · '
+                                            '${DateFormats.shortDate(DateOnly.fromDateTime(note.updatedAt))}',
+                                ),
+                                trailing: Icon(Icons.chevron_right),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (context) =>
+                                        NoteDetailPage(noteId: note.id),
                                   ),
                                 ),
                               ),
@@ -100,5 +106,77 @@ class NotesPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    Note note,
+    Offset globalPosition,
+  ) async {
+    final action = await showDesktopContextMenu<_NoteContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _NoteContextAction.open,
+          child: Text(AppStrings.openNote),
+        ),
+        PopupMenuItem(
+          value: _NoteContextAction.edit,
+          child: Text(AppStrings.edit),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _NoteContextAction.delete,
+          child: Text(AppStrings.delete),
+        ),
+      ],
+    );
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case _NoteContextAction.open:
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => NoteDetailPage(noteId: note.id)),
+        );
+      case _NoteContextAction.edit:
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => NoteEditorPage(existing: note)),
+        );
+      case _NoteContextAction.delete:
+        await _delete(context, note);
+    }
+  }
+
+  Future<void> _delete(BuildContext context, Note note) async {
+    final notes = AppScope.of(context).notes;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.deleteNoteQuestion),
+        content: Text(AppStrings.deleteNoteExplanation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.confirmDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await notes.deleteNote(note);
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.deletedMessage)),
+      );
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(AppStrings.noteDeleteError)),
+      );
+    }
   }
 }

@@ -1562,3 +1562,23 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   fabricating post-its or losing valid history.
 - `flutter test`: **299 tests passing**; `flutter analyze`: no issues.
 - Build: version **0.6.2+14**. Live server now reports 0.2.2.
+
+## Desktop release review (pending)
+
+- Windows portable ZIP and unsigned MSIX are attached to the existing
+  **v0.6.2** release; no new version/tag was created.
+- Linux assets are intentionally **not** published in v0.6.2. Linux target,
+  bundle, `.deb` and AppImage remain in the working tree for the next commit.
+- Review the Windows build on a clean Windows 10/11 machine: extract the ZIP,
+  open every screen with mouse only and keyboard only, test right-click menus,
+  `Ctrl+S`/`Ctrl+Enter`, `Esc`, `Ctrl+Tab`, `Alt+←/→`, `Ctrl++/-`, checklist
+  Ctrl/Shift selection and explicit desktop delete.
+- Check window resize at 900×600 and 1280×800, 100%/150% DPI, light/dark theme
+  and pt-BR/en. Close and reopen to confirm the existing database was preserved.
+- Verify backup export/import and the Windows data path
+  `%APPDATA%\com.example\Stick2Planner`.
+- Decide whether to sign the MSIX for normal installation or keep distributing
+  only the portable ZIP.
+- Remaining project items: desktop scheduled notifications, Linux Secret
+  Service/keyring validation, AppStream metadata for AppImage, AppImage signing,
+  real Linux GUI smoke test and Android release installation on a device.

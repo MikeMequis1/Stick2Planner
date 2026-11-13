@@ -4,7 +4,11 @@ import '../../app/app_scope.dart';
 import '../../app/app_strings.dart';
 import '../../app/controllers/tags_controller.dart';
 import '../../domain/entities/tag.dart';
+import '../shared/desktop_context_menu.dart';
+import '../shared/desktop_dialog_shortcuts.dart';
 import 'tag_presentation.dart';
+
+enum _TagContextAction { edit, delete }
 
 /// Gerenciamento compartilhado de tags de eventos e tarefas.
 class TagsPage extends StatelessWidget {
@@ -50,35 +54,39 @@ class TagsPage extends StatelessWidget {
                       tag.tone,
                       Theme.of(context).colorScheme,
                     );
-                    return ListTile(
-                      key: Key('tag-${tag.id}'),
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: colors.accent,
-                          shape: BoxShape.circle,
+                    return DesktopContextMenuRegion(
+                      onOpen: (position) =>
+                          _showContextMenu(context, tags, tag, position),
+                      child: ListTile(
+                        key: Key('tag-${tag.id}'),
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: colors.accent,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      title: Text(tag.name),
-                      subtitle: Text(tagToneLabel(tag.tone)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            key: Key('tag-edit-${tag.id}'),
-                            tooltip: AppStrings.tagEdit,
-                            onPressed: () => _openEditor(context, tags, tag),
-                            icon: const Icon(Icons.edit_outlined),
-                          ),
-                          IconButton(
-                            key: Key('tag-delete-${tag.id}'),
-                            tooltip: AppStrings.delete,
-                            onPressed: () => _delete(context, tags, tag),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
+                        title: Text(tag.name),
+                        subtitle: Text(tagToneLabel(tag.tone)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              key: Key('tag-edit-${tag.id}'),
+                              tooltip: AppStrings.tagEdit,
+                              onPressed: () => _openEditor(context, tags, tag),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              key: Key('tag-delete-${tag.id}'),
+                              tooltip: AppStrings.delete,
+                              onPressed: () => _delete(context, tags, tag),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -86,6 +94,36 @@ class TagsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showContextMenu(
+    BuildContext context,
+    TagsController tags,
+    Tag tag,
+    Offset globalPosition,
+  ) async {
+    final action = await showDesktopContextMenu<_TagContextAction>(
+      context,
+      globalPosition: globalPosition,
+      items: [
+        PopupMenuItem(
+          value: _TagContextAction.edit,
+          child: Text(AppStrings.tagEdit),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _TagContextAction.delete,
+          child: Text(AppStrings.delete),
+        ),
+      ],
+    );
+    if (action == null || !context.mounted) return;
+    switch (action) {
+      case _TagContextAction.edit:
+        await _openEditor(context, tags, tag);
+      case _TagContextAction.delete:
+        await _delete(context, tags, tag);
+    }
   }
 
   Future<void> _openEditor(
@@ -190,26 +228,32 @@ class _TagDialogState extends State<_TagDialog> {
     final checkColor = accent.computeLuminance() > 0.5
         ? Colors.black87
         : Colors.white;
-    return Tooltip(
-      message: tagToneLabel(tone),
-      child: InkWell(
-        key: Key('tag-tone-${tone.name}'),
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: accent,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? scheme.onSurface : Colors.transparent,
-              width: 2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: tagToneLabel(tone),
+      child: Tooltip(
+        message: tagToneLabel(tone),
+        child: InkWell(
+          key: Key('tag-tone-${tone.name}'),
+          borderRadius: BorderRadius.circular(999),
+          focusColor: accent.withValues(alpha: 0.25),
+          onTap: onTap,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: accent,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected ? scheme.onSurface : Colors.transparent,
+                width: 2,
+              ),
             ),
+            child: selected
+                ? Icon(Icons.check, size: 18, color: checkColor)
+                : null,
           ),
-          child: selected
-              ? Icon(Icons.check, size: 18, color: checkColor)
-              : null,
         ),
       ),
     );
@@ -218,61 +262,67 @@ class _TagDialogState extends State<_TagDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Text(widget.tag == null ? AppStrings.tagNew : AppStrings.tagEdit),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              key: const Key('tag-name'),
-              controller: _name,
-              autofocus: true,
-              maxLength: 40,
-              decoration: InputDecoration(
-                labelText: AppStrings.tagName,
-                border: const OutlineInputBorder(),
-                counterText: '',
+    void save() =>
+        Navigator.of(context).pop(TagDraft(name: _name.text, tone: _tone));
+    return DesktopDialogShortcuts(
+      onConfirm: save,
+      onCancel: () => Navigator.of(context).pop(),
+      child: AlertDialog(
+        title: Text(
+          widget.tag == null ? AppStrings.tagNew : AppStrings.tagEdit,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('tag-name'),
+                controller: _name,
+                autofocus: true,
+                maxLength: 40,
+                decoration: InputDecoration(
+                  labelText: AppStrings.tagName,
+                  border: const OutlineInputBorder(),
+                  counterText: '',
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              AppStrings.tagColor,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final tone in TagTone.values)
-                  _toneSwatch(
-                    tone: tone,
-                    scheme: scheme,
-                    selected: _tone == tone,
-                    onTap: () => setState(() => _tone = tone),
-                  ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.tagColor,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final tone in TagTone.values)
+                    _toneSwatch(
+                      tone: tone,
+                      scheme: scheme,
+                      selected: _tone == tone,
+                      onTap: () => setState(() => _tone = tone),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            key: const Key('tag-save'),
+            onPressed: save,
+            child: Text(AppStrings.save),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppStrings.cancel),
-        ),
-        FilledButton(
-          key: const Key('tag-save'),
-          onPressed: () =>
-              Navigator.of(context)
-                  .pop(TagDraft(name: _name.text, tone: _tone)),
-          child: Text(AppStrings.save),
-        ),
-      ],
     );
   }
 }
