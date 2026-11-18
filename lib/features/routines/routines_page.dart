@@ -321,7 +321,7 @@ class _RoutinesPageState extends State<RoutinesPage> {
 
   int _dayTotal(RoutinesController controller, DateOnly date) => controller
       .routinesOn(date)
-      .fold(0, (total, routine) => total + routine.items.length);
+      .fold(0, (total, routine) => total + routine.taskCount);
 
   int _dayDone(RoutinesController controller, DateOnly date) => controller
       .routinesOn(date)
@@ -461,7 +461,7 @@ class _RoutineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final total = routine.items.length;
+    final total = routine.taskCount;
     final done = routine.completedOn(date);
     final progress = total == 0 ? 0.0 : done / total;
     final weekdays = [
@@ -609,7 +609,53 @@ class _RoutineCard extends StatelessWidget {
                             alpha: 0.18,
                           ),
                         ),
-                        if (routine.items.isEmpty)
+                        if (routine.mode == RoutineMode.simple) ...[
+                          if (routine.items.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                AppStrings.routineNoItems,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onSecondaryContainer,
+                                ),
+                              ),
+                            )
+                          else
+                            ReorderableListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              buildDefaultDragHandles: false,
+                              proxyDecorator: reorderProxyDecorator,
+                              itemCount: routine.items.length,
+                              onReorderItem: (oldIndex, newIndex) => controller
+                                  .reorderItems(routine, oldIndex, newIndex),
+                              itemBuilder: (context, index) {
+                                final item = routine.items[index];
+                                return _RoutineItemRow(
+                                  key: ValueKey(item.id),
+                                  item: item,
+                                  date: date,
+                                  index: index,
+                                  controller: controller,
+                                  routine: routine,
+                                );
+                              },
+                            ),
+                          if (showHints)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                              child: Text(
+                                isDesktopTargetPlatform
+                                    ? AppStrings.dragToReorderDesktop
+                                    : AppStrings.dragToReorder,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: scheme.onSecondaryContainer.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ] else if (routine.sections.isEmpty)
                           Padding(
                             padding: const EdgeInsets.all(16),
                             child: Text(
@@ -620,38 +666,31 @@ class _RoutineCard extends StatelessWidget {
                             ),
                           )
                         else
-                          ReorderableListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            buildDefaultDragHandles: false,
-                            proxyDecorator: reorderProxyDecorator,
-                            itemCount: routine.items.length,
-                            onReorderItem: (oldIndex, newIndex) => controller
-                                .reorderItems(routine, oldIndex, newIndex),
-                            itemBuilder: (context, index) {
-                              final item = routine.items[index];
-                              return _RoutineItemRow(
-                                key: ValueKey(item.id),
-                                item: item,
-                                date: date,
-                                index: index,
-                                controller: controller,
-                                routine: routine,
-                              );
-                            },
-                          ),
-                        if (showHints)
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                            child: Text(
-                              isDesktopTargetPlatform
-                                  ? AppStrings.dragToReorderDesktop
-                                  : AppStrings.dragToReorder,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: scheme.onSecondaryContainer.withValues(
-                                  alpha: 0.65,
-                                ),
-                              ),
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final twoColumns = constraints.maxWidth >= 680;
+                                final width = twoColumns
+                                    ? (constraints.maxWidth - 10) / 2
+                                    : constraints.maxWidth;
+                                return Wrap(
+                                  spacing: 10,
+                                  children: [
+                                    for (final section in routine.sections)
+                                      SizedBox(
+                                        width: width,
+                                        child: _CompleteSectionView(
+                                          key: ValueKey(section.id),
+                                          routine: routine,
+                                          section: section,
+                                          date: date,
+                                          controller: controller,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                       ],
@@ -691,6 +730,172 @@ class _RoutineCard extends StatelessWidget {
       case null:
         break;
     }
+  }
+}
+
+class _CompleteSectionView extends StatelessWidget {
+  const _CompleteSectionView({
+    super.key,
+    required this.routine,
+    required this.section,
+    required this.date,
+    required this.controller,
+  });
+
+  final Routine routine;
+  final RoutineSection section;
+  final DateOnly date;
+  final RoutinesController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final range = section.isConfigured
+        ? '${DateFormats.clockTime(section.startMinutes!)} – '
+              '${DateFormats.clockTime(section.endMinutes!)}'
+        : AppStrings.routineSectionNoTime;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: scheme.surfaceContainerHigh.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.view_agenda_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      section.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    range,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              if (section.intervals.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    AppStrings.routineSectionNoIntervals,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              else
+                for (final interval in section.intervals)
+                  _CompleteIntervalRow(
+                    key: ValueKey(interval.id),
+                    interval: interval,
+                    date: date,
+                    controller: controller,
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompleteIntervalRow extends StatelessWidget {
+  const _CompleteIntervalRow({
+    super.key,
+    required this.interval,
+    required this.date,
+    required this.controller,
+  });
+
+  final RoutineInterval interval;
+  final DateOnly date;
+  final RoutinesController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final completed = interval.isCompletedOn(date);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (interval.hasTask)
+            Checkbox(
+              key: Key(
+                'routine-interval-${interval.id}-${date.toIso8601String()}',
+              ),
+              value: completed,
+              onChanged: (_) =>
+                  controller.toggleIntervalCompletion(interval, date),
+            )
+          else
+            const SizedBox(width: 48),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${DateFormats.clockTime(interval.startMinutes)} – '
+                    '${DateFormats.clockTime(interval.endMinutes)}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    interval.hasTask
+                        ? interval.title!
+                        : AppStrings.routineNoTask,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: interval.hasTask
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: completed
+                          ? scheme.onSurfaceVariant
+                          : scheme.onSurface,
+                      decoration: completed
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
+                  ),
+                  if (interval.details != null)
+                    Text(
+                      interval.details!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

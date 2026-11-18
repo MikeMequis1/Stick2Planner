@@ -1597,6 +1597,52 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter test`: **318 tests passing**; `flutter analyze`: no issues.
 - Build: version **0.7.0+15**.
 
+## Complete routines (0.8.0)
+
+- Routines now have a format: **Simple** keeps the existing flat activity list;
+  **Complete** adds independent cards with title, start/end times, free
+  intermediate times and one optional task per interval.
+- Time editing is centralized in `lib/domain/usecases/routine_sections.dart`:
+  adding a time splits the containing interval (the left side keeps its ID, task
+  and completions), moving a boundary only adjusts the neighbors, and removing a
+  boundary merges intervals. If both sides have tasks, the user must choose which
+  one to keep, so no task is discarded silently.
+- Schema **v11** adds `routines.mode`, `routine_sections`, `routine_intervals` and
+  `routine_interval_completions`. Migrations from v1-v10 preserve existing simple
+  routines without resetting data.
+- Complete routines sync as the same atomic `routine` entity with nested
+  `sections`/`intervals`. Conflict copies regenerate card and interval IDs so they
+  cannot overwrite the original routine's structure.
+- JSON backups now include simple and complete routines, including cards,
+  intervals, tasks and per-date completions; backups accept schema v11.
+- `flutter test`: **333 tests passing**; `flutter analyze`: no issues.
+  Stick2Server: **17 tests passing**, including a complete-routine payload.
+- Build: version **0.8.0+16**.
+- Limitation: conflicts remain routine-level (`[Conflito]` copy); there is no
+  element-level automatic merge.
+
+## Routine conflict merge (0.9.0)
+
+- Schema **v12** adds `sync_bases`, which stores the last payload accepted by
+  the server for each entity. It is local sync metadata: not exported in JSON
+  backups and cleared on backup import.
+- Routine conflicts now use a three-way merge (`base`, `local`, `server`) keyed
+  by stable card, interval and task IDs. Changes to different cards, intervals,
+  fields or completion dates merge into one payload and are re-sent
+  automatically, with no conflict copy.
+- When both sides change the same field or element differently, the server
+  version is kept as the original and the local version becomes a
+  `[Conflito]` copy. Routine conflicts no longer depend only on timestamps, so a
+  newer local edit cannot silently overwrite a server edit to the same element.
+- Stick2Server now protects complete routines from legacy clients: an incoming
+  routine payload without `mode`/`sections` keeps the stored complete cards
+  instead of erasing them. No API endpoint or schema changed.
+- Complete routine cards are displayed in two columns on wide screens; the
+  editor keeps a centered single column so drag reordering stays predictable.
+- `flutter test`: **339 tests passing**; `flutter analyze`: no issues.
+  Stick2Server: **17 tests passing**.
+- Build: version **0.9.0+17**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

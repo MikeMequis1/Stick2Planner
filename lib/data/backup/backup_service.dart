@@ -8,7 +8,11 @@ import '../../data/db/app_database.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
+import '../db/converters.dart';
+import '../mappers/mappers.dart';
+import '../repositories/drift_routine_repository.dart';
 import 'backup_document.dart';
 
 /// Snapshot local criado antes de uma importação.
@@ -77,6 +81,7 @@ final class BackupService {
     final tags = await (_db.select(
       _db.tags,
     )..orderBy([(table) => OrderingTerm(expression: table.name)])).get();
+    final routines = await DriftRoutineRepository(_db).loadAll();
 
     return BackupDocument(
       schemaVersion: _db.schemaVersion,
@@ -88,6 +93,7 @@ final class BackupService {
         'noteLines': [for (final row in noteLines) _noteLineToJson(row)],
         'history': [for (final row in history) _historyToJson(row)],
         'tags': [for (final row in tags) _tagToJson(row)],
+        'routines': [for (final routine in routines) _routineToJson(routine)],
         'settings': [
           for (final row in settings) {'key': row.key, 'value': row.value},
         ],
@@ -111,6 +117,12 @@ final class BackupService {
         await _db.delete(_db.noteLines).go();
         await _db.delete(_db.notes).go();
         await _db.delete(_db.tags).go();
+        await _db.delete(_db.routineIntervalCompletions).go();
+        await _db.delete(_db.routineIntervals).go();
+        await _db.delete(_db.routineSections).go();
+        await _db.delete(_db.routineCompletions).go();
+        await _db.delete(_db.routineItems).go();
+        await _db.delete(_db.routines).go();
         await _db.customStatement(
           "DELETE FROM app_settings WHERE key NOT LIKE 'planner.sync.%'",
         );
@@ -119,6 +131,7 @@ final class BackupService {
         // servidor e deviceId permanecem.
         await _db.delete(_db.syncOutbox).go();
         await _db.delete(_db.syncRowStates).go();
+        await _db.delete(_db.syncBases).go();
         await _db.customStatement(
           "DELETE FROM sync_states WHERE key IN ('cursor', 'last_sync_at', 'last_error')",
         );
@@ -223,6 +236,109 @@ final class BackupService {
           batch.insertAll(_db.tags, tags);
           batch.insertAll(_db.appSettings, settings);
         });
+
+        for (final entry in _rowsOrEmpty(document.data, 'routines')) {
+          final routineId = _string(entry, 'id');
+          final routineCreatedAt = _timestamp(entry, 'createdAt');
+          final routineUpdatedAt = _timestamp(entry, 'updatedAt');
+          await _db
+              .into(_db.routines)
+              .insert(
+                RoutinesCompanion.insert(
+                  id: routineId,
+                  name: _string(entry, 'name'),
+                  details: Value(_nullableString(entry, 'details')),
+                  mode: Value(_routineMode(_string(entry, 'mode'))),
+                  weekdays: Value(
+                    routineWeekdayMask(_weekdays(entry['weekdays'])),
+                  ),
+                  createdAt: routineCreatedAt,
+                  updatedAt: routineUpdatedAt,
+                ),
+              );
+
+          for (final itemEntry in _rowsOrEmpty(entry, 'items')) {
+            final itemId = _string(itemEntry, 'id');
+            await _db
+                .into(_db.routineItems)
+                .insert(
+                  RoutineItemsCompanion.insert(
+                    id: itemId,
+                    routineId: routineId,
+                    title: _string(itemEntry, 'title'),
+                    details: Value(_nullableString(itemEntry, 'details')),
+                    position: _int(itemEntry, 'position'),
+                    createdAt: routineCreatedAt,
+                    updatedAt: routineUpdatedAt,
+                  ),
+                );
+            for (final date in _dateList(itemEntry['completedDates'])) {
+              await _db
+                  .into(_db.routineCompletions)
+                  .insert(
+                    RoutineCompletionsCompanion.insert(
+                      routineItemId: itemId,
+                      date: date,
+                      completedAt: routineUpdatedAt,
+                    ),
+                  );
+            }
+          }
+
+          for (final sectionEntry in _rowsOrEmpty(entry, 'sections')) {
+            final sectionId = _string(sectionEntry, 'id');
+            await _db
+                .into(_db.routineSections)
+                .insert(
+                  RoutineSectionsCompanion.insert(
+                    id: sectionId,
+                    routineId: routineId,
+                    title: _string(sectionEntry, 'title'),
+                    position: _int(sectionEntry, 'position'),
+                    startMinutes: Value(
+                      _nullableInt(sectionEntry, 'startMinutes'),
+                    ),
+                    endMinutes: Value(_nullableInt(sectionEntry, 'endMinutes')),
+                    createdAt: routineCreatedAt,
+                    updatedAt: routineUpdatedAt,
+                  ),
+                );
+            for (final intervalEntry in _rowsOrEmpty(
+              sectionEntry,
+              'intervals',
+            )) {
+              final intervalId = _string(intervalEntry, 'id');
+              await _db
+                  .into(_db.routineIntervals)
+                  .insert(
+                    RoutineIntervalsCompanion.insert(
+                      id: intervalId,
+                      sectionId: sectionId,
+                      startMinutes: _int(intervalEntry, 'startMinutes'),
+                      endMinutes: _int(intervalEntry, 'endMinutes'),
+                      position: _int(intervalEntry, 'position'),
+                      taskTitle: Value(_nullableString(intervalEntry, 'title')),
+                      taskDetails: Value(
+                        _nullableString(intervalEntry, 'details'),
+                      ),
+                      createdAt: routineCreatedAt,
+                      updatedAt: routineUpdatedAt,
+                    ),
+                  );
+              for (final date in _dateList(intervalEntry['completedDates'])) {
+                await _db
+                    .into(_db.routineIntervalCompletions)
+                    .insert(
+                      RoutineIntervalCompletionsCompanion.insert(
+                        intervalId: intervalId,
+                        date: date,
+                        completedAt: routineUpdatedAt,
+                      ),
+                    );
+              }
+            }
+          }
+        }
       });
     } on BackupException {
       rethrow;
@@ -393,6 +509,54 @@ final class BackupService {
     'createdAt': _iso(row.createdAt),
     'updatedAt': _iso(row.updatedAt),
     'deletedAt': _isoOrNull(row.deletedAt),
+  };
+
+  Map<String, Object?> _routineToJson(Routine routine) => {
+    'id': routine.id,
+    'name': routine.name,
+    'details': routine.details,
+    'mode': routine.mode.name,
+    'weekdays': routine.weekdays.toList()..sort(),
+    'items': [
+      for (final item in routine.items)
+        {
+          'id': item.id,
+          'title': item.title,
+          'details': item.details,
+          'position': item.position,
+          'completedDates': [
+            for (final date in item.completedDates.toList()..sort())
+              date.toIso8601String(),
+          ],
+        },
+    ],
+    'sections': [
+      for (final section in routine.sections)
+        {
+          'id': section.id,
+          'title': section.title,
+          'position': section.position,
+          'startMinutes': section.startMinutes,
+          'endMinutes': section.endMinutes,
+          'intervals': [
+            for (final interval in section.intervals)
+              {
+                'id': interval.id,
+                'startMinutes': interval.startMinutes,
+                'endMinutes': interval.endMinutes,
+                'position': interval.position,
+                'title': interval.title,
+                'details': interval.details,
+                'completedDates': [
+                  for (final date in interval.completedDates.toList()..sort())
+                    date.toIso8601String(),
+                ],
+              },
+          ],
+        },
+    ],
+    'createdAt': _iso(dateTimeToStorage(routine.createdAt)),
+    'updatedAt': _iso(dateTimeToStorage(routine.updatedAt)),
   };
 
   static String _iso(int milliseconds) => DateTime.fromMillisecondsSinceEpoch(
@@ -601,5 +765,46 @@ final class BackupService {
       BackupErrorCode.invalidData,
       'ação de histórico $name',
     );
+  }
+
+  static RoutineMode _routineMode(String name) {
+    for (final value in RoutineMode.values) {
+      if (value.name == name) return value;
+    }
+    throw BackupException(
+      BackupErrorCode.invalidData,
+      'formato de rotina $name',
+    );
+  }
+
+  static Set<int> _weekdays(Object? value) {
+    if (value is! List) return const {};
+    final days = <int>{};
+    for (final day in value) {
+      if (day is int && day >= 1 && day <= 7) days.add(day);
+    }
+    return days;
+  }
+
+  static List<DateOnly> _dateList(Object? value) {
+    if (value is! List) return const [];
+    final dates = <DateOnly>[];
+    for (final entry in value) {
+      if (entry is! String) {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'data de conclusão inválida',
+        );
+      }
+      try {
+        dates.add(DateOnly.parse(entry));
+      } on FormatException {
+        throw const BackupException(
+          BackupErrorCode.invalidData,
+          'data de conclusão inválida',
+        );
+      }
+    }
+    return dates;
   }
 }

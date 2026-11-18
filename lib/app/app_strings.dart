@@ -812,6 +812,64 @@ abstract final class AppStrings {
   static String get routines => _t('Rotinas', 'Routines');
   static String get routineNew => _t('Nova rotina', 'New routine');
   static String get routineEdit => _t('Editar rotina', 'Edit routine');
+  static String get routineMode => _t('Formato da rotina', 'Routine format');
+  static String get routineSimple => _t('Simples', 'Simple');
+  static String get routineComplete => _t('Completa', 'Complete');
+  static String get routineSimpleHelp => _t(
+    'Lista rápida de afazeres do dia.',
+    'A quick list of the day\'s tasks.',
+  );
+  static String get routineCompleteHelp => _t(
+    'Cards com horários e tarefas por intervalo.',
+    'Cards with time ranges and tasks per interval.',
+  );
+  static String get routineSectionNew => _t('Novo card', 'New card');
+  static String get routineSectionTitle => _t('Título do card', 'Card title');
+  static String get routineSectionStart => _t('Início', 'Start');
+  static String get routineSectionEnd => _t('Fim', 'End');
+  static String get routineSectionAddTime =>
+      _t('Adicionar horário', 'Add time');
+  static String get routineSectionNoTime =>
+      _t('Defina início e fim para configurar os intervalos.', 'Set start and end to configure intervals.');
+  static String get routineSectionNoIntervals => _t(
+    'Nenhum intervalo. Defina os horários do card.',
+    'No intervals. Set the card times.',
+  );
+  static String get routineRemoveTime => _t('Remover horário', 'Remove time');
+  static String get routineEditTime => _t('Editar horário', 'Edit time');
+  static String get routineMergeTitle =>
+      _t('Unir intervalos com tarefas?', 'Merge intervals with tasks?');
+  static String get routineMergeBody => _t(
+    'Os dois intervalos possuem tarefas. Escolha qual tarefa manter.',
+    'Both intervals have tasks. Choose which task to keep.',
+  );
+  static String get routineKeepLeft => _t('Manter primeira', 'Keep first');
+  static String get routineKeepRight => _t('Manter segunda', 'Keep second');
+  static String get routineTaskTitle => _t('Tarefa', 'Task');
+  static String get routineTaskDetails =>
+      _t('Detalhes da tarefa (opcional)', 'Task details (optional)');
+  static String get routineNoTask => _t('Sem tarefa', 'No task');
+  static String get routineSectionDelete => _t('Excluir card?', 'Delete card?');
+  static String get routineSectionDeleteBody => _t(
+    'As tarefas deste card serão removidas da rotina.',
+    'Tasks in this card will be removed from the routine.',
+  );
+  static String get routineSectionMissingBoundary => _t(
+    'Defina os dois horários do card.',
+    'Set both card times.',
+  );
+  static String get routineSectionEndBeforeStart => _t(
+    'O fim do card deve ser posterior ao início.',
+    'The card end must be after the start.',
+  );
+  static String get routineSectionInvalidInterval => _t(
+    'Os horários do card são inválidos.',
+    'The card times are invalid.',
+  );
+  static String get routineSectionTitleRequired => _t(
+    'Informe o título do card.',
+    'Enter the card title.',
+  );
   static String get routineName => _t('Nome da rotina', 'Routine name');
   static String get routineDescription =>
       _t('Descrição (opcional)', 'Description (optional)');

@@ -7,6 +7,7 @@ import '../../core/clock.dart';
 import '../../core/date_only.dart';
 import '../../domain/entities/routine.dart';
 import '../../domain/repositories/routine_repository.dart';
+import '../../domain/usecases/routine_sections.dart';
 
 final class RoutineItemInput {
   const RoutineItemInput({this.id, required this.title, this.details});
@@ -61,8 +62,10 @@ final class RoutinesController extends ChangeNotifier {
     String? id,
     required String name,
     String? details,
+    RoutineMode mode = RoutineMode.simple,
     required Set<int> weekdays,
     required List<RoutineItemInput> items,
+    List<RoutineSection> sections = const [],
   }) async {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
@@ -82,6 +85,10 @@ final class RoutinesController extends ChangeNotifier {
       for (final item in existing?.items ?? const <RoutineItem>[])
         item.id: item,
     };
+    final previousIntervals = {
+      for (final section in existing?.sections ?? const <RoutineSection>[])
+        for (final interval in section.intervals) interval.id: interval,
+    };
     final drafts = [
       for (var index = 0; index < items.length; index++)
         if (items[index].title.trim().isNotEmpty)
@@ -93,23 +100,64 @@ final class RoutinesController extends ChangeNotifier {
           ),
     ];
 
+    final normalizedSections = mode == RoutineMode.complete
+        ? [
+            for (
+              var sectionIndex = 0;
+              sectionIndex < sections.length;
+              sectionIndex++
+            )
+              sections[sectionIndex].copyWith(
+                position: sectionIndex,
+                createdAt: sections[sectionIndex].createdAt ?? now,
+                intervals: [
+                  for (
+                    var intervalIndex = 0;
+                    intervalIndex < sections[sectionIndex].intervals.length;
+                    intervalIndex++
+                  )
+                    sections[sectionIndex].intervals[intervalIndex].copyWith(
+                      position: intervalIndex,
+                      createdAt:
+                          previousIntervals[sections[sectionIndex]
+                                  .intervals[intervalIndex]
+                                  .id]
+                              ?.createdAt ??
+                          now,
+                    ),
+                ],
+              ),
+          ]
+        : const <RoutineSection>[];
+
+    if (mode == RoutineMode.complete) {
+      final sectionErrors = validateRoutineSections(normalizedSections);
+      if (sectionErrors.isNotEmpty) {
+        throw RoutineSectionValidationException(sectionErrors);
+      }
+    }
+
     final routine = Routine(
       id: routineId,
       name: normalizedName,
+      mode: mode,
       details: _normalizeDetails(details),
       weekdays: {...weekdays},
-      items: [
-        for (final draft in drafts)
-          RoutineItem(
-            id: draft.input.id ?? _uuid.v4(),
-            routineId: routineId,
-            title: draft.title,
-            details: draft.details,
-            position: draft.position,
-            completedDates:
-                previousItems[draft.input.id]?.completedDates ?? const {},
-          ),
-      ],
+      items: mode == RoutineMode.simple
+          ? [
+              for (final draft in drafts)
+                RoutineItem(
+                  id: draft.input.id ?? _uuid.v4(),
+                  routineId: routineId,
+                  title: draft.title,
+                  details: draft.details,
+                  position: draft.position,
+                  completedDates:
+                      previousItems[draft.input.id]?.completedDates ?? const {},
+                ),
+            ]
+          : const [],
+      sections: normalizedSections,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     );
@@ -164,6 +212,29 @@ final class RoutinesController extends ChangeNotifier {
       routineItemId: item.id,
       date: date,
       completed: !completed,
+      at: _clock.now().toUtc(),
+    );
+    await refresh();
+  }
+
+  Future<void> toggleIntervalCompletion(
+    RoutineInterval interval,
+    DateOnly date,
+  ) async {
+    Routine? routine;
+    for (final candidate in _routines) {
+      if (candidate.sections.any(
+        (section) => section.id == interval.sectionId,
+      )) {
+        routine = candidate;
+        break;
+      }
+    }
+    if (routine == null || !routine.runsOn(date)) return;
+    await _repository.setIntervalCompletion(
+      intervalId: interval.id,
+      date: date,
+      completed: !interval.isCompletedOn(date),
       at: _clock.now().toUtc(),
     );
     await refresh();

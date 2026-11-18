@@ -15,6 +15,7 @@ import '../sync/sync_outbox.dart';
 import '../sync/sync_payload.dart';
 import '../sync/sync_state_store.dart';
 import '../sync/sync_transport.dart';
+import '../sync/routine_merge.dart';
 
 /// Executa push/pull, resolve conflitos e mantém cursor/outbox consistentes.
 final class SyncEngine {
@@ -211,6 +212,9 @@ final class SyncEngine {
     }
     final rows = await (pendingQuery..limit(batchSize)).get();
     final changes = [for (final row in rows) _toChange(row)];
+    final pushedPayloads = {
+      for (final change in changes) change.changeId: change.payload,
+    };
     final pushedByEntity = {
       for (final row in rows) '${row.entity}\u0000${row.entityId}': row,
     };
@@ -226,8 +230,18 @@ final class SyncEngine {
     var copies = 0;
 
     await _db.transaction(() async {
+      final conflictKeys = {
+        for (final conflict in response.conflicts)
+          '${conflict.entity}\u0000${conflict.entityId}',
+      };
       for (final change in _sortedByEntity(response.changes)) {
         await _applyChange(change);
+        if (change.entity == syncEntityRoutine &&
+            !conflictKeys.contains(
+              '${change.entity}\u0000${change.entityId}',
+            )) {
+          await _storeBase(change.entity, change.entityId, change.payload);
+        }
       }
 
       for (final conflict in response.conflicts) {
@@ -248,6 +262,53 @@ final class SyncEngine {
           if (current != null) {
             await _setBaseRev(current, conflict.server.rev);
           }
+          continue;
+        }
+
+        if (conflict.entity == syncEntityRoutine) {
+          final localPayload = _decode(row.payload);
+          final localDeleted = _isDeleted(row.entity, localPayload);
+          final serverDeleted = conflict.server.payload['deletedAt'] != null;
+          if (!localDeleted && !serverDeleted) {
+            final base = await _loadBase(conflict.entity, conflict.entityId);
+            if (base != null) {
+              final merged = mergeRoutinePayloads(
+                base: base,
+                local: localPayload,
+                server: conflict.server.payload,
+              );
+              if (merged != null &&
+                  canonicalJsonEncode(merged) ==
+                      canonicalJsonEncode(conflict.server.payload)) {
+                await _deleteRow(row);
+                await _applyChange(conflict.server);
+                await _storeBase(
+                  conflict.entity,
+                  conflict.entityId,
+                  conflict.server.payload,
+                );
+                continue;
+              }
+              if (merged != null) {
+                await _apply.applyRoutine(merged, conflict.server.rev);
+                await _replaceMergedRow(row, merged, conflict.server.rev);
+                if (allowRetry) retryNeeded = true;
+                continue;
+              }
+            }
+          }
+          // Conflito no mesmo elemento: preserva o original e a versão local
+          // como cópia, sem depender de qual relógio é mais novo.
+          if (!localDeleted) {
+            copies += await _copyLocal(row);
+          }
+          await _deleteRow(row);
+          await _applyChange(conflict.server);
+          await _storeBase(
+            conflict.entity,
+            conflict.entityId,
+            conflict.server.payload,
+          );
           continue;
         }
 
@@ -285,6 +346,10 @@ final class SyncEngine {
           } else {
             await _setBaseRev(row, ack.rev);
           }
+        }
+        final acceptedPayload = pushedPayloads[ack.changeId];
+        if (ack.entity == syncEntityRoutine && acceptedPayload != null) {
+          await _storeBase(ack.entity, ack.entityId, acceptedPayload);
         }
         await _db
             .into(_db.syncRowStates)
@@ -422,7 +487,37 @@ final class SyncEngine {
             {...Map<String, Object?>.from(item), 'id': _uuid.v4()},
       ];
     }
+    final sections = payload['sections'];
+    if (sections is List) {
+      copy['sections'] = [
+        for (final section in sections)
+          if (section is Map) _conflictCopySection(section),
+      ];
+    }
     return copy;
+  }
+
+  /// Recria IDs de cards e intervalos para a cópia de conflito.
+  ///
+  /// Sem isso, os IDs globais colidiriam com os da rotina original e a
+  /// aplicação sobrescreveria os cards originais em vez de duplicá-los.
+  Map<String, Object?> _conflictCopySection(Map<Object?, Object?> raw) {
+    final section = Map<String, Object?>.from(raw);
+    final sectionId = _uuid.v4();
+    section['id'] = sectionId;
+    final intervals = section['intervals'];
+    if (intervals is List) {
+      section['intervals'] = [
+        for (final interval in intervals)
+          if (interval is Map)
+            {
+              ...Map<String, Object?>.from(interval),
+              'id': _uuid.v4(),
+              'sectionId': sectionId,
+            },
+      ];
+    }
+    return section;
   }
 
   Future<bool> _hasNote(String id) async {
@@ -446,6 +541,62 @@ final class SyncEngine {
               table.entityId.equals(row.entityId),
         ))
         .write(SyncOutboxCompanion(baseRev: Value(rev)));
+  }
+
+  Future<void> _replaceMergedRow(
+    SyncOutboxRow row,
+    Map<String, Object?> payload,
+    int baseRev,
+  ) async {
+    final updatedAt =
+        DateTime.tryParse((payload['updatedAt'] as String?) ?? '')?.toUtc() ??
+        _now().toUtc();
+    await (_db.update(_db.syncOutbox)..where(
+          (table) =>
+              table.entity.equals(row.entity) &
+              table.entityId.equals(row.entityId),
+        ))
+        .write(
+          SyncOutboxCompanion(
+            payload: Value(canonicalJsonEncode(payload)),
+            changeId: Value(_uuid.v4()),
+            updatedAt: Value(dateTimeToStorage(updatedAt)),
+            baseRev: Value(baseRev),
+            attempts: const Value(0),
+            lastError: const Value(null),
+          ),
+        );
+  }
+
+  Future<Map<String, Object?>?> _loadBase(
+    String entity,
+    String entityId,
+  ) async {
+    final row =
+        await (_db.select(_db.syncBases)..where(
+              (table) =>
+                  table.entity.equals(entity) & table.entityId.equals(entityId),
+            ))
+            .getSingleOrNull();
+    if (row == null) return null;
+    return _decode(row.payload);
+  }
+
+  Future<void> _storeBase(
+    String entity,
+    String entityId,
+    Map<String, Object?> payload,
+  ) async {
+    await _db
+        .into(_db.syncBases)
+        .insertOnConflictUpdate(
+          SyncBasesCompanion.insert(
+            entity: entity,
+            entityId: entityId,
+            payload: canonicalJsonEncode(payload),
+            updatedAt: dateTimeToStorage(_now().toUtc()),
+          ),
+        );
   }
 
   Future<void> _deleteRow(SyncOutboxRow row) async {

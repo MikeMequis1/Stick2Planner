@@ -9,11 +9,13 @@ import 'package:stick2planner/data/backup/backup_service.dart';
 import 'package:stick2planner/data/db/app_database.dart';
 import 'package:stick2planner/data/repositories/drift_note_repository.dart';
 import 'package:stick2planner/data/repositories/drift_post_it_repository.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
 import 'package:stick2planner/data/repositories/drift_settings_repository.dart';
 import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/domain/entities/note.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
 import 'package:stick2planner/domain/entities/post_it_history.dart';
+import 'package:stick2planner/domain/entities/routine.dart';
 
 void main() {
   final exportedAt = DateTime.utc(2026, 11, 4, 12);
@@ -158,6 +160,103 @@ void main() {
     },
   );
 
+  test('exporta e restaura rotinas simples e completas', () async {
+    final source = openDb();
+    await seed(source);
+    final routines = DriftRoutineRepository(source);
+    await routines.save(
+      Routine(
+        id: 'r-simple',
+        name: 'Simples',
+        weekdays: const {1},
+        items: [
+          RoutineItem(
+            id: 'ri1',
+            routineId: 'r-simple',
+            title: 'Alongar',
+            position: 0,
+            completedDates: {DateOnly(2026, 11, 4)},
+          ),
+        ],
+        createdAt: exportedAt,
+        updatedAt: exportedAt,
+      ),
+    );
+    await routines.setCompletion(
+      routineItemId: 'ri1',
+      date: DateOnly(2026, 11, 4),
+      completed: true,
+      at: exportedAt,
+    );
+    await routines.save(
+      Routine(
+        id: 'r-complete',
+        name: 'Completa',
+        mode: RoutineMode.complete,
+        weekdays: const {3},
+        sections: [
+          RoutineSection(
+            id: 'rs1',
+            routineId: 'r-complete',
+            title: 'Manhã',
+            position: 0,
+            startMinutes: 480,
+            endMinutes: 720,
+            intervals: [
+              RoutineInterval(
+                id: 'rv1',
+                sectionId: 'rs1',
+                startMinutes: 480,
+                endMinutes: 600,
+                position: 0,
+                title: 'Estudar',
+                completedDates: {DateOnly(2026, 11, 4)},
+              ),
+              const RoutineInterval(
+                id: 'rv2',
+                sectionId: 'rs1',
+                startMinutes: 600,
+                endMinutes: 720,
+                position: 1,
+                title: 'Trabalhar',
+              ),
+            ],
+          ),
+        ],
+        createdAt: exportedAt,
+        updatedAt: exportedAt,
+      ),
+    );
+
+    final dir = await tempDir();
+    final raw = await serviceFor(source, dir).exportToJson();
+    final document = BackupDocument.parse(raw);
+    expect(document.counts.routines, 2);
+
+    final target = openDb();
+    await serviceFor(target, dir).importJson(raw);
+    final restored = await DriftRoutineRepository(target).loadAll();
+    expect(restored, hasLength(2));
+
+    final simple = restored.singleWhere((item) => item.id == 'r-simple');
+    expect(simple.mode, RoutineMode.simple);
+    expect(simple.items.single.completedDates, {DateOnly(2026, 11, 4)});
+
+    final complete = restored.singleWhere((item) => item.id == 'r-complete');
+    expect(complete.mode, RoutineMode.complete);
+    expect(complete.sections.single.title, 'Manhã');
+    expect(complete.sections.single.startMinutes, 480);
+    expect(complete.sections.single.endMinutes, 720);
+    expect(complete.sections.single.intervals.map((item) => item.title), [
+      'Estudar',
+      'Trabalhar',
+    ]);
+    expect(complete.sections.single.intervals.first.completedDates, {
+      DateOnly(2026, 11, 4),
+    });
+    expect(await serviceFor(target, dir).exportToJson(), raw);
+  });
+
   test('ida e volta reconstrói o mesmo estado', () async {
     final source = openDb();
     await seed(source);
@@ -220,7 +319,7 @@ void main() {
     );
 
     root['formatVersion'] = 1;
-    root['schemaVersion'] = 11;
+    root['schemaVersion'] = 13;
     expect(
       () => BackupDocument.parse(jsonEncode(root)),
       throwsA(
@@ -302,6 +401,7 @@ void main() {
 
     expect(await target.select(target.syncOutbox).get(), isEmpty);
     expect(await target.select(target.syncRowStates).get(), isEmpty);
+    expect(await target.select(target.syncBases).get(), isEmpty);
     expect(await state.cursor(), 0);
   });
 

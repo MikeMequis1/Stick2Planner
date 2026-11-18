@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stick2planner/app/controllers/routines_controller.dart';
 import 'package:stick2planner/core/date_only.dart';
+import 'package:stick2planner/domain/entities/routine.dart';
 
 import '../helpers/test_dependencies.dart';
 
@@ -165,5 +166,60 @@ void main() {
     current = routines.routines.single;
     expect(current.items.map((item) => item.title), ['B', 'A']);
     expect(current.items.map((item) => item.position), [0, 1]);
+  });
+
+  test('rotina completa persiste cards, intervalos e conclusão', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    final routines = dependencies.routines;
+    final section = RoutineSection(
+      id: 's1',
+      routineId: '',
+      title: 'Manhã',
+      position: 0,
+      startMinutes: 8 * 60,
+      endMinutes: 12 * 60,
+      intervals: [
+        const RoutineInterval(
+          id: 'i1',
+          sectionId: 's1',
+          startMinutes: 8 * 60,
+          endMinutes: 10 * 60,
+          position: 0,
+          title: 'Estudar',
+        ),
+        const RoutineInterval(
+          id: 'i2',
+          sectionId: 's1',
+          startMinutes: 10 * 60,
+          endMinutes: 12 * 60,
+          position: 1,
+          title: 'Trabalhar',
+        ),
+      ],
+    );
+
+    final routine = await routines.saveRoutine(
+      name: 'Rotina completa',
+      mode: RoutineMode.complete,
+      weekdays: {1},
+      items: const [],
+      sections: [section],
+    );
+    expect(routine.mode, RoutineMode.complete);
+    expect(routine.sections.single.title, 'Manhã');
+    expect(routine.sections.single.intervals, hasLength(2));
+
+    final monday = DateOnly(2026, 11, 9);
+    await routines.toggleIntervalCompletion(
+      routine.sections.single.intervals.first,
+      monday,
+    );
+    final current = routines.routines.single;
+    expect(current.sections.single.intervals.first.isCompletedOn(monday), isTrue);
+    expect(current.sections.single.intervals.last.isCompletedOn(monday), isFalse);
+    expect(current.completedOn(monday), 1);
+    expect(current.taskCount, 2);
   });
 }

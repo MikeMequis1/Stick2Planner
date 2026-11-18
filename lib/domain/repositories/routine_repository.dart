@@ -16,4 +16,11 @@ abstract interface class RoutineRepository {
     required bool completed,
     required DateTime at,
   });
+
+  Future<void> setIntervalCompletion({
+    required String intervalId,
+    required DateOnly date,
+    required bool completed,
+    required DateTime at,
+  });
 }

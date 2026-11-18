@@ -361,8 +361,7 @@ stages. Each item: context, decision, consequence.
   days at 08:00.
 - The navigation shell now has one adaptive surface: landscape rail with
   Config/Sync pinned at the bottom and a six-action bar in portrait.
-- Routines are not part of sync or JSON backups yet; post-it reminders are
-  carried in both.
+- Routines and post-it reminders are carried in both sync and JSON backups.
 
 ## Routine creation date and list interactions
 
@@ -390,6 +389,63 @@ stages. Each item: context, decision, consequence.
   toggle lines, and a close button leaves it. This keeps tap-to-edit available
   while selection is off and avoids accidental editor openings while selecting.
 - No schema migration was required: `createdAt` already existed from v9.
+
+## Complete routines and interval stability (schema v11)
+
+- `routines.mode` selects simple or complete. Simple keeps `routine_items` for
+  backward compatibility; complete uses normalized `routine_sections`,
+  `routine_intervals` and `routine_interval_completions`. The structure is not
+  stored as a single JSON blob locally, so queries, migrations and sync keep
+  working per element.
+- Intermediate times are internal boundaries of the card: the card stores its
+  own start/end and the ordered intervals. Adding a time splits the interval that
+  contains it; the left side keeps its ID, task and completions while the right
+  side receives a new ID. Moving a boundary only changes the adjacent start/end.
+  Removing a boundary merges neighbors; when both have tasks, the UI must choose
+  which task to keep, otherwise the existing task survives. `RoutineInterval.id`
+  is the stable identity, never the list index.
+- Cards may be created as drafts without boundaries and persist with no
+  intervals. Once configured, validation requires `end > start`, contiguous
+  intervals covering the whole range, unique times inside the card and bounded
+  task titles. Validation lives in the domain use case and is enforced by the
+  controller before persistence, not only by the editor UI.
+- Sync remains atomic per routine: the server stores the nested payload
+  opaquely, so no new entity or API contract was required. Conflict copies now
+  regenerate section and interval IDs; without that, global primary keys would
+  overwrite the original routine's cards.
+- JSON backups include simple and complete routines and accept schema v11.
+  Backup format stays `1` because the `routines` key is additive; older apps
+  reject the newer schema version instead of silently dropping routines.
+- Per-element merge is not implemented: two devices editing different elements
+  of the same routine still produce a routine-level `[Conflito]` copy.
+
+## Routine merge base and element-level conflicts (schema v12)
+
+- `sync_bases` stores the last routine payload accepted by the server, keyed by
+  `(entity, entity_id)`. The outbox stores only the pending local snapshot, so
+  this separate table is what makes a three-way merge possible.
+- On a routine revision conflict, the client merges `base`, `local` and `server`
+  recursively: scalars by field, lists of items/cards/intervals by stable ID and
+  completion dates as a set. Independent additions, edits and completions are
+  combined and re-sent after aligning the base revision.
+- If both sides changed the same scalar or the same element differently, the
+  merge returns no result. For routines this always preserves the server version
+  and creates a local `[Conflito]` copy; unlike other entities, a newer local
+  clock cannot overwrite the same routine element.
+- Remote changes are applied before conflict handling, so the stored base is not
+  overwritten for entities that also appear in the conflict list. Push
+  acknowledgements store the accepted payload as the new base; remote applies
+  store the received payload.
+- `sync_bases` is local and disposable: backup import clears it together with
+  the outbox and row revisions, and it is never exported.
+- Older clients cannot understand `mode`/`sections`. Stick2Server therefore
+  keeps the stored complete routine structure when an update arrives without
+  those keys, while still applying legacy name/weekday/item changes. This is a
+  server-side compatibility guard, not an API change; the old client itself
+  still cannot display cards and must be updated to edit them.
+- Cards are shown in two columns from 680 px of available width. The editor
+  stays in one centered column because the drag handle reorders a single list;
+  a grid would make drop targets ambiguous.
 
 ## Recurring occurrences, Feito and global hints
 

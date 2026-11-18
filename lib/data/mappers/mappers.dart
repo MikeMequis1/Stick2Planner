@@ -153,10 +153,12 @@ TagsCompanion tagToCompanion(Tag tag) => TagsCompanion(
 Routine routineFromRows(
   RoutineRow row,
   List<RoutineItemRow> itemRows,
-  Map<String, Set<DateOnly>> completions,
-) => Routine(
+  Map<String, Set<DateOnly>> completions, {
+  List<RoutineSection> sections = const [],
+}) => Routine(
   id: row.id,
   name: row.name,
+  mode: row.mode,
   details: row.details,
   weekdays: {
     for (var day = 1; day <= 7; day++)
@@ -173,6 +175,7 @@ Routine routineFromRows(
         completedDates: completions[item.id] ?? const {},
       ),
   ],
+  sections: sections,
   createdAt: dateTimeFromStorage(row.createdAt),
   updatedAt: dateTimeFromStorage(row.updatedAt),
 );

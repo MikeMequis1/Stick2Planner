@@ -204,8 +204,28 @@ usuário decidir.
 ## Rotinas
 
 - Rotinas são uma entidade de sync (`routine`) desde o servidor **0.2.2**. O
-  payload é atômico: nome, detalhes, dias da semana, `createdAt`, `updatedAt`,
-  tombstone de exclusão e todas as atividades com suas datas concluídas.
+  payload é atômico: nome, detalhes, formato, dias da semana, `createdAt`,
+  `updatedAt`, tombstone de exclusão, atividades simples com suas datas
+  concluídas e, para rotinas completas, `sections` aninhadas com `intervals`,
+  horários, tarefas e conclusões por data.
+- Um payload completo usa `"mode": "complete"` e mantém IDs estáveis de cards e
+  intervalos. Horários intermediários são as fronteiras entre intervalos
+  consecutivos, então adicionar/remover um horário altera a lista de intervalos
+  preservando os IDs dos elementos não afetados. O servidor armazena essa
+  estrutura aninhada de forma opaca; nenhuma entidade ou rota nova é necessária.
+- O cliente guarda o último payload de rotina aceito pelo servidor em
+  `sync_bases` e faz mesclagem de três vias em conflitos de revisão. Edições
+  independentes em cards, intervalos, campos ou datas de conclusão diferentes
+  são combinadas e reenviadas automaticamente. Se o mesmo elemento mudou de
+  formas diferentes, a versão do servidor permanece como original e a local vira
+  cópia `[Conflito]`; conflitos de rotina nunca dependem apenas de horário.
+- Cópias de conflito regeneram IDs de cards e intervalos junto com o ID da
+  rotina, então uma cópia `[Conflito]` nunca sobrescreve a estrutura da rotina
+  original.
+- O Stick2Server preserva os cards completos armazenados quando chega uma
+  atualização de cliente anterior à 0.8 sem `mode`/`sections`. Clientes antigos
+  ainda não exibem cards, mas suas edições de rotina não apagam mais a estrutura
+  aninhada.
 - `createdAt` é o instante de criação do registro e é preservado nas edições.
   Ocorrências só aparecem a partir da data local de criação; assim um período
   offline ou um sync atrasado nunca gera atividades anteriores à existência da

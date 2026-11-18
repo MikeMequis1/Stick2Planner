@@ -10,6 +10,7 @@ import '../../core/date_only.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
 import 'converters.dart';
 import 'tables.dart';
@@ -31,8 +32,12 @@ part 'app_database.g.dart';
     Routines,
     RoutineItems,
     RoutineCompletions,
+    RoutineSections,
+    RoutineIntervals,
+    RoutineIntervalCompletions,
     SyncOutbox,
     SyncRowStates,
+    SyncBases,
     SyncStates,
   ],
 )
@@ -40,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,6 +141,26 @@ class AppDatabase extends _$AppDatabase {
         if (await _hasTable('post_its') &&
             !await _hasColumn('post_its', 'occurrence_statuses')) {
           await migrator.addColumn(postIts, postIts.occurrenceStatuses);
+        }
+      }
+      if (from < 11) {
+        if (await _hasTable('routines') &&
+            !await _hasColumn('routines', 'mode')) {
+          await migrator.addColumn(routines, routines.mode);
+        }
+        if (!await _hasTable('routine_sections')) {
+          await migrator.createTable(routineSections);
+        }
+        if (!await _hasTable('routine_intervals')) {
+          await migrator.createTable(routineIntervals);
+        }
+        if (!await _hasTable('routine_interval_completions')) {
+          await migrator.createTable(routineIntervalCompletions);
+        }
+      }
+      if (from < 12) {
+        if (!await _hasTable('sync_bases')) {
+          await migrator.createTable(syncBases);
         }
       }
     },

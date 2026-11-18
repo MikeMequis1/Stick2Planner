@@ -364,8 +364,7 @@ etapas. Cada item: contexto, decisão, consequência.
   dias às 08:00.
 - A casca de navegação agora tem uma superfície adaptativa: trilho em paisagem
   com Config/Sync no rodapé e barra de seis ações em retrato.
-- Rotinas ainda não entram no sync nem no backup JSON; lembretes de post-its
-  entram nos dois.
+- Rotinas e lembretes de post-its entram no sync e no backup JSON.
 
 ## Data de criação da rotina e interações de lista
 
@@ -393,6 +392,66 @@ etapas. Cada item: contexto, decisão, consequência.
   toques alternam linhas e um botão de fechar sai. Assim o toque para editar
   continua disponível fora da seleção e evita abrir o editor sem querer.
 - Nenhuma migração de esquema foi necessária: `createdAt` já existia desde a v9.
+
+## Rotinas completas e estabilidade dos intervalos (esquema v11)
+
+- `routines.mode` seleciona simples ou completa. O modo simples mantém
+  `routine_items` por compatibilidade; o completo usa `routine_sections`,
+  `routine_intervals` e `routine_interval_completions` normalizados. A estrutura
+  não é gravada como um único JSON local, preservando consultas, migrações e
+  sync por elemento.
+- Horários intermediários são fronteiras internas do card: ele guarda início/fim
+  e os intervalos ordenados. Adicionar um horário divide o intervalo que o
+  contém; o lado esquerdo mantém ID, tarefa e conclusões, e o direito recebe um
+  ID novo. Mover uma fronteira só ajusta início/fim vizinhos. Remover uma
+  fronteira une os intervalos; se os dois tiverem tarefas, a interface exige a
+  escolha de qual manter, senão a tarefa existente sobrevive. O ID do intervalo
+  é a identidade estável, nunca o índice da lista.
+- Cards podem ser criados como rascunho sem horários e persistir sem intervalos.
+  Depois de configurados, a validação exige `fim > início`, intervalos contíguos
+  cobrindo todo o período, horários únicos no card e títulos dentro do limite. A
+  validação fica no caso de uso do domínio e é aplicada pelo controller antes da
+  persistência, não apenas pela interface.
+- O sync continua atômico por rotina: o servidor armazena o payload aninhado de
+  forma opaca, então nenhuma entidade ou contrato novo foi necessário. Cópias de
+  conflito agora regeneram IDs de cards e intervalos; sem isso, chaves primárias
+  globais sobrescreveriam os cards da rotina original.
+- O backup JSON inclui rotinas simples e completas e aceita o esquema v11. O
+  formato de backup continua `1` porque a chave `routines` é aditiva; apps
+  antigos recusam a versão de esquema nova em vez de descartar rotinas em
+  silêncio.
+- Não há mesclagem por elemento: dois dispositivos editando elementos diferentes
+  da mesma rotina ainda geram uma cópia `[Conflito]` no nível da rotina.
+
+## Base de mesclagem e conflitos por elemento (esquema v12)
+
+- `sync_bases` guarda o último payload de rotina aceito pelo servidor, por
+  `(entity, entity_id)`. A outbox guarda apenas o estado local pendente; esta
+  tabela separada é o que permite a mesclagem de três vias.
+- Em conflito de revisão de rotina, o cliente mescla `base`, `local` e
+  `servidor` recursivamente: escalares por campo, listas de atividades/cards/
+  intervalos por ID estável e datas de conclusão como conjunto. Adições, edições
+  e conclusões independentes são combinadas e reenviadas após alinhar a revisão
+  base.
+- Se os dois lados mudaram o mesmo escalar ou o mesmo elemento de formas
+  diferentes, a mesclagem não retorna resultado. Para rotinas isso sempre
+  preserva a versão do servidor e cria uma cópia local `[Conflito]`; diferente
+  das outras entidades, um relógio local mais novo não sobrescreve o mesmo
+  elemento da rotina.
+- Mudanças remotas são aplicadas antes do tratamento de conflitos, então a base
+  armazenada não é sobrescrita para entidades que também aparecem na lista de
+  conflitos. Acks de push guardam o payload aceito como nova base; aplicações
+  remotas guardam o payload recebido.
+- `sync_bases` é local e descartável: a importação de backup a limpa junto com a
+  outbox e as revisões, e ela nunca é exportada.
+- Clientes antigos não entendem `mode`/`sections`. Por isso o Stick2Server
+  mantém a estrutura completa armazenada quando chega uma atualização sem essas
+  chaves, aplicando ainda nome/dias/atividades legadas. É uma proteção de
+  compatibilidade no servidor, não uma mudança de API; o cliente antigo continua
+  sem exibir cards e precisa ser atualizado para editá-los.
+- Cards aparecem em duas colunas a partir de 680 px de largura disponível. O
+  editor permanece em uma coluna centralizada porque a alça reordena uma lista
+  única; uma grade tornaria os alvos de soltura ambíguos.
 
 ## Ocorrências recorrentes, Feito e dicas globais
 

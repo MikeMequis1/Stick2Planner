@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
+import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/data/db/app_database.dart';
+import 'package:stick2planner/data/repositories/drift_routine_repository.dart';
+import 'package:stick2planner/domain/entities/routine.dart';
 import 'package:stick2planner/domain/entities/tag.dart';
 
 const _v4Schema = '''
@@ -69,7 +72,7 @@ INSERT INTO post_it_history_entries VALUES ('h1', 'p1', 'created', NULL, 'x', 10
 
 void main() {
   test(
-    'migra v4 para v10 preservando dados e criando tabelas de sync',
+    'migra v4 para v12 preservando dados e criando tabelas de sync',
     () async {
       final directory = await Directory.systemTemp.createTemp('s2p_migrate_');
       addTearDown(() => directory.delete(recursive: true));
@@ -85,7 +88,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 10);
+      expect(db.schemaVersion, 12);
 
       final notes = await db.select(db.notes).get();
       final postIts = await db.select(db.postIts).get();
@@ -107,7 +110,7 @@ void main() {
     },
   );
 
-  test('banco novo já nasce com o esquema v10', () async {
+  test('banco novo já nasce com o esquema v12', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
@@ -115,6 +118,61 @@ void main() {
         .into(db.syncStates)
         .insert(SyncStatesCompanion.insert(key: 'device_id', value: 'x'));
     expect(await db.select(db.syncStates).get(), hasLength(1));
+  });
+
+  test('migra v10 para v12 preservando rotinas simples', () async {
+    final directory = await Directory.systemTemp.createTemp('s2p_routine_v10_');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}planner.sqlite',
+    );
+
+    final raw = sqlite.sqlite3.open(file.path);
+    raw.execute('''
+      CREATE TABLE routines (
+        id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        details TEXT,
+        weekdays INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (id)
+      );
+      CREATE TABLE routine_items (
+        id TEXT NOT NULL,
+        routine_id TEXT NOT NULL REFERENCES routines (id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        details TEXT,
+        position INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (id)
+      );
+      CREATE TABLE routine_completions (
+        routine_item_id TEXT NOT NULL REFERENCES routine_items (id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        completed_at INTEGER NOT NULL,
+        PRIMARY KEY (routine_item_id, date)
+      );
+      INSERT INTO routines VALUES ('r1', 'Antiga', NULL, 1, 1000, 1000);
+      INSERT INTO routine_items VALUES ('i1', 'r1', 'Alongar', NULL, 0, 1000, 1000);
+      INSERT INTO routine_completions VALUES ('i1', '2026-11-04', 1000);
+      PRAGMA user_version = 10;
+    ''');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+
+    final routines = await DriftRoutineRepository(db).loadAll();
+    expect(routines.single.id, 'r1');
+    expect(routines.single.mode, RoutineMode.simple);
+    expect(routines.single.items.single.title, 'Alongar');
+    expect(routines.single.items.single.completedDates, {
+      DateOnly(2026, 11, 4),
+    });
+    expect(routines.single.sections, isEmpty);
+    expect(await db.select(db.syncBases).get(), isEmpty);
   });
 
   test('migra tom de tag removido para a matiz terciária', () async {

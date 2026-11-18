@@ -36,9 +36,10 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
   redimensionar ficam indisponíveis de propósito.
 - **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
   sem data.
-- **Rotinas:** quadro semanal por dia com progresso, cards expansíveis,
-  atividades com arrastar e soltar, conclusão independente por ocorrência,
-  ocorrências que nunca antecedem a criação da rotina e sync com o servidor.
+- **Rotinas:** lista semanal simples ou cards completos com horário inicial/final,
+  horários intermediários livres e uma tarefa por intervalo. Conclusão por dia,
+  reordenação por arrastar e soltar, ocorrências que nunca antecedem a criação da
+  rotina, mesclagem de conflitos por elemento, sync com o servidor e backup JSON.
 - **Notificações:** resumo diário e lembretes por item (minutos antes), agendados
   localmente no Android sem internet.
 - **Navegação:** trilho único adaptativo em paisagem/desktop (Config/Sync no
@@ -63,7 +64,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 ## Stack
 
 - Flutter / Dart; SDK Android, toolchain C++ do Windows e GTK 3 no Linux.
-- Drift + SQLite (esquema v10, migrações v1 → v10). O mesmo esquema é usado no
+- Drift + SQLite (esquema v12, migrações v1 → v12). O mesmo esquema é usado no
   Android, Windows e Linux; no desktop os dados ficam no diretório de suporte de
   cada plataforma.
 - Servidor de sincronização opcional em Dart/shelf + SQLite, com imagens Docker

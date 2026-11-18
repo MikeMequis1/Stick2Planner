@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/canonical_json.dart';
+import '../../core/date_only.dart';
 
 /// Identificador do arquivo de backup do Planner.
 const backupFormatName = 'stick2planner-backup';
@@ -9,7 +10,7 @@ const backupFormatName = 'stick2planner-backup';
 const backupFormatVersion = 1;
 
 /// Versões de esquema local cujos backups podem ser importados.
-const supportedBackupSchemaVersions = <int>{4, 5, 6, 7, 8, 9, 10};
+const supportedBackupSchemaVersions = <int>{4, 5, 6, 7, 8, 9, 10, 11, 12};
 
 /// Falhas previstas ao ler, validar ou aplicar um backup.
 enum BackupErrorCode {
@@ -41,6 +42,7 @@ final class BackupCounts {
     required this.history,
     required this.settings,
     this.tags = 0,
+    this.routines = 0,
   });
 
   final int postIts;
@@ -49,6 +51,7 @@ final class BackupCounts {
   final int history;
   final int settings;
   final int tags;
+  final int routines;
 
   Map<String, Object?> toJson() => {
     'postIts': postIts,
@@ -57,6 +60,7 @@ final class BackupCounts {
     'history': history,
     'settings': settings,
     'tags': tags,
+    'routines': routines,
   };
 
   static BackupCounts fromJson(Object? value) {
@@ -68,6 +72,9 @@ final class BackupCounts {
       history: _asInt(map['history'], 'counts.history'),
       settings: _asInt(map['settings'], 'counts.settings'),
       tags: map['tags'] == null ? 0 : _asInt(map['tags'], 'counts.tags'),
+      routines: map['routines'] == null
+          ? 0
+          : _asInt(map['routines'], 'counts.routines'),
     );
   }
 
@@ -79,11 +86,12 @@ final class BackupCounts {
       other.noteLines == noteLines &&
       other.history == history &&
       other.settings == settings &&
-      other.tags == tags;
+      other.tags == tags &&
+      other.routines == routines;
 
   @override
   int get hashCode =>
-      Object.hash(postIts, notes, noteLines, history, settings, tags);
+      Object.hash(postIts, notes, noteLines, history, settings, tags, routines);
 }
 
 /// Documento de backup já validado.
@@ -252,11 +260,15 @@ final class BackupDocument {
         final row = _asMap(entry, 'data.tags[]');
         return row['deletedAt'] == null;
       }).length,
+      routines: _routines(data).length,
     );
   }
 
   static List<Object?> _tags(Map<String, Object?> data) =>
       data['tags'] is List ? data['tags'] as List : const [];
+
+  static List<Object?> _routines(Map<String, Object?> data) =>
+      data['routines'] is List ? data['routines'] as List : const [];
 
   static BackupCounts _rawCountsOf(Map<String, Object?> data) => BackupCounts(
     postIts: _asList(data['postIts'], 'data.postIts').length,
@@ -265,6 +277,7 @@ final class BackupDocument {
     history: _asList(data['history'], 'data.history').length,
     settings: _asList(data['settings'], 'data.settings').length,
     tags: _tags(data).length,
+    routines: _routines(data).length,
   );
 
   static void _validateStructure(Map<String, Object?> data) {
@@ -420,6 +433,165 @@ final class BackupDocument {
       _optionalTimestamp(row['deletedAt'], 'tags.deletedAt');
     }
 
+    final routines = _routines(data);
+    final routineIds = <String>{};
+    final itemIds = <String>{};
+    final sectionIds = <String>{};
+    final intervalIds = <String>{};
+    for (final entry in routines) {
+      final row = _asMap(entry, 'data.routines[]');
+      final id = _asString(row['id'], 'routines.id');
+      if (!routineIds.add(id)) {
+        throw BackupException(
+          BackupErrorCode.invalidData,
+          'rotina duplicada $id',
+        );
+      }
+      _asString(row['name'], 'routines.name');
+      final mode = _asString(row['mode'], 'routines.mode');
+      if (mode != 'simple' && mode != 'complete') {
+        throw BackupException(
+          BackupErrorCode.invalidData,
+          'routines.mode inválido',
+        );
+      }
+      final weekdays = _asList(row['weekdays'], 'routines.weekdays');
+      final seenWeekdays = <int>{};
+      for (final weekday in weekdays) {
+        if (weekday is! int || weekday < 1 || weekday > 7) {
+          throw const BackupException(
+            BackupErrorCode.invalidData,
+            'routines.weekdays inválido',
+          );
+        }
+        if (!seenWeekdays.add(weekday)) {
+          throw const BackupException(
+            BackupErrorCode.invalidData,
+            'routines.weekdays duplicado',
+          );
+        }
+      }
+      _requiredTimestamp(row['createdAt'], 'routines.createdAt');
+      _requiredTimestamp(row['updatedAt'], 'routines.updatedAt');
+
+      final items = row['items'] == null
+          ? const <Object?>[]
+          : _asList(row['items'], 'routines.items');
+      for (final itemEntry in items) {
+        final item = _asMap(itemEntry, 'routines.items[]');
+        final itemId = _asString(item['id'], 'routines.items.id');
+        if (!itemIds.add(itemId)) {
+          throw BackupException(
+            BackupErrorCode.invalidData,
+            'atividade duplicada $itemId',
+          );
+        }
+        _asString(item['title'], 'routines.items.title');
+        _optionalString(item['details'], 'routines.items.details');
+        _asInt(item['position'], 'routines.items.position');
+        _dates(item['completedDates'], 'routines.items.completedDates');
+      }
+
+      final sections = row['sections'] == null
+          ? const <Object?>[]
+          : _asList(row['sections'], 'routines.sections');
+      for (final sectionEntry in sections) {
+        final section = _asMap(sectionEntry, 'routines.sections[]');
+        final sectionId = _asString(section['id'], 'routines.sections.id');
+        if (!sectionIds.add(sectionId)) {
+          throw BackupException(
+            BackupErrorCode.invalidData,
+            'card duplicado $sectionId',
+          );
+        }
+        _asString(section['title'], 'routines.sections.title');
+        _asInt(section['position'], 'routines.sections.position');
+        final start = _optionalMinutes(
+          section['startMinutes'],
+          'routines.sections.startMinutes',
+        );
+        final end = _optionalMinutes(
+          section['endMinutes'],
+          'routines.sections.endMinutes',
+        );
+        if ((start == null) != (end == null)) {
+          throw const BackupException(
+            BackupErrorCode.invalidData,
+            'card com apenas um horário',
+          );
+        }
+        if (start != null && end != null && end <= start) {
+          throw const BackupException(
+            BackupErrorCode.invalidData,
+            'fim do card anterior ao início',
+          );
+        }
+        final intervals = section['intervals'] == null
+            ? const <Object?>[]
+            : _asList(section['intervals'], 'routines.sections.intervals');
+        var expectedStart = start;
+        for (final intervalEntry in intervals) {
+          final interval = _asMap(
+            intervalEntry,
+            'routines.sections.intervals[]',
+          );
+          final intervalId = _asString(interval['id'], 'routines.intervals.id');
+          if (!intervalIds.add(intervalId)) {
+            throw BackupException(
+              BackupErrorCode.invalidData,
+              'intervalo duplicado $intervalId',
+            );
+          }
+          final intervalStart = _asInt(
+            interval['startMinutes'],
+            'routines.intervals.startMinutes',
+          );
+          final intervalEnd = _asInt(
+            interval['endMinutes'],
+            'routines.intervals.endMinutes',
+          );
+          if (intervalStart < 0 ||
+              intervalEnd > 1440 ||
+              intervalStart >= intervalEnd) {
+            throw const BackupException(
+              BackupErrorCode.invalidData,
+              'intervalo com horário inválido',
+            );
+          }
+          if (start != null &&
+              end != null &&
+              (intervalStart < start || intervalEnd > end)) {
+            throw const BackupException(
+              BackupErrorCode.invalidData,
+              'intervalo fora dos limites do card',
+            );
+          }
+          if (expectedStart != null && intervalStart != expectedStart) {
+            throw const BackupException(
+              BackupErrorCode.invalidData,
+              'intervalos descontínuos',
+            );
+          }
+          expectedStart = intervalEnd;
+          _asInt(interval['position'], 'routines.intervals.position');
+          _optionalString(interval['title'], 'routines.intervals.title');
+          _optionalString(interval['details'], 'routines.intervals.details');
+          _dates(
+            interval['completedDates'],
+            'routines.intervals.completedDates',
+          );
+        }
+        if (start != null && end != null) {
+          if (intervals.isEmpty || expectedStart != end) {
+            throw const BackupException(
+              BackupErrorCode.invalidData,
+              'card configurado sem intervalos completos',
+            );
+          }
+        }
+      }
+    }
+
     final history = _asList(data['history'], 'data.history');
     final historyIds = <String>{};
     for (final entry in history) {
@@ -521,4 +693,34 @@ int _requiredTimestamp(Object? value, String field) {
 void _optionalTimestamp(Object? value, String field) {
   if (value == null) return;
   _requiredTimestamp(value, field);
+}
+
+String? _optionalString(Object? value, String field) {
+  if (value == null) return null;
+  return _asString(value, field);
+}
+
+int? _optionalMinutes(Object? value, String field) {
+  if (value == null) return null;
+  final minutes = _asInt(value, field);
+  if (minutes < 0 || minutes > 1440) {
+    throw BackupException(BackupErrorCode.invalidData, '$field inválido');
+  }
+  return minutes;
+}
+
+List<String> _dates(Object? value, String field) {
+  if (value == null) return const [];
+  final entries = _asList(value, field);
+  final dates = <String>[];
+  for (final entry in entries) {
+    final text = _asString(entry, field);
+    try {
+      DateOnly.parse(text);
+    } on FormatException {
+      throw BackupException(BackupErrorCode.invalidData, '$field inválido');
+    }
+    dates.add(text);
+  }
+  return dates;
 }

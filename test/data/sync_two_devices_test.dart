@@ -11,6 +11,7 @@ import 'package:stick2planner/data/sync/sync_state_store.dart';
 import 'package:stick2planner/data/sync/sync_transport.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
 import 'package:stick2planner/domain/entities/routine.dart';
+import 'package:stick2planner/domain/usecases/routine_sections.dart';
 import 'package:stick2planner/domain/entities/tag.dart';
 
 /// Servidor mínimo em memória, com a mesma semântica de rev/conflito.
@@ -448,5 +449,469 @@ void main() {
     final onB = (await repoB.loadAll()).single;
     expect(onB.recurrenceEndDate, DateOnly(2026, 11, 6));
     expect(onB.occurrenceStatuses[DateOnly(2026, 11, 5)], PostItStatus.done);
+  });
+
+  test('rotina completa sincroniza cards, intervalos e tarefas', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftRoutineRepository(dbA);
+    final repoB = DriftRoutineRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final routine = Routine(
+      id: 'r2',
+      name: 'Rotina completa',
+      mode: RoutineMode.complete,
+      weekdays: const {3},
+      sections: [
+        RoutineSection(
+          id: 's1',
+          routineId: 'r2',
+          title: 'Manhã',
+          position: 0,
+          startMinutes: 480,
+          endMinutes: 720,
+          intervals: [
+            RoutineInterval(
+              id: 'i1',
+              sectionId: 's1',
+              startMinutes: 480,
+              endMinutes: 600,
+              position: 0,
+              title: 'Estudar',
+            ),
+            RoutineInterval(
+              id: 'i2',
+              sectionId: 's1',
+              startMinutes: 600,
+              endMinutes: 720,
+              position: 1,
+              title: 'Trabalhar',
+              completedDates: {DateOnly(2026, 11, 4)},
+            ),
+          ],
+        ),
+      ],
+      createdAt: t0,
+      updatedAt: t0,
+    );
+
+    await repoA.save(routine);
+    await engineA.run();
+    await engineB.run();
+
+    final onB = (await repoB.loadAll()).single;
+    expect(onB.mode, RoutineMode.complete);
+    expect(onB.sections.single.title, 'Manhã');
+    expect(onB.sections.single.intervals.map((item) => item.title), [
+      'Estudar',
+      'Trabalhar',
+    ]);
+    expect(onB.sections.single.intervals.last.completedDates, {
+      DateOnly(2026, 11, 4),
+    });
+  });
+
+  test('card novo, horário dividido e card removido sincronizam', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftRoutineRepository(dbA);
+    final repoB = DriftRoutineRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final section = RoutineSection(
+      id: 's1',
+      routineId: 'r3',
+      title: 'Manhã',
+      position: 0,
+      startMinutes: 480,
+      endMinutes: 720,
+      intervals: [
+        RoutineInterval(
+          id: 'i1',
+          sectionId: 's1',
+          startMinutes: 480,
+          endMinutes: 600,
+          position: 0,
+          title: 'Estudar',
+        ),
+        RoutineInterval(
+          id: 'i2',
+          sectionId: 's1',
+          startMinutes: 600,
+          endMinutes: 720,
+          position: 1,
+          title: 'Trabalhar',
+          completedDates: {DateOnly(2026, 11, 4)},
+        ),
+      ],
+    );
+    final routine = Routine(
+      id: 'r3',
+      name: 'Rotina completa',
+      mode: RoutineMode.complete,
+      weekdays: const {3},
+      sections: [section],
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    await repoA.save(routine);
+    await engineA.run();
+    await engineB.run();
+
+    // B divide o primeiro intervalo e cria outro card.
+    final onB = (await repoB.loadAll()).single;
+    final split = addSectionTime(
+      onB.sections.single,
+      minutes: 540,
+      idGenerator: () => 'i3',
+    );
+    final afternoon = RoutineSection(
+      id: 's2',
+      routineId: 'r3',
+      title: 'Tarde',
+      position: 1,
+      startMinutes: 780,
+      endMinutes: 900,
+      intervals: const [
+        RoutineInterval(
+          id: 'i4',
+          sectionId: 's2',
+          startMinutes: 780,
+          endMinutes: 900,
+          position: 0,
+          title: 'Almoçar',
+        ),
+      ],
+    );
+    await repoB.save(
+      onB.copyWith(
+        sections: [split, afternoon],
+        updatedAt: t0.add(const Duration(minutes: 1)),
+      ),
+    );
+    await engineB.run();
+    await engineA.run();
+
+    var onA = (await repoA.loadAll()).single;
+    expect(onA.sections.map((item) => item.id), ['s1', 's2']);
+    expect(onA.sections.first.intervals.map((item) => item.id), [
+      'i1',
+      'i3',
+      'i2',
+    ]);
+    expect(onA.sections.first.intervals[1].title, isNull);
+    expect(onA.sections.last.intervals.single.title, 'Almoçar');
+
+    // A remove o horário intermediário (une i1/i3) e exclui o card da tarde.
+    final merged = removeSectionTime(onA.sections.first, minutes: 540);
+    await repoA.save(
+      onA.copyWith(
+        sections: [merged],
+        updatedAt: t0.add(const Duration(minutes: 2)),
+      ),
+    );
+    await engineA.run();
+    await engineB.run();
+
+    final finalB = (await repoB.loadAll()).single;
+    expect(finalB.sections.map((item) => item.id), ['s1']);
+    expect(finalB.sections.single.intervals.map((item) => item.id), [
+      'i1',
+      'i2',
+    ]);
+    expect(finalB.sections.single.intervals.first.title, 'Estudar');
+    expect(finalB.sections.single.intervals.first.endMinutes, 600);
+    expect(finalB.sections.single.intervals.last.completedDates, {
+      DateOnly(2026, 11, 4),
+    });
+
+    await repoA.delete('r3');
+    await engineA.run();
+    await engineB.run();
+    expect(await repoB.loadAll(), isEmpty);
+    expect(await dbB.select(dbB.routineSections).get(), isEmpty);
+    expect(await dbB.select(dbB.routineIntervals).get(), isEmpty);
+    expect(await dbB.select(dbB.routineIntervalCompletions).get(), isEmpty);
+  });
+
+  test('mescla conflito de rotina quando dispositivos alteram elementos diferentes', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftRoutineRepository(dbA);
+    final repoB = DriftRoutineRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final routine = Routine(
+      id: 'r5',
+      name: 'Rotina',
+      mode: RoutineMode.complete,
+      weekdays: const {3},
+      sections: const [
+        RoutineSection(
+          id: 's1',
+          routineId: 'r5',
+          title: 'Manhã',
+          position: 0,
+          startMinutes: 480,
+          endMinutes: 600,
+          intervals: [
+            RoutineInterval(
+              id: 'i1',
+              sectionId: 's1',
+              startMinutes: 480,
+              endMinutes: 600,
+              position: 0,
+              title: 'Estudar',
+            ),
+          ],
+        ),
+        RoutineSection(
+          id: 's2',
+          routineId: 'r5',
+          title: 'Tarde',
+          position: 1,
+          startMinutes: 780,
+          endMinutes: 900,
+          intervals: [
+            RoutineInterval(
+              id: 'i2',
+              sectionId: 's2',
+              startMinutes: 780,
+              endMinutes: 900,
+              position: 0,
+              title: 'Trabalhar',
+            ),
+          ],
+        ),
+      ],
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    await repoA.save(routine);
+    await engineA.run();
+    await engineB.run();
+
+    // B edita o card da manhã e conclui a tarefa.
+    final onB = (await repoB.loadAll()).single;
+    await repoB.save(
+      onB.copyWith(
+        sections: [
+          onB.sections.first.copyWith(
+            intervals: [
+              onB.sections.first.intervals.single.copyWith(
+                title: 'Manhã B',
+                completedDates: {DateOnly(2026, 11, 4)},
+              ),
+            ],
+          ),
+          onB.sections.last,
+        ],
+        updatedAt: t0.add(const Duration(minutes: 2)),
+      ),
+    );
+    await engineB.run();
+
+    // A edita outro card e adiciona um card novo.
+    final onA = (await repoA.loadAll()).single;
+    await repoA.save(
+      onA.copyWith(
+        sections: [
+          onA.sections.first,
+          onA.sections.last.copyWith(
+            intervals: [
+              onA.sections.last.intervals.single.copyWith(title: 'Tarde A'),
+            ],
+          ),
+          const RoutineSection(
+            id: 's3',
+            routineId: 'r5',
+            title: 'Noite',
+            position: 2,
+            startMinutes: 1140,
+            endMinutes: 1260,
+            intervals: [
+              RoutineInterval(
+                id: 'i3',
+                sectionId: 's3',
+                startMinutes: 1140,
+                endMinutes: 1260,
+                position: 0,
+                title: 'Ler',
+              ),
+            ],
+          ),
+        ],
+        updatedAt: t0.add(const Duration(minutes: 1)),
+      ),
+    );
+    final report = await engineA.run();
+    expect(report.conflicts, 1);
+    expect(report.copies, 0);
+
+    Future<void> expectMerged(DriftRoutineRepository repo) async {
+      final merged = (await repo.loadAll()).single;
+      expect(merged.sections.map((section) => section.id), ['s1', 's2', 's3']);
+      expect(merged.sections[0].intervals.single.title, 'Manhã B');
+      expect(merged.sections[0].intervals.single.completedDates, {
+        DateOnly(2026, 11, 4),
+      });
+      expect(merged.sections[1].intervals.single.title, 'Tarde A');
+      expect(merged.sections[2].intervals.single.title, 'Ler');
+    }
+
+    await expectMerged(repoA);
+    await engineB.run();
+    await expectMerged(repoB);
+    expect(await dbA.select(dbA.syncOutbox).get(), isEmpty);
+  });
+
+  test('conflito no mesmo elemento mantém original e cópia', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftRoutineRepository(dbA);
+    final repoB = DriftRoutineRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final routine = Routine(
+      id: 'r4',
+      name: 'Rotina',
+      mode: RoutineMode.complete,
+      weekdays: const {3},
+      sections: const [
+        RoutineSection(
+          id: 's1',
+          routineId: 'r4',
+          title: 'Manhã',
+          position: 0,
+          startMinutes: 480,
+          endMinutes: 600,
+          intervals: [
+            RoutineInterval(
+              id: 'i1',
+              sectionId: 's1',
+              startMinutes: 480,
+              endMinutes: 600,
+              position: 0,
+              title: 'Estudar',
+            ),
+          ],
+        ),
+      ],
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    await repoA.save(routine);
+    await engineA.run();
+    await engineB.run();
+
+    // B altera a tarefa e envia primeiro.
+    final onB = (await repoB.loadAll()).single;
+    await repoB.save(
+      onB.copyWith(
+        sections: [
+          onB.sections.single.copyWith(
+            intervals: [
+              onB.sections.single.intervals.single.copyWith(
+                title: 'Trabalhar B',
+              ),
+            ],
+          ),
+        ],
+        updatedAt: t0.add(const Duration(minutes: 2)),
+      ),
+    );
+    await engineB.run();
+
+    // A altera o mesmo card com timestamp mais antigo: vira cópia.
+    final onA = (await repoA.loadAll()).single;
+    await repoA.save(
+      onA.copyWith(
+        sections: [
+          onA.sections.single.copyWith(
+            intervals: [
+              onA.sections.single.intervals.single.copyWith(title: 'Estudar A'),
+            ],
+          ),
+        ],
+        updatedAt: t0.add(const Duration(minutes: 1)),
+      ),
+    );
+    final report = await engineA.run();
+    expect(report.conflicts, 1);
+    expect(report.copies, 1);
+
+    final routinesA = await repoA.loadAll();
+    expect(routinesA, hasLength(2));
+    final originalA = routinesA.singleWhere((item) => item.id == 'r4');
+    final copyA = routinesA.singleWhere((item) => item.id != 'r4');
+    expect(originalA.name, 'Rotina');
+    expect(originalA.sections.single.id, 's1');
+    expect(originalA.sections.single.intervals.single.id, 'i1');
+    expect(originalA.sections.single.intervals.single.title, 'Trabalhar B');
+    expect(copyA.name, '[Conflito] Rotina');
+    expect(copyA.sections.single.id, isNot('s1'));
+    expect(copyA.sections.single.intervals.single.id, isNot('i1'));
+    expect(copyA.sections.single.intervals.single.title, 'Estudar A');
+
+    // A cópia chega a B sem sobrescrever os cards da rotina original.
+    await engineA.run();
+    await engineB.run();
+    final routinesB = await repoB.loadAll();
+    expect(routinesB, hasLength(2));
+    final originalB = routinesB.singleWhere((item) => item.id == 'r4');
+    expect(originalB.sections.single.id, 's1');
+    expect(originalB.sections.single.intervals.single.title, 'Trabalhar B');
+    expect(
+      routinesB.any(
+        (item) =>
+            item.name == '[Conflito] Rotina' && item.sections.single.id != 's1',
+      ),
+      isTrue,
+    );
   });
 }

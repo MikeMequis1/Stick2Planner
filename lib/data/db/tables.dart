@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/post_it_history.dart';
+import '../../domain/entities/routine.dart';
 import '../../domain/entities/tag.dart';
 import 'converters.dart';
 
@@ -127,6 +128,8 @@ class Routines extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
   TextColumn get details => text().nullable()();
+  TextColumn get mode =>
+      textEnum<RoutineMode>().withDefault(const Constant('simple'))();
   IntColumn get weekdays => integer().withDefault(const Constant(0))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
@@ -165,6 +168,59 @@ class RoutineCompletions extends Table {
   Set<Column<Object>> get primaryKey => {routineItemId, date};
 }
 
+/// Cards de uma rotina completa.
+@DataClassName('RoutineSectionRow')
+@TableIndex(name: 'idx_routine_sections_routine_id', columns: {#routineId})
+class RoutineSections extends Table {
+  TextColumn get id => text()();
+  TextColumn get routineId =>
+      text().references(Routines, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text()();
+  IntColumn get position => integer()();
+  IntColumn get startMinutes => integer().nullable()();
+  IntColumn get endMinutes => integer().nullable()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Intervalos (e tarefas) de um card.
+@DataClassName('RoutineIntervalRow')
+@TableIndex(name: 'idx_routine_intervals_section_id', columns: {#sectionId})
+class RoutineIntervals extends Table {
+  TextColumn get id => text()();
+  TextColumn get sectionId =>
+      text().references(RoutineSections, #id, onDelete: KeyAction.cascade)();
+  IntColumn get startMinutes => integer()();
+  IntColumn get endMinutes => integer()();
+  IntColumn get position => integer()();
+  TextColumn get taskTitle => text().nullable()();
+  TextColumn get taskDetails => text().nullable()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Conclusão de uma tarefa de intervalo em uma data.
+@DataClassName('RoutineIntervalCompletionRow')
+@TableIndex(
+  name: 'idx_routine_interval_completions_interval',
+  columns: {#intervalId},
+)
+class RoutineIntervalCompletions extends Table {
+  TextColumn get intervalId =>
+      text().references(RoutineIntervals, #id, onDelete: KeyAction.cascade)();
+  TextColumn get date => text().map(const DateOnlyConverter())();
+  IntColumn get completedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {intervalId, date};
+}
+
 /// Fila local de alterações pendentes de envio ao servidor.
 ///
 /// O payload é o estado completo da entidade em JSON canônico; edições
@@ -179,6 +235,21 @@ class SyncOutbox extends Table {
   IntColumn get updatedAt => integer()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
   TextColumn get lastError => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {entity, entityId};
+}
+
+/// Último payload aceito pelo servidor para cada entidade.
+///
+/// Usado como base para mesclar conflitos de rotinas sem perder alterações
+/// feitas em elementos diferentes.
+@DataClassName('SyncBaseRow')
+class SyncBases extends Table {
+  TextColumn get entity => text()();
+  TextColumn get entityId => text()();
+  TextColumn get payload => text()();
+  IntColumn get updatedAt => integer()();
 
   @override
   Set<Column<Object>> get primaryKey => {entity, entityId};

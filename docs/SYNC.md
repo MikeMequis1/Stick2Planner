@@ -205,8 +205,26 @@ suspended until the user decides.
 ## Routines
 
 - Routines are a first-class sync entity (`routine`) since server **0.2.2**.
-  A routine payload is atomic: name, details, weekdays, `createdAt`,
-  `updatedAt`, deletion tombstone and all activities with their completed dates.
+  A routine payload is atomic: name, details, mode, weekdays, `createdAt`,
+  `updatedAt`, deletion tombstone, simple activities with their completed dates
+  and, for complete routines, nested `sections` with `intervals`, times, tasks
+  and per-date completions.
+- A complete payload uses `"mode": "complete"` and keeps stable IDs for cards and
+  intervals. Intermediate times are the boundaries between consecutive
+  intervals, so adding/removing a time changes the interval list while preserving
+  the IDs of unaffected elements. The server stores this nested structure
+  opaquely; no new entity or endpoint is required.
+- The client keeps the last server-accepted routine payload in `sync_bases` and
+  performs a three-way merge on revision conflicts. Independent edits to
+  different cards, intervals, fields or completion dates are combined and
+  re-sent automatically. If the same element changed differently, the server
+  version stays as the original and the local one becomes a `[Conflito]` copy;
+  routine conflicts never depend only on timestamps.
+- Conflict copies regenerate card and interval IDs along with the routine ID, so
+  a `[Conflito]` copy can never overwrite the original routine's structure.
+- Stick2Server preserves stored complete cards when an update from a pre-0.8
+  client arrives without `mode`/`sections`. Legacy clients still cannot display
+  cards, but their routine edits no longer erase the nested structure.
 - `createdAt` is the routine record creation instant and is preserved on edits.
   Occurrences are only shown on or after its local calendar date, so an offline
   gap or a delayed sync can never generate activities before the routine

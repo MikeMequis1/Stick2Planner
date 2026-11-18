@@ -3223,6 +3223,16 @@ class $RoutinesTable extends Routines
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<RoutineMode, String> mode =
+      GeneratedColumn<String>(
+        'mode',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('simple'),
+      ).withConverter<RoutineMode>($RoutinesTable.$convertermode);
   static const VerificationMeta _weekdaysMeta = const VerificationMeta(
     'weekdays',
   );
@@ -3262,6 +3272,7 @@ class $RoutinesTable extends Routines
     id,
     name,
     details,
+    mode,
     weekdays,
     createdAt,
     updatedAt,
@@ -3340,6 +3351,12 @@ class $RoutinesTable extends Routines
         DriftSqlType.string,
         data['${effectivePrefix}details'],
       ),
+      mode: $RoutinesTable.$convertermode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}mode'],
+        )!,
+      ),
       weekdays: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}weekdays'],
@@ -3359,12 +3376,16 @@ class $RoutinesTable extends Routines
   $RoutinesTable createAlias(String alias) {
     return $RoutinesTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<RoutineMode, String, String> $convertermode =
+      const EnumNameConverter<RoutineMode>(RoutineMode.values);
 }
 
 class RoutineRow extends DataClass implements Insertable<RoutineRow> {
   final String id;
   final String name;
   final String? details;
+  final RoutineMode mode;
   final int weekdays;
   final int createdAt;
   final int updatedAt;
@@ -3372,6 +3393,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     required this.id,
     required this.name,
     this.details,
+    required this.mode,
     required this.weekdays,
     required this.createdAt,
     required this.updatedAt,
@@ -3383,6 +3405,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || details != null) {
       map['details'] = Variable<String>(details);
+    }
+    {
+      map['mode'] = Variable<String>($RoutinesTable.$convertermode.toSql(mode));
     }
     map['weekdays'] = Variable<int>(weekdays);
     map['created_at'] = Variable<int>(createdAt);
@@ -3397,6 +3422,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       details: details == null && nullToAbsent
           ? const Value.absent()
           : Value(details),
+      mode: Value(mode),
       weekdays: Value(weekdays),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -3412,6 +3438,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       details: serializer.fromJson<String?>(json['details']),
+      mode: $RoutinesTable.$convertermode.fromJson(
+        serializer.fromJson<String>(json['mode']),
+      ),
       weekdays: serializer.fromJson<int>(json['weekdays']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -3424,6 +3453,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'details': serializer.toJson<String?>(details),
+      'mode': serializer.toJson<String>(
+        $RoutinesTable.$convertermode.toJson(mode),
+      ),
       'weekdays': serializer.toJson<int>(weekdays),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -3434,6 +3466,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     String? id,
     String? name,
     Value<String?> details = const Value.absent(),
+    RoutineMode? mode,
     int? weekdays,
     int? createdAt,
     int? updatedAt,
@@ -3441,6 +3474,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     id: id ?? this.id,
     name: name ?? this.name,
     details: details.present ? details.value : this.details,
+    mode: mode ?? this.mode,
     weekdays: weekdays ?? this.weekdays,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -3450,6 +3484,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       details: data.details.present ? data.details.value : this.details,
+      mode: data.mode.present ? data.mode.value : this.mode,
       weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -3462,6 +3497,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('details: $details, ')
+          ..write('mode: $mode, ')
           ..write('weekdays: $weekdays, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -3471,7 +3507,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
 
   @override
   int get hashCode =>
-      Object.hash(id, name, details, weekdays, createdAt, updatedAt);
+      Object.hash(id, name, details, mode, weekdays, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3479,6 +3515,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.id == this.id &&
           other.name == this.name &&
           other.details == this.details &&
+          other.mode == this.mode &&
           other.weekdays == this.weekdays &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -3488,6 +3525,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
   final Value<String> id;
   final Value<String> name;
   final Value<String?> details;
+  final Value<RoutineMode> mode;
   final Value<int> weekdays;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -3496,6 +3534,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.details = const Value.absent(),
+    this.mode = const Value.absent(),
     this.weekdays = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -3505,6 +3544,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
     required String id,
     required String name,
     this.details = const Value.absent(),
+    this.mode = const Value.absent(),
     this.weekdays = const Value.absent(),
     required int createdAt,
     required int updatedAt,
@@ -3517,6 +3557,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? details,
+    Expression<String>? mode,
     Expression<int>? weekdays,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -3526,6 +3567,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (details != null) 'details': details,
+      if (mode != null) 'mode': mode,
       if (weekdays != null) 'weekdays': weekdays,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -3537,6 +3579,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
     Value<String>? id,
     Value<String>? name,
     Value<String?>? details,
+    Value<RoutineMode>? mode,
     Value<int>? weekdays,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -3546,6 +3589,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
       id: id ?? this.id,
       name: name ?? this.name,
       details: details ?? this.details,
+      mode: mode ?? this.mode,
       weekdays: weekdays ?? this.weekdays,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -3564,6 +3608,11 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
     }
     if (details.present) {
       map['details'] = Variable<String>(details.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(
+        $RoutinesTable.$convertermode.toSql(mode.value),
+      );
     }
     if (weekdays.present) {
       map['weekdays'] = Variable<int>(weekdays.value);
@@ -3586,6 +3635,7 @@ class RoutinesCompanion extends UpdateCompanion<RoutineRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('details: $details, ')
+          ..write('mode: $mode, ')
           ..write('weekdays: $weekdays, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4338,6 +4388,1400 @@ class RoutineCompletionsCompanion
   String toString() {
     return (StringBuffer('RoutineCompletionsCompanion(')
           ..write('routineItemId: $routineItemId, ')
+          ..write('date: $date, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RoutineSectionsTable extends RoutineSections
+    with TableInfo<$RoutineSectionsTable, RoutineSectionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RoutineSectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _routineIdMeta = const VerificationMeta(
+    'routineId',
+  );
+  @override
+  late final GeneratedColumn<String> routineId = GeneratedColumn<String>(
+    'routine_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES routines (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMinutesMeta = const VerificationMeta(
+    'startMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> startMinutes = GeneratedColumn<int>(
+    'start_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endMinutesMeta = const VerificationMeta(
+    'endMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> endMinutes = GeneratedColumn<int>(
+    'end_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    routineId,
+    title,
+    position,
+    startMinutes,
+    endMinutes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'routine_sections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoutineSectionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('routine_id')) {
+      context.handle(
+        _routineIdMeta,
+        routineId.isAcceptableOrUnknown(data['routine_id']!, _routineIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_routineIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('start_minutes')) {
+      context.handle(
+        _startMinutesMeta,
+        startMinutes.isAcceptableOrUnknown(
+          data['start_minutes']!,
+          _startMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('end_minutes')) {
+      context.handle(
+        _endMinutesMeta,
+        endMinutes.isAcceptableOrUnknown(data['end_minutes']!, _endMinutesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RoutineSectionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoutineSectionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      routineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}routine_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      startMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_minutes'],
+      ),
+      endMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_minutes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RoutineSectionsTable createAlias(String alias) {
+    return $RoutineSectionsTable(attachedDatabase, alias);
+  }
+}
+
+class RoutineSectionRow extends DataClass
+    implements Insertable<RoutineSectionRow> {
+  final String id;
+  final String routineId;
+  final String title;
+  final int position;
+  final int? startMinutes;
+  final int? endMinutes;
+  final int createdAt;
+  final int updatedAt;
+  const RoutineSectionRow({
+    required this.id,
+    required this.routineId,
+    required this.title,
+    required this.position,
+    this.startMinutes,
+    this.endMinutes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['routine_id'] = Variable<String>(routineId);
+    map['title'] = Variable<String>(title);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || startMinutes != null) {
+      map['start_minutes'] = Variable<int>(startMinutes);
+    }
+    if (!nullToAbsent || endMinutes != null) {
+      map['end_minutes'] = Variable<int>(endMinutes);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  RoutineSectionsCompanion toCompanion(bool nullToAbsent) {
+    return RoutineSectionsCompanion(
+      id: Value(id),
+      routineId: Value(routineId),
+      title: Value(title),
+      position: Value(position),
+      startMinutes: startMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startMinutes),
+      endMinutes: endMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endMinutes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory RoutineSectionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoutineSectionRow(
+      id: serializer.fromJson<String>(json['id']),
+      routineId: serializer.fromJson<String>(json['routineId']),
+      title: serializer.fromJson<String>(json['title']),
+      position: serializer.fromJson<int>(json['position']),
+      startMinutes: serializer.fromJson<int?>(json['startMinutes']),
+      endMinutes: serializer.fromJson<int?>(json['endMinutes']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'routineId': serializer.toJson<String>(routineId),
+      'title': serializer.toJson<String>(title),
+      'position': serializer.toJson<int>(position),
+      'startMinutes': serializer.toJson<int?>(startMinutes),
+      'endMinutes': serializer.toJson<int?>(endMinutes),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  RoutineSectionRow copyWith({
+    String? id,
+    String? routineId,
+    String? title,
+    int? position,
+    Value<int?> startMinutes = const Value.absent(),
+    Value<int?> endMinutes = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => RoutineSectionRow(
+    id: id ?? this.id,
+    routineId: routineId ?? this.routineId,
+    title: title ?? this.title,
+    position: position ?? this.position,
+    startMinutes: startMinutes.present ? startMinutes.value : this.startMinutes,
+    endMinutes: endMinutes.present ? endMinutes.value : this.endMinutes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  RoutineSectionRow copyWithCompanion(RoutineSectionsCompanion data) {
+    return RoutineSectionRow(
+      id: data.id.present ? data.id.value : this.id,
+      routineId: data.routineId.present ? data.routineId.value : this.routineId,
+      title: data.title.present ? data.title.value : this.title,
+      position: data.position.present ? data.position.value : this.position,
+      startMinutes: data.startMinutes.present
+          ? data.startMinutes.value
+          : this.startMinutes,
+      endMinutes: data.endMinutes.present
+          ? data.endMinutes.value
+          : this.endMinutes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineSectionRow(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('title: $title, ')
+          ..write('position: $position, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    routineId,
+    title,
+    position,
+    startMinutes,
+    endMinutes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoutineSectionRow &&
+          other.id == this.id &&
+          other.routineId == this.routineId &&
+          other.title == this.title &&
+          other.position == this.position &&
+          other.startMinutes == this.startMinutes &&
+          other.endMinutes == this.endMinutes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class RoutineSectionsCompanion extends UpdateCompanion<RoutineSectionRow> {
+  final Value<String> id;
+  final Value<String> routineId;
+  final Value<String> title;
+  final Value<int> position;
+  final Value<int?> startMinutes;
+  final Value<int?> endMinutes;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const RoutineSectionsCompanion({
+    this.id = const Value.absent(),
+    this.routineId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.position = const Value.absent(),
+    this.startMinutes = const Value.absent(),
+    this.endMinutes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RoutineSectionsCompanion.insert({
+    required String id,
+    required String routineId,
+    required String title,
+    required int position,
+    this.startMinutes = const Value.absent(),
+    this.endMinutes = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       routineId = Value(routineId),
+       title = Value(title),
+       position = Value(position),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<RoutineSectionRow> custom({
+    Expression<String>? id,
+    Expression<String>? routineId,
+    Expression<String>? title,
+    Expression<int>? position,
+    Expression<int>? startMinutes,
+    Expression<int>? endMinutes,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (routineId != null) 'routine_id': routineId,
+      if (title != null) 'title': title,
+      if (position != null) 'position': position,
+      if (startMinutes != null) 'start_minutes': startMinutes,
+      if (endMinutes != null) 'end_minutes': endMinutes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RoutineSectionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? routineId,
+    Value<String>? title,
+    Value<int>? position,
+    Value<int?>? startMinutes,
+    Value<int?>? endMinutes,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return RoutineSectionsCompanion(
+      id: id ?? this.id,
+      routineId: routineId ?? this.routineId,
+      title: title ?? this.title,
+      position: position ?? this.position,
+      startMinutes: startMinutes ?? this.startMinutes,
+      endMinutes: endMinutes ?? this.endMinutes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (routineId.present) {
+      map['routine_id'] = Variable<String>(routineId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (startMinutes.present) {
+      map['start_minutes'] = Variable<int>(startMinutes.value);
+    }
+    if (endMinutes.present) {
+      map['end_minutes'] = Variable<int>(endMinutes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineSectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('title: $title, ')
+          ..write('position: $position, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RoutineIntervalsTable extends RoutineIntervals
+    with TableInfo<$RoutineIntervalsTable, RoutineIntervalRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RoutineIntervalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sectionIdMeta = const VerificationMeta(
+    'sectionId',
+  );
+  @override
+  late final GeneratedColumn<String> sectionId = GeneratedColumn<String>(
+    'section_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES routine_sections (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _startMinutesMeta = const VerificationMeta(
+    'startMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> startMinutes = GeneratedColumn<int>(
+    'start_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMinutesMeta = const VerificationMeta(
+    'endMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> endMinutes = GeneratedColumn<int>(
+    'end_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskTitleMeta = const VerificationMeta(
+    'taskTitle',
+  );
+  @override
+  late final GeneratedColumn<String> taskTitle = GeneratedColumn<String>(
+    'task_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taskDetailsMeta = const VerificationMeta(
+    'taskDetails',
+  );
+  @override
+  late final GeneratedColumn<String> taskDetails = GeneratedColumn<String>(
+    'task_details',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sectionId,
+    startMinutes,
+    endMinutes,
+    position,
+    taskTitle,
+    taskDetails,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'routine_intervals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoutineIntervalRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('section_id')) {
+      context.handle(
+        _sectionIdMeta,
+        sectionId.isAcceptableOrUnknown(data['section_id']!, _sectionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sectionIdMeta);
+    }
+    if (data.containsKey('start_minutes')) {
+      context.handle(
+        _startMinutesMeta,
+        startMinutes.isAcceptableOrUnknown(
+          data['start_minutes']!,
+          _startMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startMinutesMeta);
+    }
+    if (data.containsKey('end_minutes')) {
+      context.handle(
+        _endMinutesMeta,
+        endMinutes.isAcceptableOrUnknown(data['end_minutes']!, _endMinutesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMinutesMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('task_title')) {
+      context.handle(
+        _taskTitleMeta,
+        taskTitle.isAcceptableOrUnknown(data['task_title']!, _taskTitleMeta),
+      );
+    }
+    if (data.containsKey('task_details')) {
+      context.handle(
+        _taskDetailsMeta,
+        taskDetails.isAcceptableOrUnknown(
+          data['task_details']!,
+          _taskDetailsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RoutineIntervalRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoutineIntervalRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}section_id'],
+      )!,
+      startMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_minutes'],
+      )!,
+      endMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_minutes'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      taskTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_title'],
+      ),
+      taskDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_details'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RoutineIntervalsTable createAlias(String alias) {
+    return $RoutineIntervalsTable(attachedDatabase, alias);
+  }
+}
+
+class RoutineIntervalRow extends DataClass
+    implements Insertable<RoutineIntervalRow> {
+  final String id;
+  final String sectionId;
+  final int startMinutes;
+  final int endMinutes;
+  final int position;
+  final String? taskTitle;
+  final String? taskDetails;
+  final int createdAt;
+  final int updatedAt;
+  const RoutineIntervalRow({
+    required this.id,
+    required this.sectionId,
+    required this.startMinutes,
+    required this.endMinutes,
+    required this.position,
+    this.taskTitle,
+    this.taskDetails,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['section_id'] = Variable<String>(sectionId);
+    map['start_minutes'] = Variable<int>(startMinutes);
+    map['end_minutes'] = Variable<int>(endMinutes);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || taskTitle != null) {
+      map['task_title'] = Variable<String>(taskTitle);
+    }
+    if (!nullToAbsent || taskDetails != null) {
+      map['task_details'] = Variable<String>(taskDetails);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  RoutineIntervalsCompanion toCompanion(bool nullToAbsent) {
+    return RoutineIntervalsCompanion(
+      id: Value(id),
+      sectionId: Value(sectionId),
+      startMinutes: Value(startMinutes),
+      endMinutes: Value(endMinutes),
+      position: Value(position),
+      taskTitle: taskTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskTitle),
+      taskDetails: taskDetails == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskDetails),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory RoutineIntervalRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoutineIntervalRow(
+      id: serializer.fromJson<String>(json['id']),
+      sectionId: serializer.fromJson<String>(json['sectionId']),
+      startMinutes: serializer.fromJson<int>(json['startMinutes']),
+      endMinutes: serializer.fromJson<int>(json['endMinutes']),
+      position: serializer.fromJson<int>(json['position']),
+      taskTitle: serializer.fromJson<String?>(json['taskTitle']),
+      taskDetails: serializer.fromJson<String?>(json['taskDetails']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sectionId': serializer.toJson<String>(sectionId),
+      'startMinutes': serializer.toJson<int>(startMinutes),
+      'endMinutes': serializer.toJson<int>(endMinutes),
+      'position': serializer.toJson<int>(position),
+      'taskTitle': serializer.toJson<String?>(taskTitle),
+      'taskDetails': serializer.toJson<String?>(taskDetails),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  RoutineIntervalRow copyWith({
+    String? id,
+    String? sectionId,
+    int? startMinutes,
+    int? endMinutes,
+    int? position,
+    Value<String?> taskTitle = const Value.absent(),
+    Value<String?> taskDetails = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => RoutineIntervalRow(
+    id: id ?? this.id,
+    sectionId: sectionId ?? this.sectionId,
+    startMinutes: startMinutes ?? this.startMinutes,
+    endMinutes: endMinutes ?? this.endMinutes,
+    position: position ?? this.position,
+    taskTitle: taskTitle.present ? taskTitle.value : this.taskTitle,
+    taskDetails: taskDetails.present ? taskDetails.value : this.taskDetails,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  RoutineIntervalRow copyWithCompanion(RoutineIntervalsCompanion data) {
+    return RoutineIntervalRow(
+      id: data.id.present ? data.id.value : this.id,
+      sectionId: data.sectionId.present ? data.sectionId.value : this.sectionId,
+      startMinutes: data.startMinutes.present
+          ? data.startMinutes.value
+          : this.startMinutes,
+      endMinutes: data.endMinutes.present
+          ? data.endMinutes.value
+          : this.endMinutes,
+      position: data.position.present ? data.position.value : this.position,
+      taskTitle: data.taskTitle.present ? data.taskTitle.value : this.taskTitle,
+      taskDetails: data.taskDetails.present
+          ? data.taskDetails.value
+          : this.taskDetails,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineIntervalRow(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('position: $position, ')
+          ..write('taskTitle: $taskTitle, ')
+          ..write('taskDetails: $taskDetails, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sectionId,
+    startMinutes,
+    endMinutes,
+    position,
+    taskTitle,
+    taskDetails,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoutineIntervalRow &&
+          other.id == this.id &&
+          other.sectionId == this.sectionId &&
+          other.startMinutes == this.startMinutes &&
+          other.endMinutes == this.endMinutes &&
+          other.position == this.position &&
+          other.taskTitle == this.taskTitle &&
+          other.taskDetails == this.taskDetails &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class RoutineIntervalsCompanion extends UpdateCompanion<RoutineIntervalRow> {
+  final Value<String> id;
+  final Value<String> sectionId;
+  final Value<int> startMinutes;
+  final Value<int> endMinutes;
+  final Value<int> position;
+  final Value<String?> taskTitle;
+  final Value<String?> taskDetails;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const RoutineIntervalsCompanion({
+    this.id = const Value.absent(),
+    this.sectionId = const Value.absent(),
+    this.startMinutes = const Value.absent(),
+    this.endMinutes = const Value.absent(),
+    this.position = const Value.absent(),
+    this.taskTitle = const Value.absent(),
+    this.taskDetails = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RoutineIntervalsCompanion.insert({
+    required String id,
+    required String sectionId,
+    required int startMinutes,
+    required int endMinutes,
+    required int position,
+    this.taskTitle = const Value.absent(),
+    this.taskDetails = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sectionId = Value(sectionId),
+       startMinutes = Value(startMinutes),
+       endMinutes = Value(endMinutes),
+       position = Value(position),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<RoutineIntervalRow> custom({
+    Expression<String>? id,
+    Expression<String>? sectionId,
+    Expression<int>? startMinutes,
+    Expression<int>? endMinutes,
+    Expression<int>? position,
+    Expression<String>? taskTitle,
+    Expression<String>? taskDetails,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sectionId != null) 'section_id': sectionId,
+      if (startMinutes != null) 'start_minutes': startMinutes,
+      if (endMinutes != null) 'end_minutes': endMinutes,
+      if (position != null) 'position': position,
+      if (taskTitle != null) 'task_title': taskTitle,
+      if (taskDetails != null) 'task_details': taskDetails,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RoutineIntervalsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sectionId,
+    Value<int>? startMinutes,
+    Value<int>? endMinutes,
+    Value<int>? position,
+    Value<String?>? taskTitle,
+    Value<String?>? taskDetails,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return RoutineIntervalsCompanion(
+      id: id ?? this.id,
+      sectionId: sectionId ?? this.sectionId,
+      startMinutes: startMinutes ?? this.startMinutes,
+      endMinutes: endMinutes ?? this.endMinutes,
+      position: position ?? this.position,
+      taskTitle: taskTitle ?? this.taskTitle,
+      taskDetails: taskDetails ?? this.taskDetails,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sectionId.present) {
+      map['section_id'] = Variable<String>(sectionId.value);
+    }
+    if (startMinutes.present) {
+      map['start_minutes'] = Variable<int>(startMinutes.value);
+    }
+    if (endMinutes.present) {
+      map['end_minutes'] = Variable<int>(endMinutes.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (taskTitle.present) {
+      map['task_title'] = Variable<String>(taskTitle.value);
+    }
+    if (taskDetails.present) {
+      map['task_details'] = Variable<String>(taskDetails.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineIntervalsCompanion(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('position: $position, ')
+          ..write('taskTitle: $taskTitle, ')
+          ..write('taskDetails: $taskDetails, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RoutineIntervalCompletionsTable extends RoutineIntervalCompletions
+    with
+        TableInfo<
+          $RoutineIntervalCompletionsTable,
+          RoutineIntervalCompletionRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RoutineIntervalCompletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _intervalIdMeta = const VerificationMeta(
+    'intervalId',
+  );
+  @override
+  late final GeneratedColumn<String> intervalId = GeneratedColumn<String>(
+    'interval_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES routine_intervals (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateOnly, String> date =
+      GeneratedColumn<String>(
+        'date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateOnly>(
+        $RoutineIntervalCompletionsTable.$converterdate,
+      );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<int> completedAt = GeneratedColumn<int>(
+    'completed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [intervalId, date, completedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'routine_interval_completions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoutineIntervalCompletionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('interval_id')) {
+      context.handle(
+        _intervalIdMeta,
+        intervalId.isAcceptableOrUnknown(data['interval_id']!, _intervalIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_intervalIdMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {intervalId, date};
+  @override
+  RoutineIntervalCompletionRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoutineIntervalCompletionRow(
+      intervalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interval_id'],
+      )!,
+      date: $RoutineIntervalCompletionsTable.$converterdate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}date'],
+        )!,
+      ),
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RoutineIntervalCompletionsTable createAlias(String alias) {
+    return $RoutineIntervalCompletionsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateOnly, String> $converterdate =
+      const DateOnlyConverter();
+}
+
+class RoutineIntervalCompletionRow extends DataClass
+    implements Insertable<RoutineIntervalCompletionRow> {
+  final String intervalId;
+  final DateOnly date;
+  final int completedAt;
+  const RoutineIntervalCompletionRow({
+    required this.intervalId,
+    required this.date,
+    required this.completedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['interval_id'] = Variable<String>(intervalId);
+    {
+      map['date'] = Variable<String>(
+        $RoutineIntervalCompletionsTable.$converterdate.toSql(date),
+      );
+    }
+    map['completed_at'] = Variable<int>(completedAt);
+    return map;
+  }
+
+  RoutineIntervalCompletionsCompanion toCompanion(bool nullToAbsent) {
+    return RoutineIntervalCompletionsCompanion(
+      intervalId: Value(intervalId),
+      date: Value(date),
+      completedAt: Value(completedAt),
+    );
+  }
+
+  factory RoutineIntervalCompletionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoutineIntervalCompletionRow(
+      intervalId: serializer.fromJson<String>(json['intervalId']),
+      date: serializer.fromJson<DateOnly>(json['date']),
+      completedAt: serializer.fromJson<int>(json['completedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'intervalId': serializer.toJson<String>(intervalId),
+      'date': serializer.toJson<DateOnly>(date),
+      'completedAt': serializer.toJson<int>(completedAt),
+    };
+  }
+
+  RoutineIntervalCompletionRow copyWith({
+    String? intervalId,
+    DateOnly? date,
+    int? completedAt,
+  }) => RoutineIntervalCompletionRow(
+    intervalId: intervalId ?? this.intervalId,
+    date: date ?? this.date,
+    completedAt: completedAt ?? this.completedAt,
+  );
+  RoutineIntervalCompletionRow copyWithCompanion(
+    RoutineIntervalCompletionsCompanion data,
+  ) {
+    return RoutineIntervalCompletionRow(
+      intervalId: data.intervalId.present
+          ? data.intervalId.value
+          : this.intervalId,
+      date: data.date.present ? data.date.value : this.date,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineIntervalCompletionRow(')
+          ..write('intervalId: $intervalId, ')
+          ..write('date: $date, ')
+          ..write('completedAt: $completedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(intervalId, date, completedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoutineIntervalCompletionRow &&
+          other.intervalId == this.intervalId &&
+          other.date == this.date &&
+          other.completedAt == this.completedAt);
+}
+
+class RoutineIntervalCompletionsCompanion
+    extends UpdateCompanion<RoutineIntervalCompletionRow> {
+  final Value<String> intervalId;
+  final Value<DateOnly> date;
+  final Value<int> completedAt;
+  final Value<int> rowid;
+  const RoutineIntervalCompletionsCompanion({
+    this.intervalId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RoutineIntervalCompletionsCompanion.insert({
+    required String intervalId,
+    required DateOnly date,
+    required int completedAt,
+    this.rowid = const Value.absent(),
+  }) : intervalId = Value(intervalId),
+       date = Value(date),
+       completedAt = Value(completedAt);
+  static Insertable<RoutineIntervalCompletionRow> custom({
+    Expression<String>? intervalId,
+    Expression<String>? date,
+    Expression<int>? completedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (intervalId != null) 'interval_id': intervalId,
+      if (date != null) 'date': date,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RoutineIntervalCompletionsCompanion copyWith({
+    Value<String>? intervalId,
+    Value<DateOnly>? date,
+    Value<int>? completedAt,
+    Value<int>? rowid,
+  }) {
+    return RoutineIntervalCompletionsCompanion(
+      intervalId: intervalId ?? this.intervalId,
+      date: date ?? this.date,
+      completedAt: completedAt ?? this.completedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (intervalId.present) {
+      map['interval_id'] = Variable<String>(intervalId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(
+        $RoutineIntervalCompletionsTable.$converterdate.toSql(date.value),
+      );
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<int>(completedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineIntervalCompletionsCompanion(')
+          ..write('intervalId: $intervalId, ')
           ..write('date: $date, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
@@ -5181,6 +6625,319 @@ class SyncRowStatesCompanion extends UpdateCompanion<SyncRowStateRow> {
   }
 }
 
+class $SyncBasesTable extends SyncBases
+    with TableInfo<$SyncBasesTable, SyncBaseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncBasesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _entityMeta = const VerificationMeta('entity');
+  @override
+  late final GeneratedColumn<String> entity = GeneratedColumn<String>(
+    'entity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [entity, entityId, payload, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_bases';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncBaseRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('entity')) {
+      context.handle(
+        _entityMeta,
+        entity.isAcceptableOrUnknown(data['entity']!, _entityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {entity, entityId};
+  @override
+  SyncBaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncBaseRow(
+      entity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SyncBasesTable createAlias(String alias) {
+    return $SyncBasesTable(attachedDatabase, alias);
+  }
+}
+
+class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
+  final String entity;
+  final String entityId;
+  final String payload;
+  final int updatedAt;
+  const SyncBaseRow({
+    required this.entity,
+    required this.entityId,
+    required this.payload,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['entity'] = Variable<String>(entity);
+    map['entity_id'] = Variable<String>(entityId);
+    map['payload'] = Variable<String>(payload);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  SyncBasesCompanion toCompanion(bool nullToAbsent) {
+    return SyncBasesCompanion(
+      entity: Value(entity),
+      entityId: Value(entityId),
+      payload: Value(payload),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SyncBaseRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncBaseRow(
+      entity: serializer.fromJson<String>(json['entity']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      payload: serializer.fromJson<String>(json['payload']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'entity': serializer.toJson<String>(entity),
+      'entityId': serializer.toJson<String>(entityId),
+      'payload': serializer.toJson<String>(payload),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  SyncBaseRow copyWith({
+    String? entity,
+    String? entityId,
+    String? payload,
+    int? updatedAt,
+  }) => SyncBaseRow(
+    entity: entity ?? this.entity,
+    entityId: entityId ?? this.entityId,
+    payload: payload ?? this.payload,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  SyncBaseRow copyWithCompanion(SyncBasesCompanion data) {
+    return SyncBaseRow(
+      entity: data.entity.present ? data.entity.value : this.entity,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncBaseRow(')
+          ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(entity, entityId, payload, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncBaseRow &&
+          other.entity == this.entity &&
+          other.entityId == this.entityId &&
+          other.payload == this.payload &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SyncBasesCompanion extends UpdateCompanion<SyncBaseRow> {
+  final Value<String> entity;
+  final Value<String> entityId;
+  final Value<String> payload;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const SyncBasesCompanion({
+    this.entity = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncBasesCompanion.insert({
+    required String entity,
+    required String entityId,
+    required String payload,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : entity = Value(entity),
+       entityId = Value(entityId),
+       payload = Value(payload),
+       updatedAt = Value(updatedAt);
+  static Insertable<SyncBaseRow> custom({
+    Expression<String>? entity,
+    Expression<String>? entityId,
+    Expression<String>? payload,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (entity != null) 'entity': entity,
+      if (entityId != null) 'entity_id': entityId,
+      if (payload != null) 'payload': payload,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncBasesCompanion copyWith({
+    Value<String>? entity,
+    Value<String>? entityId,
+    Value<String>? payload,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return SyncBasesCompanion(
+      entity: entity ?? this.entity,
+      entityId: entityId ?? this.entityId,
+      payload: payload ?? this.payload,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (entity.present) {
+      map['entity'] = Variable<String>(entity.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncBasesCompanion(')
+          ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncStatesTable extends SyncStates
     with TableInfo<$SyncStatesTable, SyncStateRow> {
   @override
@@ -5403,8 +7160,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RoutineItemsTable routineItems = $RoutineItemsTable(this);
   late final $RoutineCompletionsTable routineCompletions =
       $RoutineCompletionsTable(this);
+  late final $RoutineSectionsTable routineSections = $RoutineSectionsTable(
+    this,
+  );
+  late final $RoutineIntervalsTable routineIntervals = $RoutineIntervalsTable(
+    this,
+  );
+  late final $RoutineIntervalCompletionsTable routineIntervalCompletions =
+      $RoutineIntervalCompletionsTable(this);
   late final $SyncOutboxTable syncOutbox = $SyncOutboxTable(this);
   late final $SyncRowStatesTable syncRowStates = $SyncRowStatesTable(this);
+  late final $SyncBasesTable syncBases = $SyncBasesTable(this);
   late final $SyncStatesTable syncStates = $SyncStatesTable(this);
   late final Index idxNoteLinesNoteId = Index(
     'idx_note_lines_note_id',
@@ -5438,6 +7204,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_routine_completions_item',
     'CREATE INDEX idx_routine_completions_item ON routine_completions (routine_item_id)',
   );
+  late final Index idxRoutineSectionsRoutineId = Index(
+    'idx_routine_sections_routine_id',
+    'CREATE INDEX idx_routine_sections_routine_id ON routine_sections (routine_id)',
+  );
+  late final Index idxRoutineIntervalsSectionId = Index(
+    'idx_routine_intervals_section_id',
+    'CREATE INDEX idx_routine_intervals_section_id ON routine_intervals (section_id)',
+  );
+  late final Index idxRoutineIntervalCompletionsInterval = Index(
+    'idx_routine_interval_completions_interval',
+    'CREATE INDEX idx_routine_interval_completions_interval ON routine_interval_completions (interval_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5452,8 +7230,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     routines,
     routineItems,
     routineCompletions,
+    routineSections,
+    routineIntervals,
+    routineIntervalCompletions,
     syncOutbox,
     syncRowStates,
+    syncBases,
     syncStates,
     idxNoteLinesNoteId,
     idxPostItsStartDate,
@@ -5463,6 +7245,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxTagsName,
     idxRoutineItemsRoutineId,
     idxRoutineCompletionsItem,
+    idxRoutineSectionsRoutineId,
+    idxRoutineIntervalsSectionId,
+    idxRoutineIntervalCompletionsInterval,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5500,6 +7285,29 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('routine_completions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'routines',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('routine_sections', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'routine_sections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('routine_intervals', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'routine_intervals',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('routine_interval_completions', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -7761,6 +9569,7 @@ typedef $$RoutinesTableCreateCompanionBuilder = RoutinesCompanion Function({
   required String id,
   required String name,
   Value<String?> details,
+  Value<RoutineMode> mode,
   Value<int> weekdays,
   required int createdAt,
   required int updatedAt,
@@ -7770,6 +9579,7 @@ typedef $$RoutinesTableUpdateCompanionBuilder = RoutinesCompanion Function({
   Value<String> id,
   Value<String> name,
   Value<String?> details,
+  Value<RoutineMode> mode,
   Value<int> weekdays,
   Value<int> createdAt,
   Value<int> updatedAt,
@@ -7793,6 +9603,26 @@ final class $$RoutinesTableReferences
     ).filter((f) => f.routineId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_routineItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RoutineSectionsTable, List<RoutineSectionRow>>
+  _routineSectionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.routineSections,
+    aliasName: 'routines__id__routine_sections__routine_id',
+  );
+
+  $$RoutineSectionsTableProcessedTableManager get routineSectionsRefs {
+    final manager = $$RoutineSectionsTableTableManager(
+      $_db,
+      $_db.routineSections,
+    ).filter((f) => f.routineId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _routineSectionsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -7822,6 +9652,12 @@ class $$RoutinesTableFilterComposer
     column: $table.details,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<RoutineMode, RoutineMode, String> get mode =>
+      $composableBuilder(
+        column: $table.mode,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   ColumnFilters<int> get weekdays => $composableBuilder(
     column: $table.weekdays,
@@ -7862,6 +9698,31 @@ class $$RoutinesTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> routineSectionsRefs(
+    Expression<bool> Function($$RoutineSectionsTableFilterComposer f) f,
+  ) {
+    final $$RoutineSectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.routineSections,
+      getReferencedColumn: (t) => t.routineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineSectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.routineSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RoutinesTableOrderingComposer
@@ -7885,6 +9746,11 @@ class $$RoutinesTableOrderingComposer
 
   ColumnOrderings<String> get details => $composableBuilder(
     column: $table.details,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7922,6 +9788,9 @@ class $$RoutinesTableAnnotationComposer
   GeneratedColumn<String> get details =>
       $composableBuilder(column: $table.details, builder: (column) => column);
 
+  GeneratedColumnWithTypeConverter<RoutineMode, String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
   GeneratedColumn<int> get weekdays =>
       $composableBuilder(column: $table.weekdays, builder: (column) => column);
 
@@ -7955,6 +9824,31 @@ class $$RoutinesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> routineSectionsRefs<T extends Object>(
+    Expression<T> Function($$RoutineSectionsTableAnnotationComposer a) f,
+  ) {
+    final $$RoutineSectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.routineSections,
+      getReferencedColumn: (t) => t.routineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineSectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.routineSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RoutinesTableTableManager
@@ -7970,7 +9864,10 @@ class $$RoutinesTableTableManager
           $$RoutinesTableUpdateCompanionBuilder,
           (RoutineRow, $$RoutinesTableReferences),
           RoutineRow,
-          PrefetchHooks Function({bool routineItemsRefs})
+          PrefetchHooks Function({
+            bool routineItemsRefs,
+            bool routineSectionsRefs,
+          })
         > {
   $$RoutinesTableTableManager(_$AppDatabase db, $RoutinesTable table)
     : super(
@@ -7988,6 +9885,7 @@ class $$RoutinesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> details = const Value.absent(),
+                Value<RoutineMode> mode = const Value.absent(),
                 Value<int> weekdays = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -7996,6 +9894,7 @@ class $$RoutinesTableTableManager
                 id: id,
                 name: name,
                 details: details,
+                mode: mode,
                 weekdays: weekdays,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -8006,6 +9905,7 @@ class $$RoutinesTableTableManager
                 required String id,
                 required String name,
                 Value<String?> details = const Value.absent(),
+                Value<RoutineMode> mode = const Value.absent(),
                 Value<int> weekdays = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
@@ -8014,6 +9914,7 @@ class $$RoutinesTableTableManager
                 id: id,
                 name: name,
                 details: details,
+                mode: mode,
                 weekdays: weekdays,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -8027,36 +9928,61 @@ class $$RoutinesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({routineItemsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (routineItemsRefs) db.routineItems],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (routineItemsRefs)
-                    await $_getPrefetchedDataByColumns<
-                      RoutineRow,
-                      $RoutinesTable,
-                      RoutineItemRow,
-                      $RoutineItemsTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$RoutinesTableReferences
-                          ._routineItemsRefsTable(db),
-                      managerFromTypedResult: (p0) => $$RoutinesTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).routineItemsRefs,
-                      currentColumn: 'id',
-                      referencedColumn: 'routine_id',
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({routineItemsRefs = false, routineSectionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (routineItemsRefs) db.routineItems,
+                    if (routineSectionsRefs) db.routineSections,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (routineItemsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RoutineRow,
+                          $RoutinesTable,
+                          RoutineItemRow,
+                          $RoutineItemsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoutinesTableReferences
+                              ._routineItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoutinesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).routineItemsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'routine_id',
+                          typedResults: items,
+                        ),
+                      if (routineSectionsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RoutineRow,
+                          $RoutinesTable,
+                          RoutineSectionRow,
+                          $RoutineSectionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoutinesTableReferences
+                              ._routineSectionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoutinesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).routineSectionsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'routine_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -8073,7 +9999,7 @@ typedef $$RoutinesTableProcessedTableManager =
       $$RoutinesTableUpdateCompanionBuilder,
       (RoutineRow, $$RoutinesTableReferences),
       RoutineRow,
-      PrefetchHooks Function({bool routineItemsRefs})
+      PrefetchHooks Function({bool routineItemsRefs, bool routineSectionsRefs})
     >;
 typedef $$RoutineItemsTableCreateCompanionBuilder =
     RoutineItemsCompanion Function({
@@ -8824,6 +10750,1324 @@ typedef $$RoutineCompletionsTableProcessedTableManager =
       RoutineCompletionRow,
       PrefetchHooks Function({bool routineItemId})
     >;
+typedef $$RoutineSectionsTableCreateCompanionBuilder =
+    RoutineSectionsCompanion Function({
+      required String id,
+      required String routineId,
+      required String title,
+      required int position,
+      Value<int?> startMinutes,
+      Value<int?> endMinutes,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$RoutineSectionsTableUpdateCompanionBuilder =
+    RoutineSectionsCompanion Function({
+      Value<String> id,
+      Value<String> routineId,
+      Value<String> title,
+      Value<int> position,
+      Value<int?> startMinutes,
+      Value<int?> endMinutes,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$RoutineSectionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RoutineSectionsTable,
+          RoutineSectionRow
+        > {
+  $$RoutineSectionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RoutinesTable _routineIdTable(_$AppDatabase db) =>
+      db.routines.createAlias('routine_sections__routine_id__routines__id');
+
+  $$RoutinesTableProcessedTableManager get routineId {
+    final $_column = $_itemColumn<String>('routine_id')!;
+
+    final manager = $$RoutinesTableTableManager(
+      $_db,
+      $_db.routines,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_routineIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$RoutineIntervalsTable, List<RoutineIntervalRow>>
+  _routineIntervalsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.routineIntervals,
+    aliasName: 'routine_sections__id__routine_intervals__section_id',
+  );
+
+  $$RoutineIntervalsTableProcessedTableManager get routineIntervalsRefs {
+    final manager = $$RoutineIntervalsTableTableManager(
+      $_db,
+      $_db.routineIntervals,
+    ).filter((f) => f.sectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _routineIntervalsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RoutineSectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RoutineSectionsTable> {
+  $$RoutineSectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RoutinesTableFilterComposer get routineId {
+    final $$RoutinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.routineId,
+      referencedTable: $db.routines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutinesTableFilterComposer(
+            $db: $db,
+            $table: $db.routines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> routineIntervalsRefs(
+    Expression<bool> Function($$RoutineIntervalsTableFilterComposer f) f,
+  ) {
+    final $$RoutineIntervalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.routineIntervals,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineIntervalsTableFilterComposer(
+            $db: $db,
+            $table: $db.routineIntervals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RoutineSectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RoutineSectionsTable> {
+  $$RoutineSectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RoutinesTableOrderingComposer get routineId {
+    final $$RoutinesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.routineId,
+      referencedTable: $db.routines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutinesTableOrderingComposer(
+            $db: $db,
+            $table: $db.routines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RoutineSectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RoutineSectionsTable> {
+  $$RoutineSectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$RoutinesTableAnnotationComposer get routineId {
+    final $$RoutinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.routineId,
+      referencedTable: $db.routines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.routines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> routineIntervalsRefs<T extends Object>(
+    Expression<T> Function($$RoutineIntervalsTableAnnotationComposer a) f,
+  ) {
+    final $$RoutineIntervalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.routineIntervals,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineIntervalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.routineIntervals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RoutineSectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RoutineSectionsTable,
+          RoutineSectionRow,
+          $$RoutineSectionsTableFilterComposer,
+          $$RoutineSectionsTableOrderingComposer,
+          $$RoutineSectionsTableAnnotationComposer,
+          $$RoutineSectionsTableCreateCompanionBuilder,
+          $$RoutineSectionsTableUpdateCompanionBuilder,
+          (RoutineSectionRow, $$RoutineSectionsTableReferences),
+          RoutineSectionRow,
+          PrefetchHooks Function({bool routineId, bool routineIntervalsRefs})
+        > {
+  $$RoutineSectionsTableTableManager(
+    _$AppDatabase db,
+    $RoutineSectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoutineSectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoutineSectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoutineSectionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> routineId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<int?> startMinutes = const Value.absent(),
+                Value<int?> endMinutes = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineSectionsCompanion(
+                id: id,
+                routineId: routineId,
+                title: title,
+                position: position,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String routineId,
+                required String title,
+                required int position,
+                Value<int?> startMinutes = const Value.absent(),
+                Value<int?> endMinutes = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineSectionsCompanion.insert(
+                id: id,
+                routineId: routineId,
+                title: title,
+                position: position,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RoutineSectionsTable, RoutineSectionRow>(table),
+                  $$RoutineSectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({routineId = false, routineIntervalsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (routineIntervalsRefs) db.routineIntervals,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (routineId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.routineId,
+                            referencedTable: $$RoutineSectionsTableReferences
+                                ._routineIdTable(db),
+                            referencedColumn: $$RoutineSectionsTableReferences
+                                ._routineIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (routineIntervalsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RoutineSectionRow,
+                          $RoutineSectionsTable,
+                          RoutineIntervalRow,
+                          $RoutineIntervalsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoutineSectionsTableReferences
+                              ._routineIntervalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoutineSectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).routineIntervalsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'section_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RoutineSectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RoutineSectionsTable,
+      RoutineSectionRow,
+      $$RoutineSectionsTableFilterComposer,
+      $$RoutineSectionsTableOrderingComposer,
+      $$RoutineSectionsTableAnnotationComposer,
+      $$RoutineSectionsTableCreateCompanionBuilder,
+      $$RoutineSectionsTableUpdateCompanionBuilder,
+      (RoutineSectionRow, $$RoutineSectionsTableReferences),
+      RoutineSectionRow,
+      PrefetchHooks Function({bool routineId, bool routineIntervalsRefs})
+    >;
+typedef $$RoutineIntervalsTableCreateCompanionBuilder =
+    RoutineIntervalsCompanion Function({
+      required String id,
+      required String sectionId,
+      required int startMinutes,
+      required int endMinutes,
+      required int position,
+      Value<String?> taskTitle,
+      Value<String?> taskDetails,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$RoutineIntervalsTableUpdateCompanionBuilder =
+    RoutineIntervalsCompanion Function({
+      Value<String> id,
+      Value<String> sectionId,
+      Value<int> startMinutes,
+      Value<int> endMinutes,
+      Value<int> position,
+      Value<String?> taskTitle,
+      Value<String?> taskDetails,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$RoutineIntervalsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RoutineIntervalsTable,
+          RoutineIntervalRow
+        > {
+  $$RoutineIntervalsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RoutineSectionsTable _sectionIdTable(_$AppDatabase db) => db
+      .routineSections
+      .createAlias('routine_intervals__section_id__routine_sections__id');
+
+  $$RoutineSectionsTableProcessedTableManager get sectionId {
+    final $_column = $_itemColumn<String>('section_id')!;
+
+    final manager = $$RoutineSectionsTableTableManager(
+      $_db,
+      $_db.routineSections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $RoutineIntervalCompletionsTable,
+    List<RoutineIntervalCompletionRow>
+  >
+  _routineIntervalCompletionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.routineIntervalCompletions,
+        aliasName:
+            'routine_intervals__id__routine_interval_completions__interval_id',
+      );
+
+  $$RoutineIntervalCompletionsTableProcessedTableManager
+  get routineIntervalCompletionsRefs {
+    final manager = $$RoutineIntervalCompletionsTableTableManager(
+      $_db,
+      $_db.routineIntervalCompletions,
+    ).filter((f) => f.intervalId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _routineIntervalCompletionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RoutineIntervalsTableFilterComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalsTable> {
+  $$RoutineIntervalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskTitle => $composableBuilder(
+    column: $table.taskTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskDetails => $composableBuilder(
+    column: $table.taskDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RoutineSectionsTableFilterComposer get sectionId {
+    final $$RoutineSectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.routineSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineSectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.routineSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> routineIntervalCompletionsRefs(
+    Expression<bool> Function($$RoutineIntervalCompletionsTableFilterComposer f)
+    f,
+  ) {
+    final $$RoutineIntervalCompletionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.routineIntervalCompletions,
+          getReferencedColumn: (t) => t.intervalId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RoutineIntervalCompletionsTableFilterComposer(
+                $db: $db,
+                $table: $db.routineIntervalCompletions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$RoutineIntervalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalsTable> {
+  $$RoutineIntervalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskTitle => $composableBuilder(
+    column: $table.taskTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskDetails => $composableBuilder(
+    column: $table.taskDetails,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RoutineSectionsTableOrderingComposer get sectionId {
+    final $$RoutineSectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.routineSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineSectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.routineSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RoutineIntervalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalsTable> {
+  $$RoutineIntervalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get taskTitle =>
+      $composableBuilder(column: $table.taskTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get taskDetails => $composableBuilder(
+    column: $table.taskDetails,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$RoutineSectionsTableAnnotationComposer get sectionId {
+    final $$RoutineSectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.routineSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineSectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.routineSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> routineIntervalCompletionsRefs<T extends Object>(
+    Expression<T> Function(
+      $$RoutineIntervalCompletionsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$RoutineIntervalCompletionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.routineIntervalCompletions,
+          getReferencedColumn: (t) => t.intervalId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RoutineIntervalCompletionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.routineIntervalCompletions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$RoutineIntervalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RoutineIntervalsTable,
+          RoutineIntervalRow,
+          $$RoutineIntervalsTableFilterComposer,
+          $$RoutineIntervalsTableOrderingComposer,
+          $$RoutineIntervalsTableAnnotationComposer,
+          $$RoutineIntervalsTableCreateCompanionBuilder,
+          $$RoutineIntervalsTableUpdateCompanionBuilder,
+          (RoutineIntervalRow, $$RoutineIntervalsTableReferences),
+          RoutineIntervalRow,
+          PrefetchHooks Function({
+            bool sectionId,
+            bool routineIntervalCompletionsRefs,
+          })
+        > {
+  $$RoutineIntervalsTableTableManager(
+    _$AppDatabase db,
+    $RoutineIntervalsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoutineIntervalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoutineIntervalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoutineIntervalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sectionId = const Value.absent(),
+                Value<int> startMinutes = const Value.absent(),
+                Value<int> endMinutes = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> taskTitle = const Value.absent(),
+                Value<String?> taskDetails = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineIntervalsCompanion(
+                id: id,
+                sectionId: sectionId,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                position: position,
+                taskTitle: taskTitle,
+                taskDetails: taskDetails,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sectionId,
+                required int startMinutes,
+                required int endMinutes,
+                required int position,
+                Value<String?> taskTitle = const Value.absent(),
+                Value<String?> taskDetails = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineIntervalsCompanion.insert(
+                id: id,
+                sectionId: sectionId,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                position: position,
+                taskTitle: taskTitle,
+                taskDetails: taskDetails,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RoutineIntervalsTable, RoutineIntervalRow>(
+                    table,
+                  ),
+                  $$RoutineIntervalsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({sectionId = false, routineIntervalCompletionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (routineIntervalCompletionsRefs)
+                      db.routineIntervalCompletions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (sectionId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.sectionId,
+                            referencedTable: $$RoutineIntervalsTableReferences
+                                ._sectionIdTable(db),
+                            referencedColumn: $$RoutineIntervalsTableReferences
+                                ._sectionIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (routineIntervalCompletionsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RoutineIntervalRow,
+                          $RoutineIntervalsTable,
+                          RoutineIntervalCompletionRow,
+                          $RoutineIntervalCompletionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RoutineIntervalsTableReferences
+                              ._routineIntervalCompletionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RoutineIntervalsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).routineIntervalCompletionsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'interval_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RoutineIntervalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RoutineIntervalsTable,
+      RoutineIntervalRow,
+      $$RoutineIntervalsTableFilterComposer,
+      $$RoutineIntervalsTableOrderingComposer,
+      $$RoutineIntervalsTableAnnotationComposer,
+      $$RoutineIntervalsTableCreateCompanionBuilder,
+      $$RoutineIntervalsTableUpdateCompanionBuilder,
+      (RoutineIntervalRow, $$RoutineIntervalsTableReferences),
+      RoutineIntervalRow,
+      PrefetchHooks Function({
+        bool sectionId,
+        bool routineIntervalCompletionsRefs,
+      })
+    >;
+typedef $$RoutineIntervalCompletionsTableCreateCompanionBuilder =
+    RoutineIntervalCompletionsCompanion Function({
+      required String intervalId,
+      required DateOnly date,
+      required int completedAt,
+      Value<int> rowid,
+    });
+typedef $$RoutineIntervalCompletionsTableUpdateCompanionBuilder =
+    RoutineIntervalCompletionsCompanion Function({
+      Value<String> intervalId,
+      Value<DateOnly> date,
+      Value<int> completedAt,
+      Value<int> rowid,
+    });
+
+final class $$RoutineIntervalCompletionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RoutineIntervalCompletionsTable,
+          RoutineIntervalCompletionRow
+        > {
+  $$RoutineIntervalCompletionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RoutineIntervalsTable _intervalIdTable(_$AppDatabase db) =>
+      db.routineIntervals.createAlias(
+        'routine_interval_completions__interval_id__routine_intervals__id',
+      );
+
+  $$RoutineIntervalsTableProcessedTableManager get intervalId {
+    final $_column = $_itemColumn<String>('interval_id')!;
+
+    final manager = $$RoutineIntervalsTableTableManager(
+      $_db,
+      $_db.routineIntervals,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_intervalIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RoutineIntervalCompletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalCompletionsTable> {
+  $$RoutineIntervalCompletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnWithTypeConverterFilters<DateOnly, DateOnly, String> get date =>
+      $composableBuilder(
+        column: $table.date,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RoutineIntervalsTableFilterComposer get intervalId {
+    final $$RoutineIntervalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.intervalId,
+      referencedTable: $db.routineIntervals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineIntervalsTableFilterComposer(
+            $db: $db,
+            $table: $db.routineIntervals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RoutineIntervalCompletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalCompletionsTable> {
+  $$RoutineIntervalCompletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RoutineIntervalsTableOrderingComposer get intervalId {
+    final $$RoutineIntervalsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.intervalId,
+      referencedTable: $db.routineIntervals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineIntervalsTableOrderingComposer(
+            $db: $db,
+            $table: $db.routineIntervals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RoutineIntervalCompletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RoutineIntervalCompletionsTable> {
+  $$RoutineIntervalCompletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumnWithTypeConverter<DateOnly, String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  $$RoutineIntervalsTableAnnotationComposer get intervalId {
+    final $$RoutineIntervalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.intervalId,
+      referencedTable: $db.routineIntervals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RoutineIntervalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.routineIntervals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RoutineIntervalCompletionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RoutineIntervalCompletionsTable,
+          RoutineIntervalCompletionRow,
+          $$RoutineIntervalCompletionsTableFilterComposer,
+          $$RoutineIntervalCompletionsTableOrderingComposer,
+          $$RoutineIntervalCompletionsTableAnnotationComposer,
+          $$RoutineIntervalCompletionsTableCreateCompanionBuilder,
+          $$RoutineIntervalCompletionsTableUpdateCompanionBuilder,
+          (
+            RoutineIntervalCompletionRow,
+            $$RoutineIntervalCompletionsTableReferences,
+          ),
+          RoutineIntervalCompletionRow,
+          PrefetchHooks Function({bool intervalId})
+        > {
+  $$RoutineIntervalCompletionsTableTableManager(
+    _$AppDatabase db,
+    $RoutineIntervalCompletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoutineIntervalCompletionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$RoutineIntervalCompletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RoutineIntervalCompletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> intervalId = const Value.absent(),
+                Value<DateOnly> date = const Value.absent(),
+                Value<int> completedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineIntervalCompletionsCompanion(
+                intervalId: intervalId,
+                date: date,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String intervalId,
+                required DateOnly date,
+                required int completedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineIntervalCompletionsCompanion.insert(
+                intervalId: intervalId,
+                date: date,
+                completedAt: completedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $RoutineIntervalCompletionsTable,
+                    RoutineIntervalCompletionRow
+                  >(table),
+                  $$RoutineIntervalCompletionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({intervalId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (intervalId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.intervalId,
+                        referencedTable:
+                            $$RoutineIntervalCompletionsTableReferences
+                                ._intervalIdTable(db),
+                        referencedColumn:
+                            $$RoutineIntervalCompletionsTableReferences
+                                ._intervalIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RoutineIntervalCompletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RoutineIntervalCompletionsTable,
+      RoutineIntervalCompletionRow,
+      $$RoutineIntervalCompletionsTableFilterComposer,
+      $$RoutineIntervalCompletionsTableOrderingComposer,
+      $$RoutineIntervalCompletionsTableAnnotationComposer,
+      $$RoutineIntervalCompletionsTableCreateCompanionBuilder,
+      $$RoutineIntervalCompletionsTableUpdateCompanionBuilder,
+      (
+        RoutineIntervalCompletionRow,
+        $$RoutineIntervalCompletionsTableReferences,
+      ),
+      RoutineIntervalCompletionRow,
+      PrefetchHooks Function({bool intervalId})
+    >;
 typedef $$SyncOutboxTableCreateCompanionBuilder = SyncOutboxCompanion Function({
   required String entity,
   required String entityId,
@@ -9280,6 +12524,194 @@ typedef $$SyncRowStatesTableProcessedTableManager =
       SyncRowStateRow,
       PrefetchHooks Function()
     >;
+typedef $$SyncBasesTableCreateCompanionBuilder = SyncBasesCompanion Function({
+  required String entity,
+  required String entityId,
+  required String payload,
+  required int updatedAt,
+  Value<int> rowid,
+});
+typedef $$SyncBasesTableUpdateCompanionBuilder = SyncBasesCompanion Function({
+  Value<String> entity,
+  Value<String> entityId,
+  Value<String> payload,
+  Value<int> updatedAt,
+  Value<int> rowid,
+});
+
+class $$SyncBasesTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncBasesTable> {
+  $$SyncBasesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncBasesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncBasesTable> {
+  $$SyncBasesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncBasesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncBasesTable> {
+  $$SyncBasesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get entity =>
+      $composableBuilder(column: $table.entity, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SyncBasesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncBasesTable,
+          SyncBaseRow,
+          $$SyncBasesTableFilterComposer,
+          $$SyncBasesTableOrderingComposer,
+          $$SyncBasesTableAnnotationComposer,
+          $$SyncBasesTableCreateCompanionBuilder,
+          $$SyncBasesTableUpdateCompanionBuilder,
+          (
+            SyncBaseRow,
+            BaseReferences<_$AppDatabase, $SyncBasesTable, SyncBaseRow>,
+          ),
+          SyncBaseRow,
+          PrefetchHooks Function()
+        > {
+  $$SyncBasesTableTableManager(_$AppDatabase db, $SyncBasesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncBasesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncBasesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncBasesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> entity = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncBasesCompanion(
+                entity: entity,
+                entityId: entityId,
+                payload: payload,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String entity,
+                required String entityId,
+                required String payload,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncBasesCompanion.insert(
+                entity: entity,
+                entityId: entityId,
+                payload: payload,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SyncBasesTable, SyncBaseRow>(table),
+                  BaseReferences<_$AppDatabase, $SyncBasesTable, SyncBaseRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncBasesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncBasesTable,
+      SyncBaseRow,
+      $$SyncBasesTableFilterComposer,
+      $$SyncBasesTableOrderingComposer,
+      $$SyncBasesTableAnnotationComposer,
+      $$SyncBasesTableCreateCompanionBuilder,
+      $$SyncBasesTableUpdateCompanionBuilder,
+      (
+        SyncBaseRow,
+        BaseReferences<_$AppDatabase, $SyncBasesTable, SyncBaseRow>,
+      ),
+      SyncBaseRow,
+      PrefetchHooks Function()
+    >;
 typedef $$SyncStatesTableCreateCompanionBuilder = SyncStatesCompanion Function({
   required String key,
   required String value,
@@ -9446,10 +12878,22 @@ class $AppDatabaseManager {
       $$RoutineItemsTableTableManager(_db, _db.routineItems);
   $$RoutineCompletionsTableTableManager get routineCompletions =>
       $$RoutineCompletionsTableTableManager(_db, _db.routineCompletions);
+  $$RoutineSectionsTableTableManager get routineSections =>
+      $$RoutineSectionsTableTableManager(_db, _db.routineSections);
+  $$RoutineIntervalsTableTableManager get routineIntervals =>
+      $$RoutineIntervalsTableTableManager(_db, _db.routineIntervals);
+  $$RoutineIntervalCompletionsTableTableManager
+  get routineIntervalCompletions =>
+      $$RoutineIntervalCompletionsTableTableManager(
+        _db,
+        _db.routineIntervalCompletions,
+      );
   $$SyncOutboxTableTableManager get syncOutbox =>
       $$SyncOutboxTableTableManager(_db, _db.syncOutbox);
   $$SyncRowStatesTableTableManager get syncRowStates =>
       $$SyncRowStatesTableTableManager(_db, _db.syncRowStates);
+  $$SyncBasesTableTableManager get syncBases =>
+      $$SyncBasesTableTableManager(_db, _db.syncBases);
   $$SyncStatesTableTableManager get syncStates =>
       $$SyncStatesTableTableManager(_db, _db.syncStates);
 }

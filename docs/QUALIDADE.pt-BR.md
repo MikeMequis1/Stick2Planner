@@ -147,7 +147,8 @@ Validação da migração desktop (2026-11-12):
   portátil e um MSIX não assinado foram gerados. O ZIP é utilizável direto; o
   MSIX não assinado exige assinatura (ou publisher de namespace não assinado,
   apenas para desenvolvimento).
-- Compatibilidade dos dados Android: esquema v10 e `planner.sqlite` inalterados;
-  todos os testes de migração e rollback passaram.
-- Os testes do servidor não foram repetidos nesta migração; o resultado anterior
-  permanece 16 testes aprovados.
+- Compatibilidade dos dados Android: esquema v12 migra v1-v11 sem resetar
+  `planner.sqlite`; testes de migração, rotinas simples/completas, mesclagem e
+  backup passaram.
+- Stick2Server: 17 testes aprovados, incluindo receber/devolver rotina completa
+  e preservar cards aninhados contra atualização de cliente antigo.

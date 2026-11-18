@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 
-import '../../core/date_only.dart';
 import '../../data/db/app_database.dart';
 import '../../data/db/converters.dart';
 import '../../data/mappers/mappers.dart';
+import '../../data/repositories/drift_routine_repository.dart';
 import '../../domain/entities/post_it.dart';
 import 'sync_models.dart';
 import 'sync_payload.dart';
@@ -57,25 +57,11 @@ final class SyncDatasetService {
     )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
     final historyRows = await _db.select(_db.postItHistoryEntries).get();
     final tagRows = await _db.select(_db.tags).get();
-    final routineRows = await _db.select(_db.routines).get();
-    final routineItemRows = await (_db.select(
-      _db.routineItems,
-    )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
-    final routineCompletionRows = await _db
-        .select(_db.routineCompletions)
-        .get();
+    final routines = await DriftRoutineRepository(_db).loadAll();
 
     final linesByNote = <String, List<NoteLineRow>>{};
     for (final row in lineRows) {
       linesByNote.putIfAbsent(row.noteId, () => []).add(row);
-    }
-    final itemsByRoutine = <String, List<RoutineItemRow>>{};
-    for (final row in routineItemRows) {
-      itemsByRoutine.putIfAbsent(row.routineId, () => []).add(row);
-    }
-    final completionsByItem = <String, Set<DateOnly>>{};
-    for (final row in routineCompletionRows) {
-      completionsByItem.putIfAbsent(row.routineItemId, () => {}).add(row.date);
     }
 
     return [
@@ -111,18 +97,12 @@ final class SyncDatasetService {
           dateTimeFromStorage(row.updatedAt),
           row.deletedAt != null,
         ),
-      for (final row in routineRows)
+      for (final routine in routines)
         _entity(
           syncEntityRoutine,
-          row.id,
-          routinePayload(
-            routineFromRows(
-              row,
-              itemsByRoutine[row.id] ?? const [],
-              completionsByItem,
-            ),
-          ),
-          dateTimeFromStorage(row.updatedAt),
+          routine.id,
+          routinePayload(routine),
+          routine.updatedAt,
           false,
         ),
     ];

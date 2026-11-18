@@ -168,6 +168,7 @@ Map<String, Object?> routinePayload(Routine routine, {DateTime? deletedAt}) => {
   'id': routine.id,
   'name': routine.name,
   'details': routine.details,
+  'mode': routine.mode.name,
   'weekdays': routine.weekdays.toList()..sort(),
   'items': [
     for (final item in routine.items)
@@ -185,6 +186,31 @@ Map<String, Object?> routinePayload(Routine routine, {DateTime? deletedAt}) => {
   'createdAt': routine.createdAt.toUtc().toIso8601String(),
   'updatedAt': routine.updatedAt.toUtc().toIso8601String(),
   'deletedAt': deletedAt?.toUtc().toIso8601String(),
+  'sections': [
+    for (final section in routine.sections)
+      {
+        'id': section.id,
+        'title': section.title,
+        'position': section.position,
+        'startMinutes': section.startMinutes,
+        'endMinutes': section.endMinutes,
+        'intervals': [
+          for (final interval in section.intervals)
+            {
+              'id': interval.id,
+              'startMinutes': interval.startMinutes,
+              'endMinutes': interval.endMinutes,
+              'position': interval.position,
+              'title': interval.title,
+              'details': interval.details,
+              'completedDates': [
+                for (final date in interval.completedDates.toList()..sort())
+                  date.toIso8601String(),
+              ],
+            },
+        ],
+      },
+  ],
 };
 
 Routine routineFromPayload(Map<String, Object?> payload) {
@@ -209,15 +235,72 @@ Routine routineFromPayload(Map<String, Object?> payload) {
     }
   }
   items.sort((a, b) => a.position.compareTo(b.position));
+  final sections = _sectionsFromPayload(payload['sections'], routineId);
   return Routine(
     id: routineId,
     name: _text(payload, 'name'),
+    mode: _optionalEnum(
+      RoutineMode.values,
+      payload['mode'],
+      RoutineMode.simple,
+    ),
     details: _optionalText(payload, 'details'),
     weekdays: _integerList(payload['weekdays']).toSet(),
     items: items,
+    sections: sections,
     createdAt: _time(payload, 'createdAt'),
     updatedAt: _time(payload, 'updatedAt'),
   );
+}
+
+List<RoutineSection> _sectionsFromPayload(Object? raw, String routineId) {
+  if (raw is! List) return const [];
+  final sections = <RoutineSection>[];
+  for (var sectionIndex = 0; sectionIndex < raw.length; sectionIndex++) {
+    final rawSection = raw[sectionIndex];
+    if (rawSection is! Map) continue;
+    final section = Map<String, Object?>.from(rawSection);
+    final sectionId = _text(section, 'id');
+    final rawIntervals = section['intervals'];
+    final intervals = <RoutineInterval>[];
+    if (rawIntervals is List) {
+      for (
+        var intervalIndex = 0;
+        intervalIndex < rawIntervals.length;
+        intervalIndex++
+      ) {
+        final rawInterval = rawIntervals[intervalIndex];
+        if (rawInterval is! Map) continue;
+        final interval = Map<String, Object?>.from(rawInterval);
+        intervals.add(
+          RoutineInterval(
+            id: _text(interval, 'id'),
+            sectionId: sectionId,
+            startMinutes: _integer(interval, 'startMinutes'),
+            endMinutes: _integer(interval, 'endMinutes'),
+            position: _optionalInteger(interval, 'position', intervalIndex),
+            title: _optionalText(interval, 'title'),
+            details: _optionalText(interval, 'details'),
+            completedDates: _dateList(interval['completedDates']),
+          ),
+        );
+      }
+    }
+    intervals.sort((a, b) => a.position.compareTo(b.position));
+    sections.add(
+      RoutineSection(
+        id: sectionId,
+        routineId: routineId,
+        title: _text(section, 'title'),
+        position: _optionalInteger(section, 'position', sectionIndex),
+        startMinutes: _optionalNullableInteger(section, 'startMinutes'),
+        endMinutes: _optionalNullableInteger(section, 'endMinutes'),
+        intervals: intervals,
+      ),
+    );
+  }
+  sections.sort((a, b) => a.position.compareTo(b.position));
+  return sections;
 }
 
 String _text(Map<String, Object?> payload, String key) {

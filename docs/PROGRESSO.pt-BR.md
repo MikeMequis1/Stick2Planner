@@ -1599,6 +1599,53 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 
 
 
+## Rotinas completas (0.8.0)
+
+- Rotinas agora têm formato: **Simples** mantém a lista plana de atividades;
+  **Completa** adiciona cards independentes com título, horário inicial/final,
+  horários intermediários livres e uma tarefa opcional por intervalo.
+- A edição de horários fica em `lib/domain/usecases/routine_sections.dart`:
+  adicionar um horário divide o intervalo (o lado esquerdo mantém ID, tarefa e
+  conclusões), mover uma fronteira só ajusta os vizinhos e remover uma fronteira
+  une os intervalos. Se os dois lados tiverem tarefas, o usuário escolhe qual
+  manter, evitando perda silenciosa.
+- Esquema **v11** adiciona `routines.mode`, `routine_sections`,
+  `routine_intervals` e `routine_interval_completions`. Migrações de v1-v10
+  preservam as rotinas simples existentes sem resetar dados.
+- Rotinas completas sincronizam na mesma entidade atômica `routine`, com
+  `sections`/`intervals` aninhados. Cópias de conflito regeneram IDs de cards e
+  intervalos para não sobrescrever a estrutura da rotina original.
+- O backup JSON agora inclui rotinas simples e completas, com cards, intervalos,
+  tarefas e conclusões por data; os backups aceitam o esquema v11.
+- `flutter test`: **333 testes aprovados**; `flutter analyze`: sem issues.
+  Stick2Server: **17 testes aprovados**, incluindo payload de rotina completa.
+- Build: versão **0.8.0+16**.
+- Limitação: conflitos continuam no nível da rotina (cópia `[Conflito]`); não há
+  mesclagem automática por elemento.
+
+## Mesclagem de conflitos de rotina (0.9.0)
+
+- Esquema **v12** adiciona `sync_bases`, que guarda o último payload aceito pelo
+  servidor por entidade. É metadado local de sync: não entra no backup JSON e é
+  limpo na importação de backup.
+- Conflitos de rotina agora usam mesclagem de três vias (`base`, `local`,
+  `servidor`) com IDs estáveis de card, intervalo e tarefa. Alterações em cards,
+  intervalos, campos ou datas de conclusão diferentes são unidas em um payload e
+  reenviadas automaticamente, sem cópia de conflito.
+- Quando os dois lados alteram o mesmo campo ou elemento de formas diferentes, a
+  versão do servidor permanece como original e a local vira cópia
+  `[Conflito]`. Conflitos de rotina não dependem mais apenas de horário, então
+  uma edição local mais nova não sobrescreve silenciosamente a edição do mesmo
+  elemento vinda do servidor.
+- O Stick2Server agora protege rotinas completas de clientes antigos: um payload
+  de rotina sem `mode`/`sections` mantém os cards completos armazenados em vez de
+  apagá-los. Nenhum endpoint ou esquema de API mudou.
+- Cards de rotina completa aparecem em duas colunas em telas largas; o editor
+  mantém uma coluna centralizada para preservar a reordenação por arraste.
+- `flutter test`: **339 testes aprovados**; `flutter analyze`: sem issues.
+  Stick2Server: **17 testes aprovados**.
+- Build: versão **0.9.0+17**.
+
 ## Revisão do release desktop (pendente)
 
 - O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release

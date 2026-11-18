@@ -108,6 +108,25 @@ final class SyncApplyService {
         await (_db.delete(
           _db.routineItems,
         )..where((table) => table.routineId.equals(routineId))).go();
+        final sections = await (_db.select(
+          _db.routineSections,
+        )..where((table) => table.routineId.equals(routineId))).get();
+        for (final section in sections) {
+          final intervals = await (_db.select(
+            _db.routineIntervals,
+          )..where((table) => table.sectionId.equals(section.id))).get();
+          for (final interval in intervals) {
+            await (_db.delete(
+              _db.routineIntervalCompletions,
+            )..where((table) => table.intervalId.equals(interval.id))).go();
+          }
+          await (_db.delete(
+            _db.routineIntervals,
+          )..where((table) => table.sectionId.equals(section.id))).go();
+        }
+        await (_db.delete(
+          _db.routineSections,
+        )..where((table) => table.routineId.equals(routineId))).go();
         await (_db.delete(
           _db.routines,
         )..where((table) => table.id.equals(routineId))).go();
@@ -125,6 +144,7 @@ final class SyncApplyService {
               id: Value(routine.id),
               name: Value(routine.name),
               details: Value(routine.details),
+              mode: Value(routine.mode),
               weekdays: Value(routineWeekdayMask(routine.weekdays)),
               createdAt: Value(dateTimeToStorage(routine.createdAt)),
               updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
@@ -172,6 +192,101 @@ final class SyncApplyService {
                   completedAt: Value(dateTimeToStorage(routine.updatedAt)),
                 ),
               );
+        }
+      }
+
+      final keepSections = {for (final section in routine.sections) section.id};
+      final existingSections = await (_db.select(
+        _db.routineSections,
+      )..where((table) => table.routineId.equals(routine.id))).get();
+      for (final row in existingSections) {
+        if (keepSections.contains(row.id)) continue;
+        final intervals = await (_db.select(
+          _db.routineIntervals,
+        )..where((table) => table.sectionId.equals(row.id))).get();
+        for (final interval in intervals) {
+          await (_db.delete(
+            _db.routineIntervalCompletions,
+          )..where((table) => table.intervalId.equals(interval.id))).go();
+        }
+        await (_db.delete(
+          _db.routineIntervals,
+        )..where((table) => table.sectionId.equals(row.id))).go();
+        await (_db.delete(
+          _db.routineSections,
+        )..where((table) => table.id.equals(row.id))).go();
+      }
+
+      for (
+        var sectionIndex = 0;
+        sectionIndex < routine.sections.length;
+        sectionIndex++
+      ) {
+        final section = routine.sections[sectionIndex];
+        await _db
+            .into(_db.routineSections)
+            .insertOnConflictUpdate(
+              RoutineSectionsCompanion(
+                id: Value(section.id),
+                routineId: Value(routine.id),
+                title: Value(section.title),
+                position: Value(sectionIndex),
+                startMinutes: Value(section.startMinutes),
+                endMinutes: Value(section.endMinutes),
+                createdAt: Value(dateTimeToStorage(routine.createdAt)),
+                updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
+              ),
+            );
+        final keepIntervals = {
+          for (final interval in section.intervals) interval.id,
+        };
+        final existingIntervals = await (_db.select(
+          _db.routineIntervals,
+        )..where((table) => table.sectionId.equals(section.id))).get();
+        for (final row in existingIntervals) {
+          if (keepIntervals.contains(row.id)) continue;
+          await (_db.delete(
+            _db.routineIntervalCompletions,
+          )..where((table) => table.intervalId.equals(row.id))).go();
+          await (_db.delete(
+            _db.routineIntervals,
+          )..where((table) => table.id.equals(row.id))).go();
+        }
+        for (
+          var intervalIndex = 0;
+          intervalIndex < section.intervals.length;
+          intervalIndex++
+        ) {
+          final interval = section.intervals[intervalIndex];
+          await _db
+              .into(_db.routineIntervals)
+              .insertOnConflictUpdate(
+                RoutineIntervalsCompanion(
+                  id: Value(interval.id),
+                  sectionId: Value(section.id),
+                  startMinutes: Value(interval.startMinutes),
+                  endMinutes: Value(interval.endMinutes),
+                  position: Value(intervalIndex),
+                  taskTitle: Value(interval.title),
+                  taskDetails: Value(interval.details),
+                  createdAt: Value(dateTimeToStorage(routine.createdAt)),
+                  updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
+                ),
+              );
+          await (_db.delete(
+            _db.routineIntervalCompletions,
+          )..where((table) => table.intervalId.equals(interval.id))).go();
+          for (final date in interval.completedDates) {
+            await _db
+                .into(_db.routineIntervalCompletions)
+                .insertOnConflictUpdate(
+                  RoutineIntervalCompletionsCompanion(
+                    intervalId: Value(interval.id),
+                    date: Value(date),
+                    completedAt: Value(dateTimeToStorage(routine.updatedAt)),
+                  ),
+                );
+          }
         }
       }
       await _recordRev(syncEntityRoutine, routine.id, rev);
