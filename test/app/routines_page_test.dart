@@ -88,9 +88,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('dicas seguem a configuração de animações e transições', (
-    tester,
-  ) async {
+  testWidgets('dicas seguem a configuração Mostrar dicas', (tester) async {
     final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
     await dependencies.initialize();
     addTearDown(dependencies.dispose);
@@ -116,12 +114,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.dragToReorder), findsOneWidget);
 
-    await dependencies.settings.setAnimationsEnabled(false);
+    await dependencies.settings.setShowCalendarHints(false);
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.routineSwipeHint), findsNothing);
     expect(find.text(AppStrings.dragToReorder), findsNothing);
 
-    await dependencies.settings.setAnimationsEnabled(true);
+    await dependencies.settings.setShowCalendarHints(true);
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.routineSwipeHint), findsOneWidget);
     expect(find.text(AppStrings.dragToReorder), findsOneWidget);

@@ -651,6 +651,44 @@ void main() {
     expect(find.text('09:30'), findsWidgets);
   });
 
+  testWidgets('somente +X mais abre a listagem completa do dia', (
+    tester,
+  ) async {
+    final tasks = [
+      for (var index = 0; index < 8; index++)
+        buildPostIt(
+          id: 't$index',
+          title: 'Tarefa $index',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+    ];
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      landscapeMode: AgendaViewMode.month,
+      postIts: tasks,
+    );
+
+    await tester.tap(find.byKey(const Key('day-2026-11-05')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('day-overflow-2026-11-04')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+    expect(find.text('Tarefa 0'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Tarefa 7'),
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('day-details-sheet')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Tarefa 7'), findsWidgets);
+  });
+
   testWidgets('celular em retrato não estoura', (tester) async {
     await pumpPlanner(tester, size: const Size(360, 780));
 

@@ -492,7 +492,12 @@ class _AgendaPageState extends State<AgendaPage> {
     PlannerController planner,
     PostIt postIt,
   ) {
-    openPostItDetailsById(context, postItId: postIt.id, goToAgenda: false);
+    openPostItDetailsById(
+      context,
+      postItId: postIt.id,
+      goToAgenda: false,
+      occurrence: postIt,
+    );
   }
 }
 

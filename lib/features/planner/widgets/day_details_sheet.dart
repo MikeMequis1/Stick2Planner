@@ -29,6 +29,7 @@ Future<void> showDayDetailsSheet(
         onCancel: () => Navigator.of(sheetContext).pop(),
         child: SafeArea(
           child: SizedBox(
+            key: const Key('day-details-sheet'),
             height: height,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

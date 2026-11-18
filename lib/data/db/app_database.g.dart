@@ -1174,6 +1174,31 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateOnly?, String>
+  recurrenceEndDate = GeneratedColumn<String>(
+    'recurrence_end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<DateOnly?>($PostItsTable.$converterrecurrenceEndDaten);
+  @override
+  late final GeneratedColumnWithTypeConverter<
+    Map<DateOnly, PostItStatus>,
+    String
+  >
+  occurrenceStatuses =
+      GeneratedColumn<String>(
+        'occurrence_statuses',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('{}'),
+      ).withConverter<Map<DateOnly, PostItStatus>>(
+        $PostItsTable.$converteroccurrenceStatuses,
+      );
   static const VerificationMeta _timeMinutesMeta = const VerificationMeta(
     'timeMinutes',
   );
@@ -1277,6 +1302,8 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     endDate,
     recurrence,
     recurrenceInterval,
+    recurrenceEndDate,
+    occurrenceStatuses,
     timeMinutes,
     reminderMinutes,
     tagIds,
@@ -1485,6 +1512,18 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
         DriftSqlType.int,
         data['${effectivePrefix}recurrence_interval'],
       )!,
+      recurrenceEndDate: $PostItsTable.$converterrecurrenceEndDaten.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}recurrence_end_date'],
+        ),
+      ),
+      occurrenceStatuses: $PostItsTable.$converteroccurrenceStatuses.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}occurrence_statuses'],
+        )!,
+      ),
       timeMinutes: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}time_minutes'],
@@ -1543,6 +1582,12 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
   $converterrecurrence = const EnumNameConverter<EventRecurrence>(
     EventRecurrence.values,
   );
+  static TypeConverter<DateOnly, String> $converterrecurrenceEndDate =
+      const DateOnlyConverter();
+  static TypeConverter<DateOnly?, String?> $converterrecurrenceEndDaten =
+      NullAwareTypeConverter.wrap($converterrecurrenceEndDate);
+  static TypeConverter<Map<DateOnly, PostItStatus>, String>
+  $converteroccurrenceStatuses = const OccurrenceStatusesConverter();
   static TypeConverter<List<String>, String> $convertertagIds =
       const TagIdsConverter();
 }
@@ -1561,6 +1606,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
   final DateOnly? endDate;
   final EventRecurrence recurrence;
   final int recurrenceInterval;
+  final DateOnly? recurrenceEndDate;
+  final Map<DateOnly, PostItStatus> occurrenceStatuses;
   final int? timeMinutes;
   final int? reminderMinutes;
   final List<String> tagIds;
@@ -1583,6 +1630,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     this.endDate,
     required this.recurrence,
     required this.recurrenceInterval,
+    this.recurrenceEndDate,
+    required this.occurrenceStatuses,
     this.timeMinutes,
     this.reminderMinutes,
     required this.tagIds,
@@ -1634,6 +1683,16 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       );
     }
     map['recurrence_interval'] = Variable<int>(recurrenceInterval);
+    if (!nullToAbsent || recurrenceEndDate != null) {
+      map['recurrence_end_date'] = Variable<String>(
+        $PostItsTable.$converterrecurrenceEndDaten.toSql(recurrenceEndDate),
+      );
+    }
+    {
+      map['occurrence_statuses'] = Variable<String>(
+        $PostItsTable.$converteroccurrenceStatuses.toSql(occurrenceStatuses),
+      );
+    }
     if (!nullToAbsent || timeMinutes != null) {
       map['time_minutes'] = Variable<int>(timeMinutes);
     }
@@ -1684,6 +1743,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           : Value(endDate),
       recurrence: Value(recurrence),
       recurrenceInterval: Value(recurrenceInterval),
+      recurrenceEndDate: recurrenceEndDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recurrenceEndDate),
+      occurrenceStatuses: Value(occurrenceStatuses),
       timeMinutes: timeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(timeMinutes),
@@ -1728,6 +1791,12 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
         serializer.fromJson<String>(json['recurrence']),
       ),
       recurrenceInterval: serializer.fromJson<int>(json['recurrenceInterval']),
+      recurrenceEndDate: serializer.fromJson<DateOnly?>(
+        json['recurrenceEndDate'],
+      ),
+      occurrenceStatuses: serializer.fromJson<Map<DateOnly, PostItStatus>>(
+        json['occurrenceStatuses'],
+      ),
       timeMinutes: serializer.fromJson<int?>(json['timeMinutes']),
       reminderMinutes: serializer.fromJson<int?>(json['reminderMinutes']),
       tagIds: serializer.fromJson<List<String>>(json['tagIds']),
@@ -1761,6 +1830,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
         $PostItsTable.$converterrecurrence.toJson(recurrence),
       ),
       'recurrenceInterval': serializer.toJson<int>(recurrenceInterval),
+      'recurrenceEndDate': serializer.toJson<DateOnly?>(recurrenceEndDate),
+      'occurrenceStatuses': serializer.toJson<Map<DateOnly, PostItStatus>>(
+        occurrenceStatuses,
+      ),
       'timeMinutes': serializer.toJson<int?>(timeMinutes),
       'reminderMinutes': serializer.toJson<int?>(reminderMinutes),
       'tagIds': serializer.toJson<List<String>>(tagIds),
@@ -1786,6 +1859,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     Value<DateOnly?> endDate = const Value.absent(),
     EventRecurrence? recurrence,
     int? recurrenceInterval,
+    Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+    Map<DateOnly, PostItStatus>? occurrenceStatuses,
     Value<int?> timeMinutes = const Value.absent(),
     Value<int?> reminderMinutes = const Value.absent(),
     List<String>? tagIds,
@@ -1808,6 +1883,10 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     endDate: endDate.present ? endDate.value : this.endDate,
     recurrence: recurrence ?? this.recurrence,
     recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+    recurrenceEndDate: recurrenceEndDate.present
+        ? recurrenceEndDate.value
+        : this.recurrenceEndDate,
+    occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
     timeMinutes: timeMinutes.present ? timeMinutes.value : this.timeMinutes,
     reminderMinutes: reminderMinutes.present
         ? reminderMinutes.value
@@ -1846,6 +1925,12 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       recurrenceInterval: data.recurrenceInterval.present
           ? data.recurrenceInterval.value
           : this.recurrenceInterval,
+      recurrenceEndDate: data.recurrenceEndDate.present
+          ? data.recurrenceEndDate.value
+          : this.recurrenceEndDate,
+      occurrenceStatuses: data.occurrenceStatuses.present
+          ? data.occurrenceStatuses.value
+          : this.occurrenceStatuses,
       timeMinutes: data.timeMinutes.present
           ? data.timeMinutes.value
           : this.timeMinutes,
@@ -1879,6 +1964,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           ..write('endDate: $endDate, ')
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
+          ..write('recurrenceEndDate: $recurrenceEndDate, ')
+          ..write('occurrenceStatuses: $occurrenceStatuses, ')
           ..write('timeMinutes: $timeMinutes, ')
           ..write('reminderMinutes: $reminderMinutes, ')
           ..write('tagIds: $tagIds, ')
@@ -1906,6 +1993,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     endDate,
     recurrence,
     recurrenceInterval,
+    recurrenceEndDate,
+    occurrenceStatuses,
     timeMinutes,
     reminderMinutes,
     tagIds,
@@ -1932,6 +2021,8 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           other.endDate == this.endDate &&
           other.recurrence == this.recurrence &&
           other.recurrenceInterval == this.recurrenceInterval &&
+          other.recurrenceEndDate == this.recurrenceEndDate &&
+          other.occurrenceStatuses == this.occurrenceStatuses &&
           other.timeMinutes == this.timeMinutes &&
           other.reminderMinutes == this.reminderMinutes &&
           other.tagIds == this.tagIds &&
@@ -1956,6 +2047,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
   final Value<DateOnly?> endDate;
   final Value<EventRecurrence> recurrence;
   final Value<int> recurrenceInterval;
+  final Value<DateOnly?> recurrenceEndDate;
+  final Value<Map<DateOnly, PostItStatus>> occurrenceStatuses;
   final Value<int?> timeMinutes;
   final Value<int?> reminderMinutes;
   final Value<List<String>> tagIds;
@@ -1979,6 +2072,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.endDate = const Value.absent(),
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
+    this.recurrenceEndDate = const Value.absent(),
+    this.occurrenceStatuses = const Value.absent(),
     this.timeMinutes = const Value.absent(),
     this.reminderMinutes = const Value.absent(),
     this.tagIds = const Value.absent(),
@@ -2003,6 +2098,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.endDate = const Value.absent(),
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
+    this.recurrenceEndDate = const Value.absent(),
+    this.occurrenceStatuses = const Value.absent(),
     this.timeMinutes = const Value.absent(),
     this.reminderMinutes = const Value.absent(),
     this.tagIds = const Value.absent(),
@@ -2032,6 +2129,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Expression<String>? endDate,
     Expression<String>? recurrence,
     Expression<int>? recurrenceInterval,
+    Expression<String>? recurrenceEndDate,
+    Expression<String>? occurrenceStatuses,
     Expression<int>? timeMinutes,
     Expression<int>? reminderMinutes,
     Expression<String>? tagIds,
@@ -2056,6 +2155,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       if (endDate != null) 'end_date': endDate,
       if (recurrence != null) 'recurrence': recurrence,
       if (recurrenceInterval != null) 'recurrence_interval': recurrenceInterval,
+      if (recurrenceEndDate != null) 'recurrence_end_date': recurrenceEndDate,
+      if (occurrenceStatuses != null) 'occurrence_statuses': occurrenceStatuses,
       if (timeMinutes != null) 'time_minutes': timeMinutes,
       if (reminderMinutes != null) 'reminder_minutes': reminderMinutes,
       if (tagIds != null) 'tag_ids': tagIds,
@@ -2082,6 +2183,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Value<DateOnly?>? endDate,
     Value<EventRecurrence>? recurrence,
     Value<int>? recurrenceInterval,
+    Value<DateOnly?>? recurrenceEndDate,
+    Value<Map<DateOnly, PostItStatus>>? occurrenceStatuses,
     Value<int?>? timeMinutes,
     Value<int?>? reminderMinutes,
     Value<List<String>>? tagIds,
@@ -2106,6 +2209,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       endDate: endDate ?? this.endDate,
       recurrence: recurrence ?? this.recurrence,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      recurrenceEndDate: recurrenceEndDate ?? this.recurrenceEndDate,
+      occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
       timeMinutes: timeMinutes ?? this.timeMinutes,
       reminderMinutes: reminderMinutes ?? this.reminderMinutes,
       tagIds: tagIds ?? this.tagIds,
@@ -2170,6 +2275,20 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     if (recurrenceInterval.present) {
       map['recurrence_interval'] = Variable<int>(recurrenceInterval.value);
     }
+    if (recurrenceEndDate.present) {
+      map['recurrence_end_date'] = Variable<String>(
+        $PostItsTable.$converterrecurrenceEndDaten.toSql(
+          recurrenceEndDate.value,
+        ),
+      );
+    }
+    if (occurrenceStatuses.present) {
+      map['occurrence_statuses'] = Variable<String>(
+        $PostItsTable.$converteroccurrenceStatuses.toSql(
+          occurrenceStatuses.value,
+        ),
+      );
+    }
     if (timeMinutes.present) {
       map['time_minutes'] = Variable<int>(timeMinutes.value);
     }
@@ -2218,6 +2337,8 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
           ..write('endDate: $endDate, ')
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
+          ..write('recurrenceEndDate: $recurrenceEndDate, ')
+          ..write('occurrenceStatuses: $occurrenceStatuses, ')
           ..write('timeMinutes: $timeMinutes, ')
           ..write('reminderMinutes: $reminderMinutes, ')
           ..write('tagIds: $tagIds, ')
@@ -6284,6 +6405,8 @@ typedef $$PostItsTableCreateCompanionBuilder = PostItsCompanion Function({
   Value<DateOnly?> endDate,
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
+  Value<DateOnly?> recurrenceEndDate,
+  Value<Map<DateOnly, PostItStatus>> occurrenceStatuses,
   Value<int?> timeMinutes,
   Value<int?> reminderMinutes,
   Value<List<String>> tagIds,
@@ -6308,6 +6431,8 @@ typedef $$PostItsTableUpdateCompanionBuilder = PostItsCompanion Function({
   Value<DateOnly?> endDate,
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
+  Value<DateOnly?> recurrenceEndDate,
+  Value<Map<DateOnly, PostItStatus>> occurrenceStatuses,
   Value<int?> timeMinutes,
   Value<int?> reminderMinutes,
   Value<List<String>> tagIds,
@@ -6435,6 +6560,22 @@ class $$PostItsTableFilterComposer
   ColumnFilters<int> get recurrenceInterval => $composableBuilder(
     column: $table.recurrenceInterval,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateOnly?, DateOnly, String>
+  get recurrenceEndDate => $composableBuilder(
+    column: $table.recurrenceEndDate,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    Map<DateOnly, PostItStatus>,
+    Map<DateOnly, PostItStatus>,
+    String
+  >
+  get occurrenceStatuses => $composableBuilder(
+    column: $table.occurrenceStatuses,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<int> get timeMinutes => $composableBuilder(
@@ -6596,6 +6737,16 @@ class $$PostItsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get recurrenceEndDate => $composableBuilder(
+    column: $table.recurrenceEndDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get occurrenceStatuses => $composableBuilder(
+    column: $table.occurrenceStatuses,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get timeMinutes => $composableBuilder(
     column: $table.timeMinutes,
     builder: (column) => ColumnOrderings(column),
@@ -6713,6 +6864,18 @@ class $$PostItsTableAnnotationComposer
 
   GeneratedColumn<int> get recurrenceInterval => $composableBuilder(
     column: $table.recurrenceInterval,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<DateOnly?, String> get recurrenceEndDate =>
+      $composableBuilder(
+        column: $table.recurrenceEndDate,
+        builder: (column) => column,
+      );
+
+  GeneratedColumnWithTypeConverter<Map<DateOnly, PostItStatus>, String>
+  get occurrenceStatuses => $composableBuilder(
+    column: $table.occurrenceStatuses,
     builder: (column) => column,
   );
 
@@ -6837,6 +7000,9 @@ class $$PostItsTableTableManager
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
+                Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+                Value<Map<DateOnly, PostItStatus>> occurrenceStatuses =
+                    const Value.absent(),
                 Value<int?> timeMinutes = const Value.absent(),
                 Value<int?> reminderMinutes = const Value.absent(),
                 Value<List<String>> tagIds = const Value.absent(),
@@ -6860,6 +7026,8 @@ class $$PostItsTableTableManager
                 endDate: endDate,
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
+                recurrenceEndDate: recurrenceEndDate,
+                occurrenceStatuses: occurrenceStatuses,
                 timeMinutes: timeMinutes,
                 reminderMinutes: reminderMinutes,
                 tagIds: tagIds,
@@ -6885,6 +7053,9 @@ class $$PostItsTableTableManager
                 Value<DateOnly?> endDate = const Value.absent(),
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
+                Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+                Value<Map<DateOnly, PostItStatus>> occurrenceStatuses =
+                    const Value.absent(),
                 Value<int?> timeMinutes = const Value.absent(),
                 Value<int?> reminderMinutes = const Value.absent(),
                 Value<List<String>> tagIds = const Value.absent(),
@@ -6908,6 +7079,8 @@ class $$PostItsTableTableManager
                 endDate: endDate,
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
+                recurrenceEndDate: recurrenceEndDate,
+                occurrenceStatuses: occurrenceStatuses,
                 timeMinutes: timeMinutes,
                 reminderMinutes: reminderMinutes,
                 tagIds: tagIds,

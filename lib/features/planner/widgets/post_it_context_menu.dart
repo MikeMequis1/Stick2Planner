@@ -43,33 +43,35 @@ List<PopupMenuEntry<PostItContextAction>> _postItMenuItems(PostIt postIt) {
       child: _MenuLabel(icon: Icons.edit_outlined, label: AppStrings.edit),
     ),
     const PopupMenuDivider(),
-    if (postIt.status == PostItStatus.active)
-      PopupMenuItem(
-        value: PostItContextAction.complete,
-        key: const Key('postit-menu-complete'),
-        child: _MenuLabel(
-          icon: Icons.check_circle_outline,
-          label: AppStrings.statusDoneAction,
+    if (!postIt.isHighlight) ...[
+      if (postIt.status == PostItStatus.active)
+        PopupMenuItem(
+          value: PostItContextAction.complete,
+          key: const Key('postit-menu-complete'),
+          child: _MenuLabel(
+            icon: Icons.check_circle_outline,
+            label: AppStrings.statusDoneAction,
+          ),
+        )
+      else
+        PopupMenuItem(
+          value: PostItContextAction.reopen,
+          key: const Key('postit-menu-reopen'),
+          child: _MenuLabel(
+            icon: Icons.undo,
+            label: AppStrings.statusReopenAction,
+          ),
         ),
-      )
-    else
-      PopupMenuItem(
-        value: PostItContextAction.reopen,
-        key: const Key('postit-menu-reopen'),
-        child: _MenuLabel(
-          icon: Icons.undo,
-          label: AppStrings.statusReopenAction,
+      if (postIt.status != PostItStatus.cancelled)
+        PopupMenuItem(
+          value: PostItContextAction.cancel,
+          key: const Key('postit-menu-cancel'),
+          child: _MenuLabel(
+            icon: Icons.cancel_outlined,
+            label: AppStrings.statusCancelAction,
+          ),
         ),
-      ),
-    if (postIt.status != PostItStatus.cancelled)
-      PopupMenuItem(
-        value: PostItContextAction.cancel,
-        key: const Key('postit-menu-cancel'),
-        child: _MenuLabel(
-          icon: Icons.cancel_outlined,
-          label: AppStrings.statusCancelAction,
-        ),
-      ),
+    ],
     const PopupMenuDivider(),
     PopupMenuItem(
       value: PostItContextAction.delete,

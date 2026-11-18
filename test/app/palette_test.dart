@@ -51,6 +51,19 @@ void main() {
     }
   });
 
+  test('menus e campos de seleção têm fundo opaco', () {
+    for (final palette in AppPalette.values) {
+      for (final theme in [AppTheme.light(palette), AppTheme.dark(palette)]) {
+        expect(theme.canvasColor.a, 1.0);
+        expect(theme.canvasColor, isNot(Colors.transparent));
+        final menuColor = theme.dropdownMenuTheme.menuStyle?.backgroundColor
+            ?.resolve(<WidgetState>{});
+        expect(menuColor, isNotNull);
+        expect(menuColor!.a, 1.0);
+      }
+    }
+  });
+
   test('texto e ícones mantêm contraste nos temas claro e escuro', () {
     for (final palette in AppPalette.values) {
       for (final theme in [AppTheme.light(palette), AppTheme.dark(palette)]) {

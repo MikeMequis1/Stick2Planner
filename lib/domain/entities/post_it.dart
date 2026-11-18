@@ -27,6 +27,8 @@ final class PostIt {
     this.endDate,
     this.recurrence = EventRecurrence.none,
     this.recurrenceInterval = 1,
+    this.recurrenceEndDate,
+    this.occurrenceStatuses = const {},
     this.timeMinutes,
     this.reminderMinutes,
     this.tagIds = const [],
@@ -66,6 +68,17 @@ final class PostIt {
   /// Intervalo em semanas ou meses conforme [recurrence].
   final int recurrenceInterval;
 
+  /// Última data de início permitida para uma ocorrência recorrente.
+  ///
+  /// É distinta de [endDate], que representa a duração de uma ocorrência.
+  final DateOnly? recurrenceEndDate;
+
+  /// Conclusão/cancelamento por ocorrência, indexado pela data de início.
+  ///
+  /// Ausência de chave significa ocorrência ativa, salvo se a série inteira
+  /// estiver concluída ou cancelada em [status].
+  final Map<DateOnly, PostItStatus> occurrenceStatuses;
+
   /// Horário opcional do evento/tarefa em minutos desde a meia-noite.
   final int? timeMinutes;
 
@@ -100,6 +113,15 @@ final class PostIt {
 
   DateOnly? get effectiveEndDate => endDate ?? startDate;
 
+  /// Estado efetivo de uma ocorrência que começa em [occurrenceStart].
+  ///
+  /// O estado da série tem precedência: concluir/cancelar o evento inteiro
+  /// afeta todas as ocorrências. Caso contrário, vale a marcação individual.
+  PostItStatus statusOn(DateOnly occurrenceStart) {
+    if (status != PostItStatus.active) return status;
+    return occurrenceStatuses[occurrenceStart] ?? PostItStatus.active;
+  }
+
   int get durationInDays {
     final start = startDate;
     final end = effectiveEndDate;
@@ -131,6 +153,8 @@ final class PostIt {
     Object? endDate = _unset,
     EventRecurrence? recurrence,
     int? recurrenceInterval,
+    Object? recurrenceEndDate = _unset,
+    Map<DateOnly, PostItStatus>? occurrenceStatuses,
     Object? timeMinutes = _unset,
     Object? reminderMinutes = _unset,
     List<String>? tagIds,
@@ -160,6 +184,10 @@ final class PostIt {
       endDate: identical(endDate, _unset) ? this.endDate : endDate as DateOnly?,
       recurrence: recurrence ?? this.recurrence,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      recurrenceEndDate: identical(recurrenceEndDate, _unset)
+          ? this.recurrenceEndDate
+          : recurrenceEndDate as DateOnly?,
+      occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
       timeMinutes: identical(timeMinutes, _unset)
           ? this.timeMinutes
           : timeMinutes as int?,

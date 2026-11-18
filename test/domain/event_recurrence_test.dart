@@ -10,15 +10,20 @@ void main() {
     DateOnly? end,
     EventRecurrence recurrence = EventRecurrence.none,
     int interval = 1,
+    DateOnly? recurrenceEnd,
+    Map<DateOnly, PostItStatus> occurrenceStatuses = const {},
+    PostItStatus status = PostItStatus.active,
   }) => PostIt(
     id: id,
     title: 'Evento',
     type: PostItType.event,
-    status: PostItStatus.active,
+    status: status,
     startDate: start,
     endDate: end,
     recurrence: recurrence,
     recurrenceInterval: interval,
+    recurrenceEndDate: recurrenceEnd,
+    occurrenceStatuses: occurrenceStatuses,
     createdAt: DateTime.utc(2026, 1, 1),
     updatedAt: DateTime.utc(2026, 1, 1),
   );
@@ -40,15 +45,12 @@ void main() {
       from: DateOnly(2026, 11, 4),
       to: DateOnly(2026, 11, 7),
     );
-    expect(
-      result.map((postIt) => postIt.startDate),
-      [
-        DateOnly(2026, 11, 4),
-        DateOnly(2026, 11, 5),
-        DateOnly(2026, 11, 6),
-        DateOnly(2026, 11, 7),
-      ],
-    );
+    expect(result.map((postIt) => postIt.startDate), [
+      DateOnly(2026, 11, 4),
+      DateOnly(2026, 11, 5),
+      DateOnly(2026, 11, 6),
+      DateOnly(2026, 11, 7),
+    ]);
   });
 
   test('semanal respeita o intervalo de semanas e a duração', () {
@@ -98,12 +100,7 @@ void main() {
 
   test('anual preserva mês/dia e clampa 29 de fevereiro', () {
     final result = expandEventOccurrences(
-      [
-        event(
-          start: DateOnly(2024, 2, 29),
-          recurrence: EventRecurrence.yearly,
-        ),
-      ],
+      [event(start: DateOnly(2024, 2, 29), recurrence: EventRecurrence.yearly)],
       from: DateOnly(2024, 1, 1),
       to: DateOnly(2028, 12, 31),
     );
@@ -114,5 +111,65 @@ void main() {
       DateOnly(2027, 2, 28),
       DateOnly(2028, 2, 29),
     ]);
+  });
+
+  test('recorrência para na data final sem apagar anteriores', () {
+    final result = expandEventOccurrences(
+      [
+        event(
+          start: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          recurrenceEnd: DateOnly(2026, 11, 6),
+        ),
+      ],
+      from: DateOnly(2026, 11, 1),
+      to: DateOnly(2026, 11, 30),
+    );
+    expect(result.map((postIt) => postIt.startDate), [
+      DateOnly(2026, 11, 4),
+      DateOnly(2026, 11, 5),
+      DateOnly(2026, 11, 6),
+    ]);
+  });
+
+  test('conclusão e cancelamento são independentes por ocorrência', () {
+    final result = expandEventOccurrences(
+      [
+        event(
+          start: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          occurrenceStatuses: {
+            DateOnly(2026, 11, 4): PostItStatus.done,
+            DateOnly(2026, 11, 5): PostItStatus.cancelled,
+          },
+        ),
+      ],
+      from: DateOnly(2026, 11, 4),
+      to: DateOnly(2026, 11, 6),
+    );
+    expect(result.map((postIt) => postIt.status), [
+      PostItStatus.done,
+      PostItStatus.cancelled,
+      PostItStatus.active,
+    ]);
+  });
+
+  test('status da série tem precedência sobre ocorrências', () {
+    final result = expandEventOccurrences(
+      [
+        event(
+          start: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          status: PostItStatus.done,
+          occurrenceStatuses: {DateOnly(2026, 11, 5): PostItStatus.active},
+        ),
+      ],
+      from: DateOnly(2026, 11, 4),
+      to: DateOnly(2026, 11, 5),
+    );
+    expect(
+      result.every((postIt) => postIt.status == PostItStatus.done),
+      isTrue,
+    );
   });
 }

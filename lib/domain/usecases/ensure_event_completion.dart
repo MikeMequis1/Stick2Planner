@@ -33,6 +33,8 @@ final class EnsureEventCompletion {
     for (final postIt in postIts) {
       final end = postIt.endDate;
       if (!postIt.isEvent ||
+          postIt.isRecurringEvent ||
+          postIt.isHighlight ||
           postIt.status != PostItStatus.active ||
           end == null ||
           !end.isBefore(today)) {

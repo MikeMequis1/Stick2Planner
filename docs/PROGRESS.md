@@ -1563,6 +1563,40 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter test`: **299 tests passing**; `flutter analyze`: no issues.
 - Build: version **0.6.2+14**. Live server now reports 0.2.2.
 
+## Recurring occurrences and interface corrections (0.7.0)
+
+- Multi-day event bars now use a deterministic lane order (start, end,
+  `sortOrder`, id) and were covered by a drag test with three overlapping
+  events. Dragging in a day with multiple lanes preserves the other bars and
+  updates the moved record atomically; occurrence details now receive the
+  selected occurrence instead of silently reopening the series base.
+- Recurring events gained an optional **repeat until** date (`recurrenceEndDate`),
+  separate from an occurrence's duration. Expansion stops after that date and
+  keeps earlier occurrences.
+- Per-occurrence completion/cancellation is stored in `occurrence_statuses`,
+  keyed by occurrence start date. A scope dialog offers **this day only** or
+  **entire event**; series state takes precedence, and reopening the entire
+  event clears the per-day overrides.
+- Schema **v10** adds `post_its.recurrence_end_date` and
+  `post_its.occurrence_statuses`, migrating v1-v9 without resetting data. Both
+  fields travel in sync payloads and JSON backups.
+- The daily event auto-completion skips recurring series and Feito records, so
+  a past base occurrence cannot mark the whole series done.
+- The complete day sheet opens only through **+X mais**; the desktop day menu
+  no longer exposes an alternate "open day" path. It lists every item covering
+  the date, including events.
+- **Show hints** now controls the Markdown hint, the note selection hint, the
+  routine swipe/drag hints and the calendar hints. The setting description was
+  updated to say it applies to the whole app.
+- **Feito** is now a single-day record: tags, start/end date and recurrence are
+  hidden and normalized away; complete/cancel and resize actions are hidden and
+  rejected by the controller/domain. Existing Feito records are normalized when
+  edited.
+- Dropdown menus use an opaque `canvasColor`/`dropdownMenuTheme`, fixing
+  transparent ComboBox backgrounds in every theme.
+- `flutter test`: **318 tests passing**; `flutter analyze`: no issues.
+- Build: version **0.7.0+15**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

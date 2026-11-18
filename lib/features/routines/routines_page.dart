@@ -105,7 +105,7 @@ class _RoutinesPageState extends State<RoutinesPage> {
         if (routines.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        final showHints = settings.animationsEnabled;
+        final showHints = settings.showCalendarHints;
         final date = _selectedDate ?? today;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -120,7 +120,8 @@ class _RoutinesPageState extends State<RoutinesPage> {
                 onHorizontalDragEnd: _onHorizontalDragEnd,
                 child: AnimatedSwitcher(
                   duration:
-                      showHints && !MediaQuery.disableAnimationsOf(context)
+                      settings.animationsEnabled &&
+                          !MediaQuery.disableAnimationsOf(context)
                       ? const Duration(milliseconds: 260)
                       : Duration.zero,
                   switchInCurve: Curves.easeOutCubic,
@@ -467,9 +468,9 @@ class _RoutineCard extends StatelessWidget {
       for (var day = 1; day <= 7; day++)
         if (routine.weekdays.contains(day)) AppStrings.weekdayShort(day),
     ].join(', ');
-    final motion = showHints && !MediaQuery.disableAnimationsOf(context)
-        ? const Duration(milliseconds: 220)
-        : Duration.zero;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 220);
 
     return DesktopContextMenuRegion(
       onOpen: (position) => _showContextMenu(context, position),

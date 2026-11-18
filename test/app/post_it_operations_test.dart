@@ -56,19 +56,23 @@ void main() {
       expect(task.durationInDays, 1);
     });
 
-    test('cria evento marcante com intervalo', () async {
+    test('cria evento marcante como registro de um único dia', () async {
       final event = await dependencies.planner.createPostIt(
         title: 'Aniversário',
         type: PostItType.event,
         isHighlight: true,
         startDate: DateOnly(2026, 11, 4),
         endDate: DateOnly(2026, 11, 6),
+        recurrence: EventRecurrence.weekly,
+        tagIds: const ['t1'],
       );
 
       expect(event.type, PostItType.event);
       expect(event.isHighlight, isTrue);
-      expect(event.durationInDays, 3);
-      expect(event.endDate, DateOnly(2026, 11, 6));
+      expect(event.durationInDays, 1);
+      expect(event.endDate, isNull);
+      expect(event.recurrence, EventRecurrence.none);
+      expect(event.tagIds, isEmpty);
     });
 
     test('evento sem data é recusado e nada é persistido', () async {
@@ -82,6 +86,85 @@ void main() {
 
       expect(dependencies.planner.postIts, isEmpty);
       expect(await repository.loadAll(), isEmpty);
+    });
+
+    test(
+      'recorrência aceita data final e ocorrências têm estado próprio',
+      () async {
+        final event = await dependencies.planner.createPostIt(
+          title: 'Rotina',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          recurrenceEndDate: DateOnly(2026, 11, 6),
+        );
+        expect(event.recurrenceEndDate, DateOnly(2026, 11, 6));
+        expect(
+          dependencies.planner.postItsOn(DateOnly(2026, 11, 6)),
+          hasLength(1),
+        );
+        expect(dependencies.planner.postItsOn(DateOnly(2026, 11, 7)), isEmpty);
+
+        await dependencies.planner.setEventOccurrenceStatus(
+          event,
+          DateOnly(2026, 11, 4),
+          PostItStatus.done,
+        );
+        final current = dependencies.planner.postItById(event.id)!;
+        expect(current.status, PostItStatus.active);
+        expect(
+          current.occurrenceStatuses[DateOnly(2026, 11, 4)],
+          PostItStatus.done,
+        );
+        expect(
+          dependencies.planner.postItsOn(DateOnly(2026, 11, 4)).single.status,
+          PostItStatus.done,
+        );
+        expect(
+          dependencies.planner.postItsOn(DateOnly(2026, 11, 5)).single.status,
+          PostItStatus.active,
+        );
+
+        await dependencies.planner.setEventOccurrenceStatus(
+          current,
+          DateOnly(2026, 11, 4),
+          PostItStatus.active,
+        );
+        expect(
+          dependencies.planner.postItById(event.id)!.occurrenceStatuses,
+          isEmpty,
+        );
+
+        await dependencies.planner.setPostItStatus(
+          dependencies.planner.postItById(event.id)!,
+          PostItStatus.cancelled,
+        );
+        expect(
+          dependencies.planner.postItsOn(DateOnly(2026, 11, 6)).single.status,
+          PostItStatus.cancelled,
+        );
+      },
+    );
+
+    test('Feito não aceita estado nem redimensionamento', () async {
+      final highlight = await dependencies.planner.createPostIt(
+        title: 'Conquista',
+        type: PostItType.event,
+        isHighlight: true,
+        startDate: DateOnly(2026, 11, 4),
+      );
+      await expectLater(
+        dependencies.planner.setPostItStatus(highlight, PostItStatus.done),
+        throwsStateError,
+      );
+      await expectLater(
+        dependencies.planner.resizeEvent(
+          highlight,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+        throwsStateError,
+      );
     });
 
     test('edição preserva estado, vínculo e histórico', () async {
@@ -219,9 +302,7 @@ void main() {
 
       final history = await repository.loadHistory(event.id);
       expect(
-        history.where(
-          (entry) => entry.action == PostItHistoryAction.resized,
-        ),
+        history.where((entry) => entry.action == PostItHistoryAction.resized),
         hasLength(2),
       );
     });
@@ -331,14 +412,16 @@ void main() {
         clock: FixedClock(DateTime(2026, 11, 4, 12)),
       );
       await reloaded.planner.initialize();
-      expect(
-        reloaded.planner.postIts.map((postIt) => postIt.title),
-        ['Terceira', 'Primeira', 'Segunda'],
-      );
-      expect(
-        reloaded.planner.postIts.map((postIt) => postIt.sortOrder),
-        [0, 1, 2],
-      );
+      expect(reloaded.planner.postIts.map((postIt) => postIt.title), [
+        'Terceira',
+        'Primeira',
+        'Segunda',
+      ]);
+      expect(reloaded.planner.postIts.map((postIt) => postIt.sortOrder), [
+        0,
+        1,
+        2,
+      ]);
       reloaded.planner.dispose();
       reloaded.notes.dispose();
     });
@@ -371,10 +454,7 @@ void main() {
         items.singleWhere((postIt) => postIt.id == second.id).startDate,
         DateOnly(2026, 11, 6),
       );
-      expect(items.map((postIt) => postIt.id).toSet(), {
-        first.id,
-        second.id,
-      });
+      expect(items.map((postIt) => postIt.id).toSet(), {first.id, second.id});
     });
 
     test('mover para o mesmo dia sem índice é no-op', () async {

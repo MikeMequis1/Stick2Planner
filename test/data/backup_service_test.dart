@@ -220,7 +220,7 @@ void main() {
     );
 
     root['formatVersion'] = 1;
-    root['schemaVersion'] = 10;
+    root['schemaVersion'] = 11;
     expect(
       () => BackupDocument.parse(jsonEncode(root)),
       throwsA(

@@ -394,6 +394,29 @@ etapas. Cada item: contexto, decisão, consequência.
   continua disponível fora da seleção e evita abrir o editor sem querer.
 - Nenhuma migração de esquema foi necessária: `createdAt` já existia desde a v9.
 
+## Ocorrências recorrentes, Feito e dicas globais
+
+- Ocorrências recorrentes são visões expandidas de um único registro de série.
+  Conclusão/cancelamento por ocorrência é um mapa por data de início, então a
+  definição da série continua única e sincronizável. O estado da série tem
+  precedência sobre marcas individuais; reabrir a série limpa as marcas.
+- `recurrenceEndDate` limita o início das ocorrências; é independente de
+  `endDate` (duração da ocorrência). A expansão para depois do limite e preserva
+  as datas anteriores.
+- Feito é um registro de evento de um único dia: sem tags, data final ou
+  recorrência, e fica fora de concluir/cancelar/redimensionar na UI, controller e
+  validação.
+- As faixas de eventos têm ordem determinística (início, fim, sortOrder, id) para
+  manter a distribuição estável após arraste. Os detalhes recebem a cópia da
+  ocorrência, enquanto Editar abre sempre a série base.
+- Apenas o controle `+X mais` abre a listagem completa do dia; toques no dia
+  mantêm seleção/toques múltiplos existentes.
+- A visibilidade das dicas lê `showCalendarHints` em todas as telas que exibem
+  texto auxiliar. A chave mantém o nome por compatibilidade, mas agora significa
+  "mostrar dicas" globalmente.
+- Menus de seleção herdam `canvasColor`/estilo de menu opaco do tema, evitando
+  listas transparentes sobre o gradiente.
+
 ## Localização
 
 - **App:** Português (BR) e English, persistido em `app_settings`. `AppStrings`

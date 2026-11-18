@@ -320,15 +320,14 @@ abstract final class AppStrings {
     'Opcional, exibido no post-it do evento.',
     'Optional, shown on the event post-it.',
   );
-  static String get settingsHints =>
-      _t('Mostrar dicas de gestos na agenda', 'Show calendar gesture hints');
+  static String get settingsHints => _t('Mostrar dicas', 'Show hints');
   static String get settingsHintsHelp => _t(
-    'Mostra a dica de gestos e a contagem de post-its sem data.',
-    'Shows gesture hints and the undated post-it count.',
+    'Mostra dicas contextuais em todas as telas: agenda, notas e rotinas.',
+    'Shows contextual hints across the app: calendar, notes and routines.',
   );
   static String get settingsHintsHelpDesktop => _t(
-    'Mostra dicas de mouse/teclado e a contagem de post-its sem data.',
-    'Shows mouse/keyboard hints and the undated post-it count.',
+    'Mostra dicas de mouse/teclado em todas as telas e a contagem de post-its sem data.',
+    'Shows mouse/keyboard hints across the app and the undated post-it count.',
   );
   static String get settingsDesktopShortcuts =>
       _t('Atalhos do desktop', 'Desktop shortcuts');
@@ -601,6 +600,16 @@ abstract final class AppStrings {
   static String get repeatWeekly => _t('Semanal', 'Weekly');
   static String get repeatMonthly => _t('Mensal', 'Monthly');
   static String get repeatYearly => _t('Anual', 'Yearly');
+  static String get recurrenceEnd => _t('Repetir até', 'Repeat until');
+  static String get recurrenceEndClear => _t('Sem data final', 'No end date');
+  static String recurrenceUntil(String date) =>
+      _language == AppLanguage.en ? 'until $date' : 'até $date';
+  static String get occurrenceScopeTitle =>
+      _t('Aplicar a quais ocorrências?', 'Apply to which occurrences?');
+  static String get occurrenceScopeThisDay =>
+      _t('Somente este dia', 'This day only');
+  static String get occurrenceScopeSeries =>
+      _t('Evento inteiro', 'Entire event');
   static String get repeatEveryWeeks =>
       _t('A cada quantas semanas', 'Every how many weeks');
   static String get repeatEveryMonths =>
@@ -636,6 +645,8 @@ abstract final class AppStrings {
   );
   static String get statusDoneAction => _t('Concluir', 'Complete');
   static String get statusCancelAction => _t('Cancelar tarefa', 'Cancel task');
+  static String get statusCancelEventAction =>
+      _t('Cancelar evento', 'Cancel event');
   static String get statusReopenAction => _t('Reabrir', 'Reopen');
   static String get statusUpdatedMessage =>
       _t('Estado atualizado.', 'Status updated.');
@@ -748,6 +759,26 @@ abstract final class AppStrings {
   static String get errorRecurrenceInterval => _t(
     'Informe um intervalo de repetição válido.',
     'Enter a valid repeat interval.',
+  );
+  static String get errorRecurrenceEndBeforeStart => _t(
+    'A data final da repetição não pode ser anterior ao início.',
+    'The repeat end date cannot be before the start.',
+  );
+  static String get errorRecurrenceEndWithoutRecurrence => _t(
+    'Defina uma repetição antes da data final.',
+    'Set a recurrence before the end date.',
+  );
+  static String get errorHighlightSingleDay => _t(
+    'Feito é um registro de um único dia.',
+    'Feat is a single-day record.',
+  );
+  static String get errorHighlightRecurrence =>
+      _t('Feito não pode ser repetido.', 'Feat cannot repeat.');
+  static String get errorHighlightTags =>
+      _t('Feito não aceita tags.', 'Feat does not accept tags.');
+  static String get errorHighlightResolved => _t(
+    'Feito já é um registro concluído e não pode ser concluído ou cancelado.',
+    'Feat is already a completed record and cannot be completed or cancelled.',
   );
   static String get errorSave => _t(
     'Não foi possível salvar. Verifique os dados e tente novamente.',

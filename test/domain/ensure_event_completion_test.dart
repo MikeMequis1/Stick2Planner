@@ -13,13 +13,17 @@ void main() {
     DateOnly? start,
     DateOnly? end,
     PostItStatus status = PostItStatus.active,
+    EventRecurrence recurrence = EventRecurrence.none,
+    bool isHighlight = false,
   }) => PostIt(
     id: id,
     title: 'Evento',
     type: PostItType.event,
     status: status,
+    isHighlight: isHighlight,
     startDate: start ?? DateOnly(2026, 11, 1),
     endDate: end,
+    recurrence: recurrence,
     createdAt: now,
     updatedAt: now,
   );
@@ -48,6 +52,12 @@ void main() {
       event(id: 'future', end: DateOnly(2026, 11, 7)),
       event(id: 'single'),
       event(id: 'done', end: DateOnly(2026, 11, 5), status: PostItStatus.done),
+      event(
+        id: 'recurring',
+        end: DateOnly(2026, 11, 5),
+        recurrence: EventRecurrence.daily,
+      ),
+      event(id: 'highlight', end: DateOnly(2026, 11, 5), isHighlight: true),
     ]);
 
     expect(plan.hasChanges, isFalse);

@@ -24,15 +24,16 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 - **Calendar:** day, 4-day, week, 2-week and month views; multi-day events;
   drag, resize, reorder and quick create; anchored 4-day window; past days use a
   discreet muted tint.
-- **Event recurrence:** daily, every N weeks, every N months or yearly;
-  occurrences keep the event duration.
+- **Event recurrence:** daily, every N weeks, every N months or yearly, with an
+  optional end date; each occurrence can be completed or cancelled individually
+  or the whole series at once.
 - **Event time:** optional start time, always visible on the event bar, without
   replacing event dates or internal timestamps.
+- **Feat:** positive-moment events use a pencil icon and a short contextual
+  explanation. They are single-day records without tags, duration or recurrence;
+  completion and resize actions are intentionally unavailable.
 - **Tags:** shared tags for events and tasks, with palette-based colors, tag
   management, multi-tag filtering in the Inbox and sync/backup support.
-- **Feat:** positive-moment events use a pencil icon and a short contextual
-  explanation. Completed events are marked done automatically after their end
-  date; tasks can be completed from the details title icon.
 - **Inbox:** search, status filters, tag filters, sorting and undated post-its.
 - **Routines:** weekly day board with per-day progress, expandable cards,
   drag-and-drop activities, per-day completion (independent for each occurrence),
@@ -61,7 +62,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart; Android SDK, Windows desktop C++ toolchain and Linux GTK 3.
-- Drift + SQLite (schema v9, migrations v1 → v9). The same schema is used on
+- Drift + SQLite (schema v10, migrations v1 → v10). The same schema is used on
   Android, Windows and Linux; desktop data lives in each platform's application
   support directory.
 - Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:

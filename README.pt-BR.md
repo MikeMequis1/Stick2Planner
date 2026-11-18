@@ -24,15 +24,16 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 - **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos multi-dia; arraste,
   redimensionamento, reordenação e criação rápida; janela de 4 dias ancorada;
   dias anteriores recebem um tom acinzentado discreto.
-- **Repetição de eventos:** diária, a cada N semanas, a cada N meses ou anual;
-  as ocorrências mantêm a duração do evento.
+- **Repetição de eventos:** diária, a cada N semanas, a cada N meses ou anual,
+  com data final opcional; cada ocorrência pode ser concluída/cancelada
+  individualmente ou a série inteira de uma vez.
 - **Horário do evento:** horário inicial opcional, sempre visível na barra do
   evento, sem substituir datas nem timestamps internos.
 - **Tags:** tags compartilhadas entre eventos e tarefas, com cores da paleta,
   gerenciamento, filtro múltiplo na Caixinha e suporte a sync/backup.
-- **Feito:** eventos positivos usam ícone de lápis e uma explicação curta;
-  eventos são concluídos automaticamente após a data final e tarefas podem ser
-  concluídas pelo ícone junto ao título nos detalhes.
+- **Feito:** eventos positivos usam ícone de lápis e uma explicação curta. São
+  registros de um único dia, sem tags, duração ou recorrência; concluir e
+  redimensionar ficam indisponíveis de propósito.
 - **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
   sem data.
 - **Rotinas:** quadro semanal por dia com progresso, cards expansíveis,
@@ -62,7 +63,7 @@ APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Plann
 ## Stack
 
 - Flutter / Dart; SDK Android, toolchain C++ do Windows e GTK 3 no Linux.
-- Drift + SQLite (esquema v9, migrações v1 → v9). O mesmo esquema é usado no
+- Drift + SQLite (esquema v10, migrações v1 → v10). O mesmo esquema é usado no
   Android, Windows e Linux; no desktop os dados ficam no diretório de suporte de
   cada plataforma.
 - Servidor de sincronização opcional em Dart/shelf + SQLite, com imagens Docker

@@ -62,10 +62,10 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(
-      dependencies.notes.notes.single.lines.map((line) => line.text),
-      ['B', 'A'],
-    );
+    expect(dependencies.notes.notes.single.lines.map((line) => line.text), [
+      'B',
+      'A',
+    ]);
 
     await tester.tap(find.byKey(const Key('note-save')));
     await tester.pumpAndSettle();
@@ -121,6 +121,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.selectedLines(2)), findsNothing);
     expect(find.text(AppStrings.selectLinesHint), findsWidgets);
+  });
+
+  testWidgets('dicas de notas seguem Mostrar dicas', (tester) async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await openNotes(tester);
+    await tester.tap(find.byKey(const Key('add-note')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.markdownHint), findsOneWidget);
+    await tester.tap(find.text(AppStrings.noteTypeChecklist));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.selectLinesHint), findsOneWidget);
+
+    await dependencies.settings.setShowCalendarHints(false);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.markdownHint), findsNothing);
+    expect(find.text(AppStrings.selectLinesHint), findsNothing);
+
+    await dependencies.settings.setShowCalendarHints(true);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.selectLinesHint), findsOneWidget);
   });
 
   testWidgets('exclui linha só ao completar o pressionamento', (tester) async {

@@ -16,7 +16,7 @@ import 'post_it_drag_data.dart';
 import 'post_it_presentation.dart';
 import 'post_it_tile.dart';
 
-enum _DayContextAction { newTask, newEvent, openDay }
+enum _DayContextAction { newTask, newEvent }
 
 /// Célula de um dia: alvo de soltura, cartões arrastáveis e overflow.
 class DayCell extends StatelessWidget {
@@ -203,12 +203,6 @@ class DayCell extends StatelessWidget {
           key: Key('day-menu-event'),
           child: Text(AppStrings.newEvent),
         ),
-        PopupMenuDivider(),
-        PopupMenuItem(
-          value: _DayContextAction.openDay,
-          key: Key('day-menu-open'),
-          child: Text(AppStrings.openDay),
-        ),
       ],
     );
     switch (action) {
@@ -216,8 +210,6 @@ class DayCell extends StatelessWidget {
         onQuickCreateTask(day.date);
       case _DayContextAction.newEvent:
         onQuickCreateEvent(day.date);
-      case _DayContextAction.openDay:
-        onShowAll();
       case null:
         break;
     }

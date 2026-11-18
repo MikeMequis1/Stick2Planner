@@ -179,10 +179,13 @@ usuário decidir.
 
 ## Repetição de eventos
 
-- Payloads de post-it carregam `recurrence` e `recurrenceInterval`.
+- Payloads de post-it carregam `recurrence`, `recurrenceInterval`,
+  `recurrenceEndDate` opcional e `occurrenceStatuses` (estado por ocorrência,
+  indexado pela data de início).
 - O servidor armazena os campos de forma opaca; as ocorrências são geradas no
   aparelho para o período visível e não viram registros separados.
-- Payloads antigos sem os campos assumem sem repetição e intervalo 1.
+- Payloads antigos sem os campos assumem sem limite de repetição e sem estado
+  individual por ocorrência.
 - Post-its também carregam `timeMinutes` opcional e `tagIds`; definições de tag
   usam a entidade `tag`. Payloads antigos assumem sem horário e sem tags.
 

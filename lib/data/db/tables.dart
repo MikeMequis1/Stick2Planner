@@ -86,6 +86,11 @@ class PostIts extends Table {
       textEnum<EventRecurrence>().withDefault(const Constant('none'))();
   IntColumn get recurrenceInterval =>
       integer().withDefault(const Constant(1))();
+  TextColumn get recurrenceEndDate =>
+      text().map(const DateOnlyConverter()).nullable()();
+  TextColumn get occurrenceStatuses => text()
+      .map(const OccurrenceStatusesConverter())
+      .withDefault(const Constant('{}'))();
   IntColumn get timeMinutes => integer().nullable()();
   IntColumn get reminderMinutes => integer().nullable()();
   TextColumn get tagIds =>

@@ -11,6 +11,12 @@ enum PostItValidationError {
   recurringHasInterval,
   highlightRequiresEvent,
   recurrenceRequiresEvent,
+  recurrenceEndRequiresRecurrence,
+  recurrenceEndBeforeStart,
+  highlightCannotSpanDays,
+  highlightCannotRecur,
+  highlightCannotHaveTags,
+  highlightCannotBeResolved,
   invalidRecurrenceInterval,
 }
 
@@ -50,6 +56,15 @@ final class ValidatePostIt {
     if (postIt.hasRecurrence && postIt.recurrenceInterval < 1) {
       errors.add(PostItValidationError.invalidRecurrenceInterval);
     }
+    final recurrenceEnd = postIt.recurrenceEndDate;
+    if (recurrenceEnd != null) {
+      if (!postIt.hasRecurrence) {
+        errors.add(PostItValidationError.recurrenceEndRequiresRecurrence);
+      }
+      if (start != null && recurrenceEnd.isBefore(start)) {
+        errors.add(PostItValidationError.recurrenceEndBeforeStart);
+      }
+    }
 
     if (postIt.isEvent) {
       if (start == null) {
@@ -67,6 +82,21 @@ final class ValidatePostIt {
               ? PostItValidationError.recurringHasInterval
               : PostItValidationError.taskHasInterval,
         );
+      }
+    }
+
+    if (postIt.isHighlight) {
+      if (end != null) {
+        errors.add(PostItValidationError.highlightCannotSpanDays);
+      }
+      if (postIt.hasRecurrence) {
+        errors.add(PostItValidationError.highlightCannotRecur);
+      }
+      if (postIt.tagIds.isNotEmpty) {
+        errors.add(PostItValidationError.highlightCannotHaveTags);
+      }
+      if (postIt.status != PostItStatus.active) {
+        errors.add(PostItValidationError.highlightCannotBeResolved);
       }
     }
 

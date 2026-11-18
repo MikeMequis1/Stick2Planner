@@ -17,12 +17,13 @@ Future<bool> openPostItDetailsById(
   BuildContext context, {
   required String postItId,
   bool goToAgenda = true,
+  PostIt? occurrence,
 }) async {
   final app = AppScope.of(context);
   final planner = app.planner;
   final notes = app.notes;
   final navigation = app.navigation;
-  final postIt = _findPostIt(planner, postItId);
+  final postIt = occurrence ?? _findPostIt(planner, postItId);
 
   if (postIt == null) {
     _showMessage(context, AppStrings.postItNotFound);
@@ -48,12 +49,15 @@ Future<bool> openPostItDetailsById(
         builder: (context) => NoteDetailPage(noteId: note.id),
       ),
     ),
-    onEdit: (current) => showPostItEditorSheet(
-      navigator.context,
-      controller: planner,
-      initialDate: current.startDate ?? planner.selectedDate,
-      existing: current,
-    ),
+    onEdit: (current) {
+      final base = planner.postItById(current.id) ?? current;
+      showPostItEditorSheet(
+        navigator.context,
+        controller: planner,
+        initialDate: base.startDate ?? planner.selectedDate,
+        existing: base,
+      );
+    },
   );
   return true;
 }

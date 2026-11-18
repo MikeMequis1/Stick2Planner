@@ -26,6 +26,7 @@ List<PostIt> expandEventOccurrences(
 
     final duration = postIt.durationInDays.clamp(1, 3660);
     final interval = postIt.safeRecurrenceInterval;
+    final recurrenceEnd = postIt.recurrenceEndDate;
     final firstVisible = from.addDays(-(duration - 1));
     final firstIndex = _firstIndex(
       postIt.recurrence,
@@ -37,10 +38,15 @@ List<PostIt> expandEventOccurrences(
     for (var index = firstIndex; index < firstIndex + 100000; index++) {
       final start = _occurrenceStart(postIt.recurrence, base, interval, index);
       if (start.isAfter(to)) break;
+      if (recurrenceEnd != null && start.isAfter(recurrenceEnd)) break;
       final end = start.addDays(duration - 1);
       if (end.isBefore(from)) continue;
       expanded.add(
-        postIt.copyWith(startDate: start, endDate: duration > 1 ? end : null),
+        postIt.copyWith(
+          startDate: start,
+          endDate: duration > 1 ? end : null,
+          status: postIt.statusOn(start),
+        ),
       );
     }
   }

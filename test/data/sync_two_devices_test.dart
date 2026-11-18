@@ -409,4 +409,44 @@ void main() {
       expect(await repoB.loadAll(), isEmpty);
     },
   );
+
+  test('estado de ocorrência recorrente viaja no payload do evento', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftPostItRepository(dbA);
+    final repoB = DriftPostItRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final event = PostIt(
+      id: 'ev1',
+      title: 'Série',
+      type: PostItType.event,
+      status: PostItStatus.active,
+      startDate: DateOnly(2026, 11, 4),
+      recurrence: EventRecurrence.daily,
+      recurrenceEndDate: DateOnly(2026, 11, 6),
+      occurrenceStatuses: {DateOnly(2026, 11, 5): PostItStatus.done},
+      createdAt: t0,
+      updatedAt: t0,
+    );
+
+    await repoA.save(event);
+    await engineA.run();
+    await engineB.run();
+
+    final onB = (await repoB.loadAll()).single;
+    expect(onB.recurrenceEndDate, DateOnly(2026, 11, 6));
+    expect(onB.occurrenceStatuses[DateOnly(2026, 11, 5)], PostItStatus.done);
+  });
 }

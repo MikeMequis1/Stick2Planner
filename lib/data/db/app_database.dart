@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,6 +126,16 @@ class AppDatabase extends _$AppDatabase {
         }
         if (!await _hasTable('routine_completions')) {
           await migrator.createTable(routineCompletions);
+        }
+      }
+      if (from < 10) {
+        if (await _hasTable('post_its') &&
+            !await _hasColumn('post_its', 'recurrence_end_date')) {
+          await migrator.addColumn(postIts, postIts.recurrenceEndDate);
+        }
+        if (await _hasTable('post_its') &&
+            !await _hasColumn('post_its', 'occurrence_statuses')) {
+          await migrator.addColumn(postIts, postIts.occurrenceStatuses);
         }
       }
     },

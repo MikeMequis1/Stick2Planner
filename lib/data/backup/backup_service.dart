@@ -166,6 +166,10 @@ final class BackupService {
                 _nullableString(entry, 'recurrence'),
               ),
               recurrenceInterval: _optionalInt(entry, 'recurrenceInterval', 1),
+              recurrenceEndDate: _nullableDate(entry, 'recurrenceEndDate'),
+              occurrenceStatuses: _occurrenceStatuses(
+                entry['occurrenceStatuses'],
+              ),
               timeMinutes: _nullableInt(entry, 'timeMinutes'),
               reminderMinutes: _nullableInt(entry, 'reminderMinutes'),
               tagIds: _stringList(entry['tagIds']),
@@ -340,6 +344,11 @@ final class BackupService {
     'endDate': row.endDate?.toIso8601String(),
     'recurrence': row.recurrence.name,
     'recurrenceInterval': row.recurrenceInterval,
+    'recurrenceEndDate': row.recurrenceEndDate?.toIso8601String(),
+    'occurrenceStatuses': {
+      for (final entry in row.occurrenceStatuses.entries)
+        entry.key.toIso8601String(): entry.value.name,
+    },
     'timeMinutes': row.timeMinutes,
     'reminderMinutes': row.reminderMinutes,
     'tagIds': row.tagIds,
@@ -429,6 +438,25 @@ final class BackupService {
       for (final item in value)
         if (item is String && item.isNotEmpty) item,
     ];
+  }
+
+  static Map<DateOnly, PostItStatus> _occurrenceStatuses(Object? value) {
+    if (value is! Map) return const {};
+    final result = <DateOnly, PostItStatus>{};
+    for (final entry in value.entries) {
+      if (entry.key is! String || entry.value is! String) continue;
+      try {
+        final status = PostItStatus.values.firstWhere(
+          (candidate) => candidate.name == entry.value,
+        );
+        if (status != PostItStatus.active) {
+          result[DateOnly.parse(entry.key as String)] = status;
+        }
+      } on Object {
+        // Entrada inválida não invalida o restante do backup.
+      }
+    }
+    return result;
   }
 
   static int? _nullableInt(Map<String, Object?> row, String key) {

@@ -1562,6 +1562,40 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter test`: **299 testes aprovados**; `flutter analyze`: sem issues.
 - Build: versão **0.6.2+14**. O servidor live agora responde 0.2.2.
 
+## Ocorrências recorrentes e correções de interface (0.7.0)
+
+- As barras de eventos multi-dia agora usam ordem determinística de faixas
+  (início, fim, `sortOrder`, id) e ganharam teste de arraste com três eventos
+  sobrepostos. Arrastar em um dia com várias faixas preserva as demais barras e
+  atualiza o registro atomicamente; os detalhes da ocorrência recebem a
+  ocorrência selecionada em vez de reabrir silenciosamente a série base.
+- Eventos recorrentes ganharam data opcional de **repetir até**
+  (`recurrenceEndDate`), separada da duração de uma ocorrência. A expansão para
+  depois dessa data e preserva as anteriores.
+- Conclusão/cancelamento por ocorrência ficam em `occurrence_statuses`, por data
+  de início. Um diálogo oferece **somente este dia** ou **evento inteiro**; o
+  estado da série tem precedência e reabrir o evento inteiro limpa as marcas
+  individuais.
+- Esquema **v10** adiciona `post_its.recurrence_end_date` e
+  `post_its.occurrence_statuses`, migrando v1-v9 sem resetar dados. Os dois
+  campos viajam no payload de sync e no backup JSON.
+- A conclusão automática de eventos antigos ignora séries recorrentes e Feito,
+  impedindo que uma ocorrência-base antiga conclua a série inteira.
+- A listagem completa do dia abre apenas por **+X mais**; o menu de contexto do
+  dia no desktop não expõe mais um caminho alternativo "abrir dia". A lista
+  inclui todos os itens que cobrem a data, inclusive eventos.
+- **Mostrar dicas** agora controla a dica de Markdown, a dica de seleção de
+  linhas, as dicas de deslizar/arrastar em Rotinas e as dicas da agenda. A
+  descrição foi atualizada para indicar que vale para o app inteiro.
+- **Feito** agora é um registro de um único dia: tags, data inicial/final e
+  recorrência ficam ocultas e são normalizadas; concluir/cancelar e
+  redimensionar ficam ocultos e são recusados pelo controller/domínio. Registros
+  Feito antigos são normalizados ao editar.
+- Menus de seleção usam `canvasColor`/`dropdownMenuTheme` opacos, corrigindo o
+  fundo transparente dos ComboBoxes em todos os temas.
+- `flutter test`: **318 testes aprovados**; `flutter analyze`: sem issues.
+- Build: versão **0.7.0+15**.
+
 
 
 

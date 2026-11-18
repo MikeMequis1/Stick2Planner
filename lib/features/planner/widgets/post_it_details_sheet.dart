@@ -13,6 +13,8 @@ import '../../shared/desktop_dialog_shortcuts.dart';
 import '../../tags/tag_presentation.dart';
 import 'post_it_presentation.dart';
 
+enum _OccurrenceScope { thisDay, series }
+
 /// Folha de detalhes com acesso às ações explícitas (alternativa aos gestos).
 Future<void> showPostItDetailsSheet(
   BuildContext context, {
@@ -177,8 +179,70 @@ Future<void> showPostItDetailsSheet(
       }
 
       Future<void> setStatus(PostItStatus status) async {
+        final base = planner.postItById(postIt.id) ?? postIt;
+        if (base.isHighlight) return;
+        var applyToSeries = false;
+        final occurrenceDate = postIt.startDate;
+        if (postIt.isRecurringEvent && occurrenceDate != null) {
+          if (base.status != PostItStatus.active) {
+            applyToSeries = true;
+          } else {
+            final scope = await showDialog<_OccurrenceScope>(
+              context: sheetContext,
+              builder: (dialogContext) => AlertDialog(
+                title: Text(AppStrings.occurrenceScopeTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      key: const Key('occurrence-scope-day'),
+                      leading: const Icon(Icons.today_outlined),
+                      title: Text(AppStrings.occurrenceScopeThisDay),
+                      onTap: () =>
+                          Navigator.of(dialogContext)
+                              .pop(_OccurrenceScope.thisDay),
+                    ),
+                    ListTile(
+                      key: const Key('occurrence-scope-series'),
+                      leading: const Icon(Icons.event_repeat),
+                      title: Text(AppStrings.occurrenceScopeSeries),
+                      onTap: () =>
+                          Navigator.of(dialogContext)
+                              .pop(_OccurrenceScope.series),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(AppStrings.cancel),
+                  ),
+                ],
+              ),
+            );
+            if (scope == null) return;
+            applyToSeries = scope == _OccurrenceScope.series;
+          }
+        }
+
         try {
-          await planner.setPostItStatus(postIt, status);
+          if (applyToSeries) {
+            await planner.setPostItStatus(
+              base,
+              status,
+              clearOccurrenceStatuses: status == PostItStatus.active,
+            );
+          } else if (postIt.isRecurringEvent &&
+              occurrenceDate != null &&
+              base.status == PostItStatus.active) {
+            await planner.setEventOccurrenceStatus(
+              base,
+              occurrenceDate,
+              status,
+            );
+          } else {
+            await planner.setPostItStatus(base, status);
+          }
           if (sheetContext.mounted) Navigator.of(sheetContext).pop();
           if (context.mounted) {
             _showMessage(context, AppStrings.statusUpdatedMessage);
@@ -324,9 +388,10 @@ Future<void> showPostItDetailsSheet(
                             AppStrings.reminderMinutes(postIt.reminderMinutes!),
                           ),
                         ),
-                      for (final tagId in postIt.tagIds)
-                        if (tagsById[tagId] != null)
-                          TagChip(tag: tagsById[tagId]!),
+                      if (!postIt.isHighlight)
+                        for (final tagId in postIt.tagIds)
+                          if (tagsById[tagId] != null)
+                            TagChip(tag: tagsById[tagId]!),
                       if (postIt.noteId != null)
                         Chip(
                           avatar: Icon(Icons.link, size: 18),
@@ -430,30 +495,36 @@ Future<void> showPostItDetailsSheet(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (postIt.status == PostItStatus.active)
-                        FilledButton.tonalIcon(
-                          key: Key('details-complete'),
-                          onPressed: () => setStatus(PostItStatus.done),
-                          icon: Icon(Icons.check),
-                          label: Text(AppStrings.statusDoneAction),
-                        )
-                      else
-                        FilledButton.tonalIcon(
-                          key: Key('details-reopen'),
-                          onPressed: () => setStatus(PostItStatus.active),
-                          icon: Icon(Icons.undo),
-                          label: Text(AppStrings.statusReopenAction),
-                        ),
-                      if (postIt.status != PostItStatus.cancelled)
-                        OutlinedButton.icon(
-                          key: Key('details-cancel'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.error,
+                      if (!postIt.isHighlight) ...[
+                        if (postIt.status == PostItStatus.active)
+                          FilledButton.tonalIcon(
+                            key: Key('details-complete'),
+                            onPressed: () => setStatus(PostItStatus.done),
+                            icon: Icon(Icons.check),
+                            label: Text(AppStrings.statusDoneAction),
+                          )
+                        else
+                          FilledButton.tonalIcon(
+                            key: Key('details-reopen'),
+                            onPressed: () => setStatus(PostItStatus.active),
+                            icon: Icon(Icons.undo),
+                            label: Text(AppStrings.statusReopenAction),
                           ),
-                          onPressed: () => setStatus(PostItStatus.cancelled),
-                          icon: Icon(Icons.close),
-                          label: Text(AppStrings.statusCancelAction),
-                        ),
+                        if (postIt.status != PostItStatus.cancelled)
+                          OutlinedButton.icon(
+                            key: Key('details-cancel'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: theme.colorScheme.error,
+                            ),
+                            onPressed: () => setStatus(PostItStatus.cancelled),
+                            icon: Icon(Icons.close),
+                            label: Text(
+                              postIt.isRecurringEvent
+                                  ? AppStrings.statusCancelEventAction
+                                  : AppStrings.statusCancelAction,
+                            ),
+                          ),
+                      ],
                       FilledButton.tonalIcon(
                         key: Key('details-edit'),
                         onPressed: edit,
@@ -488,7 +559,9 @@ Future<void> showPostItDetailsSheet(
                           label: Text(AppStrings.unlinkNote),
                         ),
                       ],
-                      if (postIt.isEvent)
+                      if (postIt.isEvent &&
+                          !postIt.isHighlight &&
+                          !postIt.isRecurringEvent)
                         OutlinedButton.icon(
                           key: Key('details-resize'),
                           onPressed: resize,
@@ -585,7 +658,7 @@ class _InfoRow extends StatelessWidget {
 }
 
 String eventRecurrenceLabel(PostIt postIt) {
-  return switch (postIt.recurrence) {
+  final base = switch (postIt.recurrence) {
     EventRecurrence.daily => AppStrings.repeatSummaryDaily,
     EventRecurrence.weekly => AppStrings.repeatSummaryWeekly(
       postIt.recurrenceInterval,
@@ -596,4 +669,7 @@ String eventRecurrenceLabel(PostIt postIt) {
     EventRecurrence.yearly => AppStrings.repeatSummaryYearly,
     EventRecurrence.none => AppStrings.repeatNone,
   };
+  final end = postIt.recurrenceEndDate;
+  if (end == null) return base;
+  return '$base · ${AppStrings.recurrenceUntil(DateFormats.shortDate(end))}';
 }

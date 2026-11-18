@@ -311,8 +311,9 @@ class _WeekRowState extends State<WeekRow> {
   }) {
     final postIt = segment.postIt;
     final recurring = postIt.isRecurringEvent;
+    final resizable = !recurring && !postIt.isHighlight;
     final activeResize = _resize;
-    final resizing = !recurring && activeResize?.postIt.id == postIt.id;
+    final resizing = resizable && activeResize?.postIt.id == postIt.id;
     final resizingThisEdge =
         resizing &&
         (activeResize!.isStart
@@ -411,7 +412,7 @@ class _WeekRowState extends State<WeekRow> {
               ),
             ),
           ),
-          if (!recurring && !segment.continuesBefore)
+          if (resizable && !segment.continuesBefore)
             Align(
               alignment: Alignment.centerLeft,
               child: _ResizeHandle(
@@ -431,7 +432,7 @@ class _WeekRowState extends State<WeekRow> {
                 onCancel: _cancelResize,
               ),
             ),
-          if (!recurring && !segment.continuesAfter)
+          if (resizable && !segment.continuesAfter)
             Align(
               alignment: Alignment.centerRight,
               child: _ResizeHandle(

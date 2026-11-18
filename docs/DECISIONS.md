@@ -391,6 +391,27 @@ stages. Each item: context, decision, consequence.
   while selection is off and avoids accidental editor openings while selecting.
 - No schema migration was required: `createdAt` already existed from v9.
 
+## Recurring occurrences, Feito and global hints
+
+- Recurring occurrences are expanded views of one series record. Per-occurrence
+  completion/cancellation is a map keyed by the occurrence start date, so the
+  series definition stays single and syncable. Series status wins over individual
+  marks; reopening the series clears them.
+- `recurrenceEndDate` limits occurrence starts; it is independent from `endDate`
+  (occurrence duration). Expansion stops after the limit and keeps prior dates.
+- Feito is a single-day event record: no tags, end date or recurrence, and it is
+  excluded from completion/cancel/resize in UI, controller and validation.
+- Event lanes are ordered deterministically (start, end, sortOrder, id) to keep
+  distribution stable after a drag. Occurrence details receive the occurrence
+  copy, while Edit always opens the base series.
+- Only the `+X mais` control opens the complete day sheet; day taps keep their
+  existing selection/multi-tap behavior.
+- Hint visibility is read from `showCalendarHints` in every screen that renders
+  auxiliary copy. The preference is named for compatibility but now means
+  "show hints" globally.
+- Dropdown menus inherit an opaque `canvasColor`/menu style from the theme,
+  avoiding transparent option lists over the gradient.
+
 ## Localization
 
 - **App:** Portuguese (BR) and English, persisted in `app_settings`. `AppStrings`

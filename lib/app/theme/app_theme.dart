@@ -26,7 +26,12 @@ abstract final class AppTheme {
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       scaffoldBackgroundColor: Colors.transparent,
-      canvasColor: Colors.transparent,
+      canvasColor: scheme.surfaceContainerHigh,
+      dropdownMenuTheme: DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
+        ),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,

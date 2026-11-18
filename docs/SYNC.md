@@ -180,10 +180,13 @@ suspended until the user decides.
 
 ## Event recurrence
 
-- Post-it payloads carry `recurrence` and `recurrenceInterval`.
+- Post-it payloads carry `recurrence`, `recurrenceInterval`, optional
+  `recurrenceEndDate` and `occurrenceStatuses` (per-occurrence state keyed by
+  start date).
 - The server stores them opaquely; occurrences are generated on the device for
   the visible period and are not separate records.
-- Older payloads without the fields default to no recurrence and interval 1.
+- Older payloads without the fields default to no recurrence limit and no
+  per-occurrence state.
 - Post-its also carry optional `timeMinutes` and `tagIds`; tag definitions use the
   `tag` sync entity. Older payloads default to no time and no tags.
 

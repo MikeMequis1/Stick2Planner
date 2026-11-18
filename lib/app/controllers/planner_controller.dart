@@ -183,15 +183,29 @@ final class PlannerController extends ChangeNotifier {
   /// Hook do ciclo de vida (`AppLifecycleState.resumed`).
   Future<void> handleAppResumed() => ensureRecurringRollover();
 
-  Future<void> setPostItStatus(PostIt postIt, PostItStatus status) {
+  Future<void> setPostItStatus(
+    PostIt postIt,
+    PostItStatus status, {
+    bool clearOccurrenceStatuses = false,
+  }) {
     return _exclusive(() async {
       await _applyDailyMaintenance();
       final current = _findCurrent(postIt.id);
       if (current == null || current.status == status) return;
+      if (current.isHighlight) {
+        throw StateError('Feito não pode ser concluído ou cancelado.');
+      }
 
       final now = _clock.now().toUtc();
-      var updated = current.copyWith(status: status, updatedAt: now);
-      if (current.isRecurring && status == PostItStatus.active) {
+      var updated = current.copyWith(
+        status: status,
+        updatedAt: now,
+        occurrenceStatuses: clearOccurrenceStatuses
+            ? const {}
+            : current.occurrenceStatuses,
+      );
+      if (current.type == PostItType.recurringTodo &&
+          status == PostItStatus.active) {
         final start = current.startDate;
         if (start == null || start.isBefore(today)) {
           updated = updated.copyWith(startDate: today, lastRolloverAt: now);
@@ -206,6 +220,48 @@ final class PlannerController extends ChangeNotifier {
           now,
           fromValue: current.status.name,
           toValue: status.name,
+        ),
+      );
+      await _reload();
+    });
+  }
+
+  /// Conclui/cancela apenas uma ocorrência de um evento recorrente.
+  Future<void> setEventOccurrenceStatus(
+    PostIt postIt,
+    DateOnly occurrenceStart,
+    PostItStatus status,
+  ) {
+    return _exclusive(() async {
+      await _applyDailyMaintenance();
+      final current = _findCurrent(postIt.id);
+      if (current == null || !current.isRecurringEvent || current.isHighlight) {
+        return;
+      }
+      final previous = current.statusOn(occurrenceStart);
+      if (previous == status) return;
+
+      final statuses = Map<DateOnly, PostItStatus>.from(
+        current.occurrenceStatuses,
+      );
+      if (status == PostItStatus.active) {
+        statuses.remove(occurrenceStart);
+      } else {
+        statuses[occurrenceStart] = status;
+      }
+      final now = _clock.now().toUtc();
+      final updated = current.copyWith(
+        occurrenceStatuses: statuses,
+        updatedAt: now,
+      );
+      await _postItRepository.save(
+        updated,
+        history: _history(
+          current.id,
+          PostItHistoryAction.statusChanged,
+          now,
+          fromValue: '$previous@${occurrenceStart.toIso8601String()}',
+          toValue: '$status@${occurrenceStart.toIso8601String()}',
         ),
       );
       await _reload();
@@ -297,6 +353,7 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
+    DateOnly? recurrenceEndDate,
     int? timeMinutes,
     int? reminderMinutes,
     List<String> tagIds = const [],
@@ -307,10 +364,11 @@ final class PlannerController extends ChangeNotifier {
     return _exclusive(() async {
       await _applyDailyMaintenance();
       final now = _clock.now().toUtc();
+      final highlight = type == PostItType.event && isHighlight;
       final resolvedStart = type == PostItType.recurringTodo
           ? _initialRecurringDate(startDate)
-          : startDate;
-      final effectiveRecurrence = type == PostItType.event
+          : (highlight ? (startDate ?? today) : startDate);
+      final effectiveRecurrence = type == PostItType.event && !highlight
           ? recurrence
           : EventRecurrence.none;
       final normalizedTime = type == PostItType.recurringTodo
@@ -321,23 +379,32 @@ final class PlannerController extends ChangeNotifier {
         title: title.trim(),
         type: type,
         status: PostItStatus.active,
-        isHighlight: type == PostItType.event && isHighlight,
+        isHighlight: highlight,
         details: _normalizeDetails(details),
         noteId: noteId,
         noteExcerpt: noteId == null ? _normalizeDetails(noteExcerpt) : null,
         sourceNoteId: noteId == null ? sourceNoteId : null,
         startDate: resolvedStart,
-        endDate: _normalizeEndDate(type, resolvedStart, endDate),
+        endDate: highlight
+            ? null
+            : _normalizeEndDate(type, resolvedStart, endDate),
         recurrence: effectiveRecurrence,
         recurrenceInterval: _normalizeRecurrenceInterval(
           effectiveRecurrence,
           recurrenceInterval,
         ),
+        recurrenceEndDate: highlight
+            ? null
+            : _normalizeRecurrenceEnd(
+                effectiveRecurrence,
+                resolvedStart,
+                recurrenceEndDate,
+              ),
         timeMinutes: normalizedTime,
         reminderMinutes: normalizedTime == null
             ? null
             : _normalizeReminder(reminderMinutes),
-        tagIds: _normalizeTagIds(tagIds),
+        tagIds: highlight ? const [] : _normalizeTagIds(tagIds),
         sortOrder: _nextOrderFor(resolvedStart),
         lastRolloverAt: type == PostItType.recurringTodo ? now : null,
         createdAt: now,
@@ -364,6 +431,7 @@ final class PlannerController extends ChangeNotifier {
     DateOnly? endDate,
     EventRecurrence recurrence = EventRecurrence.none,
     int recurrenceInterval = 1,
+    DateOnly? recurrenceEndDate,
     int? timeMinutes,
     int? reminderMinutes,
     List<String> tagIds = const [],
@@ -372,10 +440,12 @@ final class PlannerController extends ChangeNotifier {
       await _applyDailyMaintenance();
       final current = _findCurrent(existing.id) ?? existing;
       final effectiveType = current.isRecurring ? current.type : type;
+      final highlight = effectiveType == PostItType.event && isHighlight;
       final effectiveStart = current.isRecurring
           ? current.startDate
-          : startDate;
-      final effectiveRecurrence = effectiveType == PostItType.event
+          : (highlight ? (current.startDate ?? startDate ?? today) : startDate);
+      final effectiveRecurrence =
+          effectiveType == PostItType.event && !highlight
           ? recurrence
           : EventRecurrence.none;
       final dateChanged =
@@ -388,22 +458,32 @@ final class PlannerController extends ChangeNotifier {
       final updated = current.copyWith(
         title: title.trim(),
         type: effectiveType,
-        isHighlight: effectiveType == PostItType.event ? isHighlight : false,
+        status: highlight ? PostItStatus.active : current.status,
+        isHighlight: highlight,
         details: _normalizeDetails(details),
         startDate: effectiveStart,
-        endDate: _normalizeEndDate(effectiveType, effectiveStart, endDate),
+        endDate: highlight
+            ? null
+            : _normalizeEndDate(effectiveType, effectiveStart, endDate),
         recurrence: effectiveRecurrence,
         recurrenceInterval: _normalizeRecurrenceInterval(
           effectiveRecurrence,
           recurrenceInterval,
         ),
+        recurrenceEndDate: highlight
+            ? null
+            : _normalizeRecurrenceEnd(
+                effectiveRecurrence,
+                effectiveStart,
+                recurrenceEndDate,
+              ),
         timeMinutes: normalizedTime,
         reminderMinutes: effectiveType == PostItType.recurringTodo
             ? current.reminderMinutes
             : (normalizedTime == null
                   ? null
                   : _normalizeReminder(reminderMinutes)),
-        tagIds: _normalizeTagIds(tagIds),
+        tagIds: highlight ? const [] : _normalizeTagIds(tagIds),
         sortOrder: dateChanged && effectiveType != PostItType.event
             ? _nextOrderFor(effectiveStart)
             : current.sortOrder,
@@ -541,6 +621,9 @@ final class PlannerController extends ChangeNotifier {
       final current = _findCurrent(postIt.id) ?? postIt;
       if (!current.isEvent) {
         throw ArgumentError('Somente eventos podem ser redimensionados.');
+      }
+      if (current.isHighlight) {
+        throw StateError('Feito não pode ter duração alterada.');
       }
       final normalizedEnd = endDate.isBefore(startDate) ? startDate : endDate;
       final updated = current.copyWith(
@@ -757,6 +840,16 @@ final class PlannerController extends ChangeNotifier {
     if (type != PostItType.event || endDate == null) return null;
     if (startDate == null) return endDate;
     return endDate.isSameDay(startDate) ? null : endDate;
+  }
+
+  static DateOnly? _normalizeRecurrenceEnd(
+    EventRecurrence recurrence,
+    DateOnly? startDate,
+    DateOnly? endDate,
+  ) {
+    if (recurrence == EventRecurrence.none || endDate == null) return null;
+    if (startDate != null && endDate.isBefore(startDate)) return startDate;
+    return endDate;
   }
 
   static int _normalizeRecurrenceInterval(

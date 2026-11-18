@@ -84,7 +84,9 @@ EventBarLayout layoutEventSegments(
     if (byStart != 0) return byStart;
     final byEnd = a.endColumn.compareTo(b.endColumn);
     if (byEnd != 0) return byEnd;
-    return a.postIt.sortOrder.compareTo(b.postIt.sortOrder);
+    final byOrder = a.postIt.sortOrder.compareTo(b.postIt.sortOrder);
+    if (byOrder != 0) return byOrder;
+    return a.postIt.id.compareTo(b.postIt.id);
   });
 
   final laneEnds = <int>[];
@@ -131,10 +133,7 @@ EventBarLayout layoutEventSegments(
     );
   }
 
-  return EventBarLayout(
-    segments: segments,
-    hiddenSegments: hiddenSegments,
-  );
+  return EventBarLayout(segments: segments, hiddenSegments: hiddenSegments);
 }
 
 final class _SegmentDraft {

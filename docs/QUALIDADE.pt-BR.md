@@ -147,7 +147,7 @@ Validação da migração desktop (2026-11-12):
   portátil e um MSIX não assinado foram gerados. O ZIP é utilizável direto; o
   MSIX não assinado exige assinatura (ou publisher de namespace não assinado,
   apenas para desenvolvimento).
-- Compatibilidade dos dados Android: esquema v9 e `planner.sqlite` inalterados;
+- Compatibilidade dos dados Android: esquema v10 e `planner.sqlite` inalterados;
   todos os testes de migração e rollback passaram.
 - Os testes do servidor não foram repetidos nesta migração; o resultado anterior
   permanece 16 testes aprovados.

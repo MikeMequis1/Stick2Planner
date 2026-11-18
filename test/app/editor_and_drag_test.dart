@@ -63,6 +63,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('editor-recurrence-weeks')), findsOneWidget);
+    expect(find.byKey(const Key('editor-recurrence-end')), findsOneWidget);
     await tester.ensureVisible(
       find.byKey(const Key('editor-recurrence-weeks')),
     );
@@ -642,6 +643,173 @@ void main() {
       dependencies.planner.postIts.single.startDate,
       DateOnly(2026, 11, 6),
     );
+  });
+
+  testWidgets('evento recorrente pede escopo da conclusão', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Rotina',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          recurrenceEndDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('event-bar-e1-2026-11-05-2026-11-02')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('details-complete')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.occurrenceScopeTitle), findsOneWidget);
+    await tester.tap(find.byKey(const Key('occurrence-scope-day')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+
+    final base = dependencies.planner.postItById('e1')!;
+    expect(base.status, PostItStatus.active);
+    expect(base.occurrenceStatuses[DateOnly(2026, 11, 5)], PostItStatus.done);
+    expect(
+      dependencies.planner.postItsOn(DateOnly(2026, 11, 6)).single.status,
+      PostItStatus.active,
+    );
+  });
+
+  testWidgets('evento recorrente pode ser concluído inteiro', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Rotina',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          recurrence: EventRecurrence.daily,
+          recurrenceEndDate: DateOnly(2026, 11, 6),
+        ),
+      ],
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('event-bar-e1-2026-11-05-2026-11-02')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('details-complete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('occurrence-scope-series')));
+    await tester.pumpAndSettle();
+
+    final base = dependencies.planner.postItById('e1')!;
+    expect(base.status, PostItStatus.done);
+    expect(
+      dependencies.planner.postItsOn(DateOnly(2026, 11, 6)).single.status,
+      PostItStatus.done,
+    );
+  });
+
+  testWidgets('arrasta evento em dia com várias faixas sem perder os demais', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'e1',
+          title: 'Longo',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 6),
+        ),
+        buildPostIt(
+          id: 'e2',
+          title: 'Médio',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 5),
+        ),
+        buildPostIt(
+          id: 'e3',
+          title: 'Curto',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          endDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    expect(
+      find.byKey(const ValueKey('event-bar-e1-2026-11-02')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('event-bar-e2-2026-11-02')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('event-bar-e3-2026-11-02')),
+      findsOneWidget,
+    );
+
+    final cell = find.byKey(const Key('day-2026-11-07'));
+    final topLeft = tester.getTopLeft(cell);
+    final cellWidth = tester.getSize(cell).width;
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('event-bar-e1-2026-11-02'))),
+    );
+    await tester.pump(const Duration(milliseconds: 650));
+    await gesture.moveTo(Offset(topLeft.dx + cellWidth / 2, topLeft.dy - 10));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final moved = dependencies.planner.postIts.firstWhere(
+      (postIt) => postIt.id == 'e1',
+    );
+    expect(moved.startDate, DateOnly(2026, 11, 7));
+    expect(
+      dependencies.planner.postIts
+          .where((postIt) => postIt.id == 'e2' || postIt.id == 'e3')
+          .map((postIt) => postIt.startDate),
+      everyElement(DateOnly(2026, 11, 4)),
+    );
+  });
+
+  testWidgets('Feito oculta campos e ações incompatíveis', (tester) async {
+    final dependencies = await pumpPlanner(tester);
+    await openEditor(tester);
+    await tester.tap(find.byKey(const Key('editor-type-event')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(SwitchListTile, AppStrings.fieldHighlight),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-manage-tags')), findsNothing);
+    expect(find.byKey(const Key('editor-start-date')), findsNothing);
+    expect(find.byKey(const Key('editor-end-date')), findsNothing);
+    expect(find.byKey(const Key('editor-recurrence')), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('editor-title')), 'Conquista');
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pumpAndSettle();
+
+    final highlight = dependencies.planner.postIts.single;
+    expect(highlight.isHighlight, isTrue);
+    expect(highlight.durationInDays, 1);
+
+    await tester.tap(
+      find.byKey(ValueKey('event-bar-${highlight.id}-2026-11-02')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('details-complete')), findsNothing);
+    expect(find.byKey(const Key('details-resize')), findsNothing);
   });
 
   testWidgets('editor não quebra com teclado virtual', (tester) async {

@@ -17,6 +17,18 @@ String postItValidationMessage(PostItValidationError error) {
       AppStrings.errorHighlightEvent,
     PostItValidationError.recurrenceRequiresEvent =>
       AppStrings.errorRecurrenceEvent,
+    PostItValidationError.recurrenceEndRequiresRecurrence =>
+      AppStrings.errorRecurrenceEndWithoutRecurrence,
+    PostItValidationError.recurrenceEndBeforeStart =>
+      AppStrings.errorRecurrenceEndBeforeStart,
+    PostItValidationError.highlightCannotSpanDays =>
+      AppStrings.errorHighlightSingleDay,
+    PostItValidationError.highlightCannotRecur =>
+      AppStrings.errorHighlightRecurrence,
+    PostItValidationError.highlightCannotHaveTags =>
+      AppStrings.errorHighlightTags,
+    PostItValidationError.highlightCannotBeResolved =>
+      AppStrings.errorHighlightResolved,
     PostItValidationError.invalidRecurrenceInterval =>
       AppStrings.errorRecurrenceInterval,
   };

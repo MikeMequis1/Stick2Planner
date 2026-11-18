@@ -73,10 +73,12 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
   Widget build(BuildContext context) {
     final notes = AppScope.of(context).notes;
     final planner = AppScope.of(context).planner;
+    final settings = AppScope.of(context).settings;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([notes, planner]),
+      listenable: Listenable.merge([notes, planner, settings]),
       builder: (context, _) {
+        final showHints = settings.showCalendarHints;
         final note = notes.findById(widget.noteId);
         if (note == null) {
           return Scaffold(
@@ -207,7 +209,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                           EmptyState(
                             icon: Icons.notes,
                             title: AppStrings.noLines,
-                            message: _selectionHint,
+                            message: showHints
+                                ? _selectionHint
+                                : AppStrings.addLine,
                           )
                         else
                           for (
@@ -234,7 +238,8 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                               ),
                               onEdit: () => _edit(note),
                             ),
-                        if (note.type == NoteType.checklist &&
+                        if (showHints &&
+                            note.type == NoteType.checklist &&
                             note.lines.isNotEmpty) ...[
                           SizedBox(height: 8),
                           Text(
@@ -310,7 +315,9 @@ class _NoteDetailPageState extends State<NoteDetailPage> {
                       ],
                     ),
                   ),
-                  if (note.type == NoteType.checklist && note.lines.isNotEmpty)
+                  if (note.type == NoteType.checklist &&
+                      note.lines.isNotEmpty &&
+                      (showHints || _selectedLines.isNotEmpty))
                     Material(
                       elevation: _selectedLines.isEmpty ? 0 : 8,
                       child: SafeArea(

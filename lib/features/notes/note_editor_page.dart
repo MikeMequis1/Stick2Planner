@@ -366,19 +366,24 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 
-  Widget _buildMarkdownEditor(ThemeData theme) {
+  Widget _buildMarkdownEditor(ThemeData theme, {required bool showHints}) {
     final field = _buildMarkdownField(theme);
-    final hint = Text(
-      AppStrings.markdownHint,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
-    );
+    final hint = showHints
+        ? Text(
+            AppStrings.markdownHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          )
+        : null;
 
     if (!_showPreview) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [field, SizedBox(height: 8), hint],
+        children: [
+          field,
+          if (hint != null) ...[SizedBox(height: 8), hint],
+        ],
       );
     }
 
@@ -394,8 +399,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               field,
               SizedBox(height: 16),
               preview,
-              SizedBox(height: 8),
-              hint,
+              if (hint != null) ...[SizedBox(height: 8), hint],
             ],
           );
         }
@@ -411,8 +415,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 Expanded(child: preview),
               ],
             ),
-            SizedBox(height: 8),
-            hint,
+            if (hint != null) ...[SizedBox(height: 8), hint],
           ],
         );
       },
@@ -530,6 +533,15 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = AppScope.of(context).settings;
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (context, _) =>
+          _buildPage(context, showHints: settings.showCalendarHints),
+    );
+  }
+
+  Widget _buildPage(BuildContext context, {required bool showHints}) {
     final theme = Theme.of(context);
 
     return CallbackShortcuts(
@@ -617,7 +629,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 child: _buildMarkdownToolbar(theme),
               ),
               SizedBox(height: 8),
-              _buildMarkdownEditor(theme),
+              _buildMarkdownEditor(theme, showHints: showHints),
             ] else ...[
               ReorderableListView.builder(
                 shrinkWrap: true,
@@ -679,15 +691,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                   label: Text(AppStrings.addLine),
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                isDesktopTargetPlatform
-                    ? AppStrings.selectLinesHintDesktop
-                    : AppStrings.selectLinesHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              if (showHints) ...[
+                SizedBox(height: 8),
+                Text(
+                  isDesktopTargetPlatform
+                      ? AppStrings.selectLinesHintDesktop
+                      : AppStrings.selectLinesHint,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
+              ],
             ],
           ],
         ),

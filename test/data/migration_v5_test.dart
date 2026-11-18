@@ -69,7 +69,7 @@ INSERT INTO post_it_history_entries VALUES ('h1', 'p1', 'created', NULL, 'x', 10
 
 void main() {
   test(
-    'migra v4 para v9 preservando dados e criando tabelas de sync',
+    'migra v4 para v10 preservando dados e criando tabelas de sync',
     () async {
       final directory = await Directory.systemTemp.createTemp('s2p_migrate_');
       addTearDown(() => directory.delete(recursive: true));
@@ -85,7 +85,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 9);
+      expect(db.schemaVersion, 10);
 
       final notes = await db.select(db.notes).get();
       final postIts = await db.select(db.postIts).get();
@@ -96,6 +96,8 @@ void main() {
       expect(notes.single.markdown, '# Título');
       expect(postIts.single.id, 'p1');
       expect(postIts.single.sourceNoteId, 'n1');
+      expect(postIts.single.recurrenceEndDate, isNull);
+      expect(postIts.single.occurrenceStatuses, isEmpty);
       expect(history.single.id, 'h1');
       expect(settings.single.value, 'dark');
 
@@ -105,7 +107,7 @@ void main() {
     },
   );
 
-  test('banco novo já nasce com o esquema v9', () async {
+  test('banco novo já nasce com o esquema v10', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 

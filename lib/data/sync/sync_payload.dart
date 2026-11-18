@@ -26,6 +26,11 @@ Map<String, Object?> postItPayload(PostIt postIt) => {
   'endDate': postIt.endDate?.toIso8601String(),
   'recurrence': postIt.recurrence.name,
   'recurrenceInterval': postIt.recurrenceInterval,
+  'recurrenceEndDate': postIt.recurrenceEndDate?.toIso8601String(),
+  'occurrenceStatuses': {
+    for (final entry in postIt.occurrenceStatuses.entries)
+      entry.key.toIso8601String(): entry.value.name,
+  },
   'timeMinutes': postIt.timeMinutes,
   'reminderMinutes': postIt.reminderMinutes,
   'tagIds': postIt.tagIds,
@@ -54,6 +59,8 @@ PostIt postItFromPayload(Map<String, Object?> payload) => PostIt(
     EventRecurrence.none,
   ),
   recurrenceInterval: _optionalInteger(payload, 'recurrenceInterval', 1),
+  recurrenceEndDate: _optionalDate(payload, 'recurrenceEndDate'),
+  occurrenceStatuses: _occurrenceStatuses(payload['occurrenceStatuses']),
   timeMinutes: _optionalNullableInteger(payload, 'timeMinutes'),
   reminderMinutes: _optionalNullableInteger(payload, 'reminderMinutes'),
   tagIds: _stringList(payload['tagIds']),
@@ -310,4 +317,26 @@ Set<DateOnly> _dateList(Object? raw) {
     }
   }
   return dates;
+}
+
+Map<DateOnly, PostItStatus> _occurrenceStatuses(Object? raw) {
+  if (raw is! Map) return const {};
+  final result = <DateOnly, PostItStatus>{};
+  for (final entry in raw.entries) {
+    if (entry.key is! String || entry.value is! String) continue;
+    PostItStatus? status;
+    for (final value in PostItStatus.values) {
+      if (value.name == entry.value) {
+        status = value;
+        break;
+      }
+    }
+    if (status == null || status == PostItStatus.active) continue;
+    try {
+      result[DateOnly.parse(entry.key as String)] = status;
+    } on Object {
+      // Ignora entrada inválida; a série continua válida.
+    }
+  }
+  return result;
 }

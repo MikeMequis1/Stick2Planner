@@ -144,7 +144,7 @@ Desktop migration validation (2026-11-12):
   Mode and installing the Visual Studio C++ desktop workload. The portable ZIP
   and an unsigned MSIX were generated. The ZIP is directly usable; the unsigned
   MSIX requires signing (or a development-only unsigned-namespace publisher).
-- Android data compatibility: schema v9 and `planner.sqlite` are unchanged; all
+- Android data compatibility: schema v10 and `planner.sqlite` are unchanged; all
   migration and rollback tests passed.
 - Server tests were not re-run in this migration; their previous result remains
   16 tests passed.

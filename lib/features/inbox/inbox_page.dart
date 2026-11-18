@@ -134,6 +134,7 @@ class _InboxPageState extends State<InboxPage> {
     PlannerController planner,
     PostIt postIt,
   ) async {
+    if (postIt.isHighlight) return;
     final available = AppScope.of(context).tags.tags;
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -445,21 +446,23 @@ class _InboxRow extends StatelessWidget {
                       value: _InboxMenuAction.openInAgenda,
                       child: Text(AppStrings.openInAgenda),
                     ),
-                  if (postIt.status == PostItStatus.active)
-                    PopupMenuItem(
-                      value: _InboxMenuAction.done,
-                      child: Text(AppStrings.statusDoneAction),
-                    )
-                  else
-                    PopupMenuItem(
-                      value: _InboxMenuAction.reopen,
-                      child: Text(AppStrings.statusReopenAction),
-                    ),
-                  if (postIt.status != PostItStatus.cancelled)
-                    PopupMenuItem(
-                      value: _InboxMenuAction.cancel,
-                      child: Text(AppStrings.statusCancelAction),
-                    ),
+                  if (!postIt.isHighlight) ...[
+                    if (postIt.status == PostItStatus.active)
+                      PopupMenuItem(
+                        value: _InboxMenuAction.done,
+                        child: Text(AppStrings.statusDoneAction),
+                      )
+                    else
+                      PopupMenuItem(
+                        value: _InboxMenuAction.reopen,
+                        child: Text(AppStrings.statusReopenAction),
+                      ),
+                    if (postIt.status != PostItStatus.cancelled)
+                      PopupMenuItem(
+                        value: _InboxMenuAction.cancel,
+                        child: Text(AppStrings.statusCancelAction),
+                      ),
+                  ],
                 ],
               ),
             ],
@@ -526,11 +529,12 @@ class _InboxRow extends StatelessWidget {
           key: Key('inbox-context-open'),
           child: Text(AppStrings.showPostItDetails),
         ),
-        PopupMenuItem(
-          value: _InboxContextAction.tags,
-          key: Key('inbox-context-tags'),
-          child: Text(AppStrings.tagManage),
-        ),
+        if (!postIt.isHighlight)
+          PopupMenuItem(
+            value: _InboxContextAction.tags,
+            key: Key('inbox-context-tags'),
+            child: Text(AppStrings.tagManage),
+          ),
         if (postIt.startDate != null)
           PopupMenuItem(
             value: _InboxContextAction.agenda,
@@ -538,24 +542,26 @@ class _InboxRow extends StatelessWidget {
             child: Text(AppStrings.openInAgenda),
           ),
         const PopupMenuDivider(),
-        if (postIt.status == PostItStatus.active)
-          PopupMenuItem(
-            value: _InboxContextAction.done,
-            key: Key('inbox-context-done'),
-            child: Text(AppStrings.statusDoneAction),
-          )
-        else
-          PopupMenuItem(
-            value: _InboxContextAction.reopen,
-            key: Key('inbox-context-reopen'),
-            child: Text(AppStrings.statusReopenAction),
-          ),
-        if (postIt.status != PostItStatus.cancelled)
-          PopupMenuItem(
-            value: _InboxContextAction.cancel,
-            key: Key('inbox-context-cancel'),
-            child: Text(AppStrings.statusCancelAction),
-          ),
+        if (!postIt.isHighlight) ...[
+          if (postIt.status == PostItStatus.active)
+            PopupMenuItem(
+              value: _InboxContextAction.done,
+              key: Key('inbox-context-done'),
+              child: Text(AppStrings.statusDoneAction),
+            )
+          else
+            PopupMenuItem(
+              value: _InboxContextAction.reopen,
+              key: Key('inbox-context-reopen'),
+              child: Text(AppStrings.statusReopenAction),
+            ),
+          if (postIt.status != PostItStatus.cancelled)
+            PopupMenuItem(
+              value: _InboxContextAction.cancel,
+              key: Key('inbox-context-cancel'),
+              child: Text(AppStrings.statusCancelAction),
+            ),
+        ],
       ],
     );
     switch (action) {

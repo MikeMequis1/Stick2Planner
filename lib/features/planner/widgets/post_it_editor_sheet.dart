@@ -67,6 +67,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
   DateOnly? _endDate;
   late EventRecurrence _recurrence;
   late int _recurrenceInterval;
+  DateOnly? _recurrenceEndDate;
   TimeOfDay? _time;
   int? _reminderMinutes;
   late List<String> _selectedTagIds;
@@ -94,6 +95,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     _endDate = existing?.endDate;
     _recurrence = existing?.recurrence ?? EventRecurrence.none;
     _recurrenceInterval = existing?.recurrenceInterval ?? 1;
+    _recurrenceEndDate = existing?.recurrenceEndDate;
     final minutes = existing?.timeMinutes;
     _time = minutes == null
         ? null
@@ -128,6 +130,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         _isHighlight = false;
         _recurrence = EventRecurrence.none;
         _recurrenceInterval = 1;
+        _recurrenceEndDate = null;
         _time = null;
         _reminderMinutes = null;
         if (type == PostItType.recurringTodo) {
@@ -135,6 +138,20 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         } else {
           _startDate ??= widget.initialDate;
         }
+      }
+    });
+  }
+
+  void _setHighlight(bool value) {
+    setState(() {
+      _isHighlight = value;
+      if (value) {
+        _startDate ??= widget.initialDate;
+        _endDate = null;
+        _recurrence = EventRecurrence.none;
+        _recurrenceInterval = 1;
+        _recurrenceEndDate = null;
+        _selectedTagIds.clear();
       }
     });
   }
@@ -158,6 +175,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       }
       if (_endDate != null && _endDate!.isSameDay(date)) {
         _endDate = null;
+      }
+      if (_recurrenceEndDate != null && _recurrenceEndDate!.isBefore(date)) {
+        _recurrenceEndDate = date;
       }
     });
   }
@@ -188,6 +208,21 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     );
     if (picked == null) return;
     setState(() => _time = picked);
+  }
+
+  Future<void> _pickRecurrenceEnd() async {
+    final start = _startDate ?? widget.initialDate;
+    final initial = _recurrenceEndDate ?? start;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial.toLocalDateTime(),
+      firstDate: start.toLocalDateTime(),
+      lastDate: DateTime(2100),
+      locale: Locale('pt', 'BR'),
+      helpText: AppStrings.recurrenceEnd,
+    );
+    if (picked == null) return;
+    setState(() => _recurrenceEndDate = DateOnly.fromDateTime(picked));
   }
 
   void _showDoneInfo() {
@@ -278,7 +313,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
             if (value == null) return;
             setState(() {
               _recurrence = value;
-              if (value == EventRecurrence.weekly) {
+              if (value == EventRecurrence.none) {
+                _recurrenceEndDate = null;
+              } else if (value == EventRecurrence.weekly) {
                 _recurrenceInterval = _recurrenceInterval.clamp(1, 12);
               } else if (value == EventRecurrence.monthly) {
                 _recurrenceInterval = _recurrenceInterval.clamp(1, 24);
@@ -326,6 +363,28 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 setState(() => _recurrenceInterval = value);
               }
             },
+          ),
+        ],
+        if (_recurrence != EventRecurrence.none) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _DateField(
+                  key: const Key('editor-recurrence-end'),
+                  label: AppStrings.recurrenceEnd,
+                  date: _recurrenceEndDate,
+                  onTap: _pickRecurrenceEnd,
+                ),
+              ),
+              if (_recurrenceEndDate != null)
+                IconButton(
+                  key: const Key('editor-recurrence-end-clear'),
+                  tooltip: AppStrings.recurrenceEndClear,
+                  onPressed: () => setState(() => _recurrenceEndDate = null),
+                  icon: const Icon(Icons.close),
+                ),
+            ],
           ),
         ],
       ],
@@ -427,6 +486,11 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
       final recurrenceInterval = _isResolved
           ? (existing?.recurrenceInterval ?? 1)
           : (_isEvent ? _recurrenceInterval : 1);
+      final recurrenceEndDate = _isResolved
+          ? existing?.recurrenceEndDate
+          : (_isEvent && _recurrence != EventRecurrence.none
+                ? _recurrenceEndDate
+                : null);
 
       if (existing == null) {
         await widget.controller.createPostIt(
@@ -438,6 +502,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           endDate: endDate,
           recurrence: recurrence,
           recurrenceInterval: recurrenceInterval,
+          recurrenceEndDate: recurrenceEndDate,
           timeMinutes: timeMinutes,
           reminderMinutes: reminderMinutes,
           tagIds: _selectedTagIds,
@@ -453,6 +518,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           endDate: endDate,
           recurrence: recurrence,
           recurrenceInterval: recurrenceInterval,
+          recurrenceEndDate: recurrenceEndDate,
           timeMinutes: timeMinutes,
           reminderMinutes: reminderMinutes,
           tagIds: _selectedTagIds,
@@ -564,7 +630,7 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     alignLabelWithHint: true,
                   ),
                 ),
-                _tagsSection(availableTags),
+                if (!_isHighlight) _tagsSection(availableTags),
                 if (_isResolved)
                   Card(
                     margin: EdgeInsets.zero,
@@ -592,40 +658,44 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                     ),
                   )
                 else if (!_isRecurringType) ...[
-                  SizedBox(height: 8),
-                  Text(
-                    _isEvent ? AppStrings.fieldStartDate : AppStrings.fieldDate,
-                    style: theme.textTheme.labelMedium,
-                  ),
-                  SizedBox(height: 4),
-                  if (!_isEvent)
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(AppStrings.fieldNoDate),
-                      value: _startDate == null,
-                      onChanged: (withoutDate) {
-                        setState(() {
-                          _startDate = withoutDate
-                              ? null
-                              : (widget.initialDate);
-                        });
-                      },
-                    ),
-                  if (_isEvent || _startDate != null)
-                    _DateField(
-                      key: Key('editor-start-date'),
-                      label: AppStrings.fieldStartDate,
-                      date: _startDate,
-                      onTap: _pickStartDate,
-                    ),
-                  if (_isEvent) ...[
+                  if (!_isHighlight) ...[
                     SizedBox(height: 8),
-                    _DateField(
-                      key: Key('editor-end-date'),
-                      label: AppStrings.fieldEndDate,
-                      date: _endDate ?? _startDate,
-                      onTap: _pickEndDate,
+                    Text(
+                      _isEvent
+                          ? AppStrings.fieldStartDate
+                          : AppStrings.fieldDate,
+                      style: theme.textTheme.labelMedium,
                     ),
+                    SizedBox(height: 4),
+                    if (!_isEvent)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(AppStrings.fieldNoDate),
+                        value: _startDate == null,
+                        onChanged: (withoutDate) {
+                          setState(() {
+                            _startDate = withoutDate
+                                ? null
+                                : (widget.initialDate);
+                          });
+                        },
+                      ),
+                    if (_isEvent || _startDate != null)
+                      _DateField(
+                        key: Key('editor-start-date'),
+                        label: AppStrings.fieldStartDate,
+                        date: _startDate,
+                        onTap: _pickStartDate,
+                      ),
+                    if (_isEvent) ...[
+                      SizedBox(height: 8),
+                      _DateField(
+                        key: Key('editor-end-date'),
+                        label: AppStrings.fieldEndDate,
+                        date: _endDate ?? _startDate,
+                        onTap: _pickEndDate,
+                      ),
+                    ],
                   ],
                   if (_isEvent || _type == PostItType.task) ...[
                     SizedBox(height: 8),
@@ -728,10 +798,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                         ],
                       ),
                       value: _isHighlight,
-                      onChanged: (value) =>
-                          setState(() => _isHighlight = value),
+                      onChanged: _setHighlight,
                     ),
-                    _recurrenceSection(),
+                    if (!_isHighlight) _recurrenceSection(),
                   ],
                 ],
                 if (_errors.isNotEmpty) ...[
