@@ -223,8 +223,32 @@ void main() {
             ],
           ),
         ],
+        reminders: const [
+          RoutineReminder(
+            id: 'rr1',
+            routineId: 'r-complete',
+            intervalId: 'rv1',
+            mode: RoutineReminderMode.frequency,
+            timesPerDay: 2,
+            startMinutes: 480,
+            endMinutes: 600,
+            weekdays: {3},
+          ),
+        ],
         createdAt: exportedAt,
         updatedAt: exportedAt,
+      ),
+    );
+    await routines.recordExecution(
+      RoutineExecution(
+        id: 'exec1',
+        routineId: 'r-complete',
+        intervalId: 'rv1',
+        reminderId: 'rr1',
+        date: DateOnly(2026, 11, 4),
+        executedAt: exportedAt,
+        origin: RoutineExecutionOrigin.notification,
+        dedupeKey: 'interval|rv1|2026-11-04|reminder|rr1|480',
       ),
     );
 
@@ -254,6 +278,11 @@ void main() {
     expect(complete.sections.single.intervals.first.completedDates, {
       DateOnly(2026, 11, 4),
     });
+    expect(complete.reminders.single.intervalId, 'rv1');
+    expect(complete.reminders.single.timesPerDay, 2);
+    final executions = await DriftRoutineRepository(target).loadExecutions();
+    expect(executions.single.origin, RoutineExecutionOrigin.notification);
+    expect(executions.single.dedupeKey, contains('rr1'));
     expect(await serviceFor(target, dir).exportToJson(), raw);
   });
 
@@ -319,7 +348,7 @@ void main() {
     );
 
     root['formatVersion'] = 1;
-    root['schemaVersion'] = 13;
+    root['schemaVersion'] = 14;
     expect(
       () => BackupDocument.parse(jsonEncode(root)),
       throwsA(

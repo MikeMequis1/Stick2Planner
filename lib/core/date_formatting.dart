@@ -33,6 +33,10 @@ abstract final class DateFormats {
   static String monthYear(DateOnly date) =>
       _capitalize(DateFormat('MMMM y', locale).format(date.toLocalDateTime()));
 
+  /// Nome do mês no idioma atual, sem ano.
+  static String monthName(int year, int month) =>
+      _capitalize(DateFormat('MMMM', locale).format(DateTime(year, month, 1)));
+
   /// "seg", "ter". sem ponto final.
   static String weekdayShort(DateOnly date) {
     final formatted = DateFormat('EEE', locale).format(date.toLocalDateTime());

@@ -226,6 +226,13 @@ usuário decidir.
   atualização de cliente anterior à 0.8 sem `mode`/`sections`. Clientes antigos
   ainda não exibem cards, mas suas edições de rotina não apagam mais a estrutura
   aninhada.
+- A configuração de lembretes viaja no payload da rotina (`reminders`). O
+  histórico de execução é a entidade separada `routineExecution` (servidor
+  0.2.3+): payloads imutáveis, IDs estáveis e `dedupeKey`, então reaplicar ou
+  tocar duas vezes na notificação não duplica execução.
+- Um evento recorrente dividido são duas linhas `postIt` com o mesmo `seriesId`.
+  O segmento anterior termina antes da ocorrência movida e o novo carrega o novo
+  dia da semana; ambos preservam `recurrenceEndDate`, estados e histórico.
 - `createdAt` é o instante de criação do registro e é preservado nas edições.
   Ocorrências só aparecem a partir da data local de criação; assim um período
   offline ou um sync atrasado nunca gera atividades anteriores à existência da

@@ -72,7 +72,7 @@ INSERT INTO post_it_history_entries VALUES ('h1', 'p1', 'created', NULL, 'x', 10
 
 void main() {
   test(
-    'migra v4 para v12 preservando dados e criando tabelas de sync',
+    'migra v4 para v13 preservando dados e criando tabelas de sync',
     () async {
       final directory = await Directory.systemTemp.createTemp('s2p_migrate_');
       addTearDown(() => directory.delete(recursive: true));
@@ -88,7 +88,7 @@ void main() {
       final db = AppDatabase(NativeDatabase(file));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 12);
+      expect(db.schemaVersion, 13);
 
       final notes = await db.select(db.notes).get();
       final postIts = await db.select(db.postIts).get();
@@ -110,7 +110,7 @@ void main() {
     },
   );
 
-  test('banco novo já nasce com o esquema v12', () async {
+  test('banco novo já nasce com o esquema v13', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
@@ -120,7 +120,7 @@ void main() {
     expect(await db.select(db.syncStates).get(), hasLength(1));
   });
 
-  test('migra v10 para v12 preservando rotinas simples', () async {
+  test('migra v10 para v13 preservando rotinas simples', () async {
     final directory = await Directory.systemTemp.createTemp('s2p_routine_v10_');
     addTearDown(() => directory.delete(recursive: true));
     final file = File(

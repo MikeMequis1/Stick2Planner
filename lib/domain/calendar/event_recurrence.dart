@@ -87,3 +87,33 @@ DateOnly _occurrenceStart(
     EventRecurrence.none => base,
   };
 }
+
+/// Início da ocorrência de índice [index], com base em [base].
+DateOnly occurrenceStartFor(
+  EventRecurrence recurrence,
+  DateOnly base,
+  int interval,
+  int index,
+) => _occurrenceStart(recurrence, base, interval, index);
+
+/// Índice da ocorrência que começa em [date], relativo a [base].
+///
+/// Datas fora da grade retornam o índice mais próximo; o chamador deve validar
+/// a data gerada antes de reutilizá-la.
+int occurrenceIndexFor(
+  EventRecurrence recurrence,
+  DateOnly base,
+  DateOnly date,
+  int interval,
+) {
+  final days = date.differenceInDays(base);
+  final months = (date.year - base.year) * 12 + date.month - base.month;
+  final safeInterval = interval < 1 ? 1 : interval;
+  return switch (recurrence) {
+    EventRecurrence.daily => days,
+    EventRecurrence.weekly => days ~/ (7 * safeInterval),
+    EventRecurrence.monthly => months ~/ safeInterval,
+    EventRecurrence.yearly => months ~/ 12,
+    EventRecurrence.none => 0,
+  };
+}

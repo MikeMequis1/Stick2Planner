@@ -28,6 +28,7 @@ final class PostIt {
     this.recurrence = EventRecurrence.none,
     this.recurrenceInterval = 1,
     this.recurrenceEndDate,
+    this.seriesId,
     this.occurrenceStatuses = const {},
     this.timeMinutes,
     this.reminderMinutes,
@@ -72,6 +73,14 @@ final class PostIt {
   ///
   /// É distinta de [endDate], que representa a duração de uma ocorrência.
   final DateOnly? recurrenceEndDate;
+
+  /// Raiz da série quando este registro é um segmento criado por divisão.
+  ///
+  /// `null` significa que o próprio `id` é a raiz. Segmentos compartilham o
+  /// mesmo [seriesId] sem perder o vínculo histórico.
+  final String? seriesId;
+
+  String get effectiveSeriesId => seriesId ?? id;
 
   /// Conclusão/cancelamento por ocorrência, indexado pela data de início.
   ///
@@ -154,6 +163,7 @@ final class PostIt {
     EventRecurrence? recurrence,
     int? recurrenceInterval,
     Object? recurrenceEndDate = _unset,
+    Object? seriesId = _unset,
     Map<DateOnly, PostItStatus>? occurrenceStatuses,
     Object? timeMinutes = _unset,
     Object? reminderMinutes = _unset,
@@ -187,6 +197,9 @@ final class PostIt {
       recurrenceEndDate: identical(recurrenceEndDate, _unset)
           ? this.recurrenceEndDate
           : recurrenceEndDate as DateOnly?,
+      seriesId: identical(seriesId, _unset)
+          ? this.seriesId
+          : seriesId as String?,
       occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
       timeMinutes: identical(timeMinutes, _unset)
           ? this.timeMinutes

@@ -689,6 +689,32 @@ void main() {
     expect(find.text('Tarefa 7'), findsWidgets);
   });
 
+  testWidgets('seletor de mês e ano navega direto para o período', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      landscapeMode: AgendaViewMode.month,
+    );
+
+    await tester.tap(find.byKey(const Key('calendar-period-label')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('month-year-picker')), findsOneWidget);
+    expect(find.textContaining('2026'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('month-picker-next-year')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('month-picker-2027-3')));
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.selectedDate, DateOnly(2027, 3, 4));
+    expect(
+      find.text(DateFormats.monthYear(DateOnly(2027, 3, 4))),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('celular em retrato não estoura', (tester) async {
     await pumpPlanner(tester, size: const Size(360, 780));
 

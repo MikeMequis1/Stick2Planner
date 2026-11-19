@@ -1183,6 +1183,17 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   ).withConverter<DateOnly?>($PostItsTable.$converterrecurrenceEndDaten);
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<String> seriesId = GeneratedColumn<String>(
+    'series_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<
     Map<DateOnly, PostItStatus>,
@@ -1303,6 +1314,7 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
     recurrence,
     recurrenceInterval,
     recurrenceEndDate,
+    seriesId,
     occurrenceStatuses,
     timeMinutes,
     reminderMinutes,
@@ -1384,6 +1396,12 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
           data['recurrence_interval']!,
           _recurrenceIntervalMeta,
         ),
+      );
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
       );
     }
     if (data.containsKey('time_minutes')) {
@@ -1518,6 +1536,10 @@ class $PostItsTable extends PostIts with TableInfo<$PostItsTable, PostItRow> {
           data['${effectivePrefix}recurrence_end_date'],
         ),
       ),
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_id'],
+      ),
       occurrenceStatuses: $PostItsTable.$converteroccurrenceStatuses.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -1607,6 +1629,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
   final EventRecurrence recurrence;
   final int recurrenceInterval;
   final DateOnly? recurrenceEndDate;
+  final String? seriesId;
   final Map<DateOnly, PostItStatus> occurrenceStatuses;
   final int? timeMinutes;
   final int? reminderMinutes;
@@ -1631,6 +1654,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     required this.recurrence,
     required this.recurrenceInterval,
     this.recurrenceEndDate,
+    this.seriesId,
     required this.occurrenceStatuses,
     this.timeMinutes,
     this.reminderMinutes,
@@ -1687,6 +1711,9 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       map['recurrence_end_date'] = Variable<String>(
         $PostItsTable.$converterrecurrenceEndDaten.toSql(recurrenceEndDate),
       );
+    }
+    if (!nullToAbsent || seriesId != null) {
+      map['series_id'] = Variable<String>(seriesId);
     }
     {
       map['occurrence_statuses'] = Variable<String>(
@@ -1746,6 +1773,9 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       recurrenceEndDate: recurrenceEndDate == null && nullToAbsent
           ? const Value.absent()
           : Value(recurrenceEndDate),
+      seriesId: seriesId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seriesId),
       occurrenceStatuses: Value(occurrenceStatuses),
       timeMinutes: timeMinutes == null && nullToAbsent
           ? const Value.absent()
@@ -1794,6 +1824,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       recurrenceEndDate: serializer.fromJson<DateOnly?>(
         json['recurrenceEndDate'],
       ),
+      seriesId: serializer.fromJson<String?>(json['seriesId']),
       occurrenceStatuses: serializer.fromJson<Map<DateOnly, PostItStatus>>(
         json['occurrenceStatuses'],
       ),
@@ -1831,6 +1862,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       ),
       'recurrenceInterval': serializer.toJson<int>(recurrenceInterval),
       'recurrenceEndDate': serializer.toJson<DateOnly?>(recurrenceEndDate),
+      'seriesId': serializer.toJson<String?>(seriesId),
       'occurrenceStatuses': serializer.toJson<Map<DateOnly, PostItStatus>>(
         occurrenceStatuses,
       ),
@@ -1860,6 +1892,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     EventRecurrence? recurrence,
     int? recurrenceInterval,
     Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+    Value<String?> seriesId = const Value.absent(),
     Map<DateOnly, PostItStatus>? occurrenceStatuses,
     Value<int?> timeMinutes = const Value.absent(),
     Value<int?> reminderMinutes = const Value.absent(),
@@ -1886,6 +1919,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     recurrenceEndDate: recurrenceEndDate.present
         ? recurrenceEndDate.value
         : this.recurrenceEndDate,
+    seriesId: seriesId.present ? seriesId.value : this.seriesId,
     occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
     timeMinutes: timeMinutes.present ? timeMinutes.value : this.timeMinutes,
     reminderMinutes: reminderMinutes.present
@@ -1928,6 +1962,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
       recurrenceEndDate: data.recurrenceEndDate.present
           ? data.recurrenceEndDate.value
           : this.recurrenceEndDate,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
       occurrenceStatuses: data.occurrenceStatuses.present
           ? data.occurrenceStatuses.value
           : this.occurrenceStatuses,
@@ -1965,6 +2000,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
           ..write('recurrenceEndDate: $recurrenceEndDate, ')
+          ..write('seriesId: $seriesId, ')
           ..write('occurrenceStatuses: $occurrenceStatuses, ')
           ..write('timeMinutes: $timeMinutes, ')
           ..write('reminderMinutes: $reminderMinutes, ')
@@ -1994,6 +2030,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
     recurrence,
     recurrenceInterval,
     recurrenceEndDate,
+    seriesId,
     occurrenceStatuses,
     timeMinutes,
     reminderMinutes,
@@ -2022,6 +2059,7 @@ class PostItRow extends DataClass implements Insertable<PostItRow> {
           other.recurrence == this.recurrence &&
           other.recurrenceInterval == this.recurrenceInterval &&
           other.recurrenceEndDate == this.recurrenceEndDate &&
+          other.seriesId == this.seriesId &&
           other.occurrenceStatuses == this.occurrenceStatuses &&
           other.timeMinutes == this.timeMinutes &&
           other.reminderMinutes == this.reminderMinutes &&
@@ -2048,6 +2086,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
   final Value<EventRecurrence> recurrence;
   final Value<int> recurrenceInterval;
   final Value<DateOnly?> recurrenceEndDate;
+  final Value<String?> seriesId;
   final Value<Map<DateOnly, PostItStatus>> occurrenceStatuses;
   final Value<int?> timeMinutes;
   final Value<int?> reminderMinutes;
@@ -2073,6 +2112,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
     this.recurrenceEndDate = const Value.absent(),
+    this.seriesId = const Value.absent(),
     this.occurrenceStatuses = const Value.absent(),
     this.timeMinutes = const Value.absent(),
     this.reminderMinutes = const Value.absent(),
@@ -2099,6 +2139,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     this.recurrence = const Value.absent(),
     this.recurrenceInterval = const Value.absent(),
     this.recurrenceEndDate = const Value.absent(),
+    this.seriesId = const Value.absent(),
     this.occurrenceStatuses = const Value.absent(),
     this.timeMinutes = const Value.absent(),
     this.reminderMinutes = const Value.absent(),
@@ -2130,6 +2171,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Expression<String>? recurrence,
     Expression<int>? recurrenceInterval,
     Expression<String>? recurrenceEndDate,
+    Expression<String>? seriesId,
     Expression<String>? occurrenceStatuses,
     Expression<int>? timeMinutes,
     Expression<int>? reminderMinutes,
@@ -2156,6 +2198,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       if (recurrence != null) 'recurrence': recurrence,
       if (recurrenceInterval != null) 'recurrence_interval': recurrenceInterval,
       if (recurrenceEndDate != null) 'recurrence_end_date': recurrenceEndDate,
+      if (seriesId != null) 'series_id': seriesId,
       if (occurrenceStatuses != null) 'occurrence_statuses': occurrenceStatuses,
       if (timeMinutes != null) 'time_minutes': timeMinutes,
       if (reminderMinutes != null) 'reminder_minutes': reminderMinutes,
@@ -2184,6 +2227,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
     Value<EventRecurrence>? recurrence,
     Value<int>? recurrenceInterval,
     Value<DateOnly?>? recurrenceEndDate,
+    Value<String?>? seriesId,
     Value<Map<DateOnly, PostItStatus>>? occurrenceStatuses,
     Value<int?>? timeMinutes,
     Value<int?>? reminderMinutes,
@@ -2210,6 +2254,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
       recurrence: recurrence ?? this.recurrence,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
       recurrenceEndDate: recurrenceEndDate ?? this.recurrenceEndDate,
+      seriesId: seriesId ?? this.seriesId,
       occurrenceStatuses: occurrenceStatuses ?? this.occurrenceStatuses,
       timeMinutes: timeMinutes ?? this.timeMinutes,
       reminderMinutes: reminderMinutes ?? this.reminderMinutes,
@@ -2282,6 +2327,9 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
         ),
       );
     }
+    if (seriesId.present) {
+      map['series_id'] = Variable<String>(seriesId.value);
+    }
     if (occurrenceStatuses.present) {
       map['occurrence_statuses'] = Variable<String>(
         $PostItsTable.$converteroccurrenceStatuses.toSql(
@@ -2338,6 +2386,7 @@ class PostItsCompanion extends UpdateCompanion<PostItRow> {
           ..write('recurrence: $recurrence, ')
           ..write('recurrenceInterval: $recurrenceInterval, ')
           ..write('recurrenceEndDate: $recurrenceEndDate, ')
+          ..write('seriesId: $seriesId, ')
           ..write('occurrenceStatuses: $occurrenceStatuses, ')
           ..write('timeMinutes: $timeMinutes, ')
           ..write('reminderMinutes: $reminderMinutes, ')
@@ -5790,6 +5839,1398 @@ class RoutineIntervalCompletionsCompanion
   }
 }
 
+class $RoutineRemindersTable extends RoutineReminders
+    with TableInfo<$RoutineRemindersTable, RoutineReminderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RoutineRemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _routineIdMeta = const VerificationMeta(
+    'routineId',
+  );
+  @override
+  late final GeneratedColumn<String> routineId = GeneratedColumn<String>(
+    'routine_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intervalIdMeta = const VerificationMeta(
+    'intervalId',
+  );
+  @override
+  late final GeneratedColumn<String> intervalId = GeneratedColumn<String>(
+    'interval_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RoutineReminderMode, String>
+  mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<RoutineReminderMode>($RoutineRemindersTable.$convertermode);
+  static const VerificationMeta _timesPerDayMeta = const VerificationMeta(
+    'timesPerDay',
+  );
+  @override
+  late final GeneratedColumn<int> timesPerDay = GeneratedColumn<int>(
+    'times_per_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _startMinutesMeta = const VerificationMeta(
+    'startMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> startMinutes = GeneratedColumn<int>(
+    'start_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(480),
+  );
+  static const VerificationMeta _endMinutesMeta = const VerificationMeta(
+    'endMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> endMinutes = GeneratedColumn<int>(
+    'end_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1200),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<int>, String> times =
+      GeneratedColumn<String>(
+        'times',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<int>>($RoutineRemindersTable.$convertertimes);
+  static const VerificationMeta _weekdaysMeta = const VerificationMeta(
+    'weekdays',
+  );
+  @override
+  late final GeneratedColumn<int> weekdays = GeneratedColumn<int>(
+    'weekdays',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _pausedMeta = const VerificationMeta('paused');
+  @override
+  late final GeneratedColumn<bool> paused = GeneratedColumn<bool>(
+    'paused',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("paused" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    routineId,
+    itemId,
+    intervalId,
+    mode,
+    timesPerDay,
+    startMinutes,
+    endMinutes,
+    times,
+    weekdays,
+    enabled,
+    paused,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'routine_reminders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoutineReminderRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('routine_id')) {
+      context.handle(
+        _routineIdMeta,
+        routineId.isAcceptableOrUnknown(data['routine_id']!, _routineIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_routineIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    }
+    if (data.containsKey('interval_id')) {
+      context.handle(
+        _intervalIdMeta,
+        intervalId.isAcceptableOrUnknown(data['interval_id']!, _intervalIdMeta),
+      );
+    }
+    if (data.containsKey('times_per_day')) {
+      context.handle(
+        _timesPerDayMeta,
+        timesPerDay.isAcceptableOrUnknown(
+          data['times_per_day']!,
+          _timesPerDayMeta,
+        ),
+      );
+    }
+    if (data.containsKey('start_minutes')) {
+      context.handle(
+        _startMinutesMeta,
+        startMinutes.isAcceptableOrUnknown(
+          data['start_minutes']!,
+          _startMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('end_minutes')) {
+      context.handle(
+        _endMinutesMeta,
+        endMinutes.isAcceptableOrUnknown(data['end_minutes']!, _endMinutesMeta),
+      );
+    }
+    if (data.containsKey('weekdays')) {
+      context.handle(
+        _weekdaysMeta,
+        weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta),
+      );
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('paused')) {
+      context.handle(
+        _pausedMeta,
+        paused.isAcceptableOrUnknown(data['paused']!, _pausedMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RoutineReminderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoutineReminderRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      routineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}routine_id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      ),
+      intervalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interval_id'],
+      ),
+      mode: $RoutineRemindersTable.$convertermode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}mode'],
+        )!,
+      ),
+      timesPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}times_per_day'],
+      )!,
+      startMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_minutes'],
+      )!,
+      endMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_minutes'],
+      )!,
+      times: $RoutineRemindersTable.$convertertimes.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}times'],
+        )!,
+      ),
+      weekdays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekdays'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      paused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}paused'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RoutineRemindersTable createAlias(String alias) {
+    return $RoutineRemindersTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<RoutineReminderMode, String, String>
+  $convertermode = const EnumNameConverter<RoutineReminderMode>(
+    RoutineReminderMode.values,
+  );
+  static TypeConverter<List<int>, String> $convertertimes =
+      const MinutesListConverter();
+}
+
+class RoutineReminderRow extends DataClass
+    implements Insertable<RoutineReminderRow> {
+  final String id;
+  final String routineId;
+  final String? itemId;
+  final String? intervalId;
+  final RoutineReminderMode mode;
+  final int timesPerDay;
+  final int startMinutes;
+  final int endMinutes;
+  final List<int> times;
+  final int weekdays;
+  final bool enabled;
+  final bool paused;
+  final int createdAt;
+  final int updatedAt;
+  const RoutineReminderRow({
+    required this.id,
+    required this.routineId,
+    this.itemId,
+    this.intervalId,
+    required this.mode,
+    required this.timesPerDay,
+    required this.startMinutes,
+    required this.endMinutes,
+    required this.times,
+    required this.weekdays,
+    required this.enabled,
+    required this.paused,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['routine_id'] = Variable<String>(routineId);
+    if (!nullToAbsent || itemId != null) {
+      map['item_id'] = Variable<String>(itemId);
+    }
+    if (!nullToAbsent || intervalId != null) {
+      map['interval_id'] = Variable<String>(intervalId);
+    }
+    {
+      map['mode'] = Variable<String>(
+        $RoutineRemindersTable.$convertermode.toSql(mode),
+      );
+    }
+    map['times_per_day'] = Variable<int>(timesPerDay);
+    map['start_minutes'] = Variable<int>(startMinutes);
+    map['end_minutes'] = Variable<int>(endMinutes);
+    {
+      map['times'] = Variable<String>(
+        $RoutineRemindersTable.$convertertimes.toSql(times),
+      );
+    }
+    map['weekdays'] = Variable<int>(weekdays);
+    map['enabled'] = Variable<bool>(enabled);
+    map['paused'] = Variable<bool>(paused);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  RoutineRemindersCompanion toCompanion(bool nullToAbsent) {
+    return RoutineRemindersCompanion(
+      id: Value(id),
+      routineId: Value(routineId),
+      itemId: itemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(itemId),
+      intervalId: intervalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intervalId),
+      mode: Value(mode),
+      timesPerDay: Value(timesPerDay),
+      startMinutes: Value(startMinutes),
+      endMinutes: Value(endMinutes),
+      times: Value(times),
+      weekdays: Value(weekdays),
+      enabled: Value(enabled),
+      paused: Value(paused),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory RoutineReminderRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoutineReminderRow(
+      id: serializer.fromJson<String>(json['id']),
+      routineId: serializer.fromJson<String>(json['routineId']),
+      itemId: serializer.fromJson<String?>(json['itemId']),
+      intervalId: serializer.fromJson<String?>(json['intervalId']),
+      mode: $RoutineRemindersTable.$convertermode.fromJson(
+        serializer.fromJson<String>(json['mode']),
+      ),
+      timesPerDay: serializer.fromJson<int>(json['timesPerDay']),
+      startMinutes: serializer.fromJson<int>(json['startMinutes']),
+      endMinutes: serializer.fromJson<int>(json['endMinutes']),
+      times: serializer.fromJson<List<int>>(json['times']),
+      weekdays: serializer.fromJson<int>(json['weekdays']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      paused: serializer.fromJson<bool>(json['paused']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'routineId': serializer.toJson<String>(routineId),
+      'itemId': serializer.toJson<String?>(itemId),
+      'intervalId': serializer.toJson<String?>(intervalId),
+      'mode': serializer.toJson<String>(
+        $RoutineRemindersTable.$convertermode.toJson(mode),
+      ),
+      'timesPerDay': serializer.toJson<int>(timesPerDay),
+      'startMinutes': serializer.toJson<int>(startMinutes),
+      'endMinutes': serializer.toJson<int>(endMinutes),
+      'times': serializer.toJson<List<int>>(times),
+      'weekdays': serializer.toJson<int>(weekdays),
+      'enabled': serializer.toJson<bool>(enabled),
+      'paused': serializer.toJson<bool>(paused),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  RoutineReminderRow copyWith({
+    String? id,
+    String? routineId,
+    Value<String?> itemId = const Value.absent(),
+    Value<String?> intervalId = const Value.absent(),
+    RoutineReminderMode? mode,
+    int? timesPerDay,
+    int? startMinutes,
+    int? endMinutes,
+    List<int>? times,
+    int? weekdays,
+    bool? enabled,
+    bool? paused,
+    int? createdAt,
+    int? updatedAt,
+  }) => RoutineReminderRow(
+    id: id ?? this.id,
+    routineId: routineId ?? this.routineId,
+    itemId: itemId.present ? itemId.value : this.itemId,
+    intervalId: intervalId.present ? intervalId.value : this.intervalId,
+    mode: mode ?? this.mode,
+    timesPerDay: timesPerDay ?? this.timesPerDay,
+    startMinutes: startMinutes ?? this.startMinutes,
+    endMinutes: endMinutes ?? this.endMinutes,
+    times: times ?? this.times,
+    weekdays: weekdays ?? this.weekdays,
+    enabled: enabled ?? this.enabled,
+    paused: paused ?? this.paused,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  RoutineReminderRow copyWithCompanion(RoutineRemindersCompanion data) {
+    return RoutineReminderRow(
+      id: data.id.present ? data.id.value : this.id,
+      routineId: data.routineId.present ? data.routineId.value : this.routineId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      intervalId: data.intervalId.present
+          ? data.intervalId.value
+          : this.intervalId,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      timesPerDay: data.timesPerDay.present
+          ? data.timesPerDay.value
+          : this.timesPerDay,
+      startMinutes: data.startMinutes.present
+          ? data.startMinutes.value
+          : this.startMinutes,
+      endMinutes: data.endMinutes.present
+          ? data.endMinutes.value
+          : this.endMinutes,
+      times: data.times.present ? data.times.value : this.times,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      paused: data.paused.present ? data.paused.value : this.paused,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineReminderRow(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('itemId: $itemId, ')
+          ..write('intervalId: $intervalId, ')
+          ..write('mode: $mode, ')
+          ..write('timesPerDay: $timesPerDay, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('times: $times, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('enabled: $enabled, ')
+          ..write('paused: $paused, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    routineId,
+    itemId,
+    intervalId,
+    mode,
+    timesPerDay,
+    startMinutes,
+    endMinutes,
+    times,
+    weekdays,
+    enabled,
+    paused,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoutineReminderRow &&
+          other.id == this.id &&
+          other.routineId == this.routineId &&
+          other.itemId == this.itemId &&
+          other.intervalId == this.intervalId &&
+          other.mode == this.mode &&
+          other.timesPerDay == this.timesPerDay &&
+          other.startMinutes == this.startMinutes &&
+          other.endMinutes == this.endMinutes &&
+          other.times == this.times &&
+          other.weekdays == this.weekdays &&
+          other.enabled == this.enabled &&
+          other.paused == this.paused &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class RoutineRemindersCompanion extends UpdateCompanion<RoutineReminderRow> {
+  final Value<String> id;
+  final Value<String> routineId;
+  final Value<String?> itemId;
+  final Value<String?> intervalId;
+  final Value<RoutineReminderMode> mode;
+  final Value<int> timesPerDay;
+  final Value<int> startMinutes;
+  final Value<int> endMinutes;
+  final Value<List<int>> times;
+  final Value<int> weekdays;
+  final Value<bool> enabled;
+  final Value<bool> paused;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const RoutineRemindersCompanion({
+    this.id = const Value.absent(),
+    this.routineId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.intervalId = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.timesPerDay = const Value.absent(),
+    this.startMinutes = const Value.absent(),
+    this.endMinutes = const Value.absent(),
+    this.times = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.paused = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RoutineRemindersCompanion.insert({
+    required String id,
+    required String routineId,
+    this.itemId = const Value.absent(),
+    this.intervalId = const Value.absent(),
+    required RoutineReminderMode mode,
+    this.timesPerDay = const Value.absent(),
+    this.startMinutes = const Value.absent(),
+    this.endMinutes = const Value.absent(),
+    this.times = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.paused = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       routineId = Value(routineId),
+       mode = Value(mode),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<RoutineReminderRow> custom({
+    Expression<String>? id,
+    Expression<String>? routineId,
+    Expression<String>? itemId,
+    Expression<String>? intervalId,
+    Expression<String>? mode,
+    Expression<int>? timesPerDay,
+    Expression<int>? startMinutes,
+    Expression<int>? endMinutes,
+    Expression<String>? times,
+    Expression<int>? weekdays,
+    Expression<bool>? enabled,
+    Expression<bool>? paused,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (routineId != null) 'routine_id': routineId,
+      if (itemId != null) 'item_id': itemId,
+      if (intervalId != null) 'interval_id': intervalId,
+      if (mode != null) 'mode': mode,
+      if (timesPerDay != null) 'times_per_day': timesPerDay,
+      if (startMinutes != null) 'start_minutes': startMinutes,
+      if (endMinutes != null) 'end_minutes': endMinutes,
+      if (times != null) 'times': times,
+      if (weekdays != null) 'weekdays': weekdays,
+      if (enabled != null) 'enabled': enabled,
+      if (paused != null) 'paused': paused,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RoutineRemindersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? routineId,
+    Value<String?>? itemId,
+    Value<String?>? intervalId,
+    Value<RoutineReminderMode>? mode,
+    Value<int>? timesPerDay,
+    Value<int>? startMinutes,
+    Value<int>? endMinutes,
+    Value<List<int>>? times,
+    Value<int>? weekdays,
+    Value<bool>? enabled,
+    Value<bool>? paused,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return RoutineRemindersCompanion(
+      id: id ?? this.id,
+      routineId: routineId ?? this.routineId,
+      itemId: itemId ?? this.itemId,
+      intervalId: intervalId ?? this.intervalId,
+      mode: mode ?? this.mode,
+      timesPerDay: timesPerDay ?? this.timesPerDay,
+      startMinutes: startMinutes ?? this.startMinutes,
+      endMinutes: endMinutes ?? this.endMinutes,
+      times: times ?? this.times,
+      weekdays: weekdays ?? this.weekdays,
+      enabled: enabled ?? this.enabled,
+      paused: paused ?? this.paused,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (routineId.present) {
+      map['routine_id'] = Variable<String>(routineId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (intervalId.present) {
+      map['interval_id'] = Variable<String>(intervalId.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(
+        $RoutineRemindersTable.$convertermode.toSql(mode.value),
+      );
+    }
+    if (timesPerDay.present) {
+      map['times_per_day'] = Variable<int>(timesPerDay.value);
+    }
+    if (startMinutes.present) {
+      map['start_minutes'] = Variable<int>(startMinutes.value);
+    }
+    if (endMinutes.present) {
+      map['end_minutes'] = Variable<int>(endMinutes.value);
+    }
+    if (times.present) {
+      map['times'] = Variable<String>(
+        $RoutineRemindersTable.$convertertimes.toSql(times.value),
+      );
+    }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<int>(weekdays.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (paused.present) {
+      map['paused'] = Variable<bool>(paused.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineRemindersCompanion(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('itemId: $itemId, ')
+          ..write('intervalId: $intervalId, ')
+          ..write('mode: $mode, ')
+          ..write('timesPerDay: $timesPerDay, ')
+          ..write('startMinutes: $startMinutes, ')
+          ..write('endMinutes: $endMinutes, ')
+          ..write('times: $times, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('enabled: $enabled, ')
+          ..write('paused: $paused, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RoutineExecutionsTable extends RoutineExecutions
+    with TableInfo<$RoutineExecutionsTable, RoutineExecutionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RoutineExecutionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _routineIdMeta = const VerificationMeta(
+    'routineId',
+  );
+  @override
+  late final GeneratedColumn<String> routineId = GeneratedColumn<String>(
+    'routine_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intervalIdMeta = const VerificationMeta(
+    'intervalId',
+  );
+  @override
+  late final GeneratedColumn<String> intervalId = GeneratedColumn<String>(
+    'interval_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderIdMeta = const VerificationMeta(
+    'reminderId',
+  );
+  @override
+  late final GeneratedColumn<String> reminderId = GeneratedColumn<String>(
+    'reminder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateOnly, String> date =
+      GeneratedColumn<String>(
+        'date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateOnly>($RoutineExecutionsTable.$converterdate);
+  static const VerificationMeta _executedAtMeta = const VerificationMeta(
+    'executedAt',
+  );
+  @override
+  late final GeneratedColumn<int> executedAt = GeneratedColumn<int>(
+    'executed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RoutineExecutionOrigin, String>
+  origin =
+      GeneratedColumn<String>(
+        'origin',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<RoutineExecutionOrigin>(
+        $RoutineExecutionsTable.$converterorigin,
+      );
+  static const VerificationMeta _dedupeKeyMeta = const VerificationMeta(
+    'dedupeKey',
+  );
+  @override
+  late final GeneratedColumn<String> dedupeKey = GeneratedColumn<String>(
+    'dedupe_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    routineId,
+    itemId,
+    intervalId,
+    reminderId,
+    date,
+    executedAt,
+    origin,
+    dedupeKey,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'routine_executions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoutineExecutionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('routine_id')) {
+      context.handle(
+        _routineIdMeta,
+        routineId.isAcceptableOrUnknown(data['routine_id']!, _routineIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_routineIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    }
+    if (data.containsKey('interval_id')) {
+      context.handle(
+        _intervalIdMeta,
+        intervalId.isAcceptableOrUnknown(data['interval_id']!, _intervalIdMeta),
+      );
+    }
+    if (data.containsKey('reminder_id')) {
+      context.handle(
+        _reminderIdMeta,
+        reminderId.isAcceptableOrUnknown(data['reminder_id']!, _reminderIdMeta),
+      );
+    }
+    if (data.containsKey('executed_at')) {
+      context.handle(
+        _executedAtMeta,
+        executedAt.isAcceptableOrUnknown(data['executed_at']!, _executedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_executedAtMeta);
+    }
+    if (data.containsKey('dedupe_key')) {
+      context.handle(
+        _dedupeKeyMeta,
+        dedupeKey.isAcceptableOrUnknown(data['dedupe_key']!, _dedupeKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dedupeKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RoutineExecutionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoutineExecutionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      routineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}routine_id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      ),
+      intervalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}interval_id'],
+      ),
+      reminderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_id'],
+      ),
+      date: $RoutineExecutionsTable.$converterdate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}date'],
+        )!,
+      ),
+      executedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}executed_at'],
+      )!,
+      origin: $RoutineExecutionsTable.$converterorigin.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}origin'],
+        )!,
+      ),
+      dedupeKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dedupe_key'],
+      )!,
+    );
+  }
+
+  @override
+  $RoutineExecutionsTable createAlias(String alias) {
+    return $RoutineExecutionsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateOnly, String> $converterdate =
+      const DateOnlyConverter();
+  static JsonTypeConverter2<RoutineExecutionOrigin, String, String>
+  $converterorigin = const EnumNameConverter<RoutineExecutionOrigin>(
+    RoutineExecutionOrigin.values,
+  );
+}
+
+class RoutineExecutionRow extends DataClass
+    implements Insertable<RoutineExecutionRow> {
+  final String id;
+  final String routineId;
+  final String? itemId;
+  final String? intervalId;
+  final String? reminderId;
+  final DateOnly date;
+  final int executedAt;
+  final RoutineExecutionOrigin origin;
+  final String dedupeKey;
+  const RoutineExecutionRow({
+    required this.id,
+    required this.routineId,
+    this.itemId,
+    this.intervalId,
+    this.reminderId,
+    required this.date,
+    required this.executedAt,
+    required this.origin,
+    required this.dedupeKey,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['routine_id'] = Variable<String>(routineId);
+    if (!nullToAbsent || itemId != null) {
+      map['item_id'] = Variable<String>(itemId);
+    }
+    if (!nullToAbsent || intervalId != null) {
+      map['interval_id'] = Variable<String>(intervalId);
+    }
+    if (!nullToAbsent || reminderId != null) {
+      map['reminder_id'] = Variable<String>(reminderId);
+    }
+    {
+      map['date'] = Variable<String>(
+        $RoutineExecutionsTable.$converterdate.toSql(date),
+      );
+    }
+    map['executed_at'] = Variable<int>(executedAt);
+    {
+      map['origin'] = Variable<String>(
+        $RoutineExecutionsTable.$converterorigin.toSql(origin),
+      );
+    }
+    map['dedupe_key'] = Variable<String>(dedupeKey);
+    return map;
+  }
+
+  RoutineExecutionsCompanion toCompanion(bool nullToAbsent) {
+    return RoutineExecutionsCompanion(
+      id: Value(id),
+      routineId: Value(routineId),
+      itemId: itemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(itemId),
+      intervalId: intervalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intervalId),
+      reminderId: reminderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderId),
+      date: Value(date),
+      executedAt: Value(executedAt),
+      origin: Value(origin),
+      dedupeKey: Value(dedupeKey),
+    );
+  }
+
+  factory RoutineExecutionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoutineExecutionRow(
+      id: serializer.fromJson<String>(json['id']),
+      routineId: serializer.fromJson<String>(json['routineId']),
+      itemId: serializer.fromJson<String?>(json['itemId']),
+      intervalId: serializer.fromJson<String?>(json['intervalId']),
+      reminderId: serializer.fromJson<String?>(json['reminderId']),
+      date: serializer.fromJson<DateOnly>(json['date']),
+      executedAt: serializer.fromJson<int>(json['executedAt']),
+      origin: $RoutineExecutionsTable.$converterorigin.fromJson(
+        serializer.fromJson<String>(json['origin']),
+      ),
+      dedupeKey: serializer.fromJson<String>(json['dedupeKey']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'routineId': serializer.toJson<String>(routineId),
+      'itemId': serializer.toJson<String?>(itemId),
+      'intervalId': serializer.toJson<String?>(intervalId),
+      'reminderId': serializer.toJson<String?>(reminderId),
+      'date': serializer.toJson<DateOnly>(date),
+      'executedAt': serializer.toJson<int>(executedAt),
+      'origin': serializer.toJson<String>(
+        $RoutineExecutionsTable.$converterorigin.toJson(origin),
+      ),
+      'dedupeKey': serializer.toJson<String>(dedupeKey),
+    };
+  }
+
+  RoutineExecutionRow copyWith({
+    String? id,
+    String? routineId,
+    Value<String?> itemId = const Value.absent(),
+    Value<String?> intervalId = const Value.absent(),
+    Value<String?> reminderId = const Value.absent(),
+    DateOnly? date,
+    int? executedAt,
+    RoutineExecutionOrigin? origin,
+    String? dedupeKey,
+  }) => RoutineExecutionRow(
+    id: id ?? this.id,
+    routineId: routineId ?? this.routineId,
+    itemId: itemId.present ? itemId.value : this.itemId,
+    intervalId: intervalId.present ? intervalId.value : this.intervalId,
+    reminderId: reminderId.present ? reminderId.value : this.reminderId,
+    date: date ?? this.date,
+    executedAt: executedAt ?? this.executedAt,
+    origin: origin ?? this.origin,
+    dedupeKey: dedupeKey ?? this.dedupeKey,
+  );
+  RoutineExecutionRow copyWithCompanion(RoutineExecutionsCompanion data) {
+    return RoutineExecutionRow(
+      id: data.id.present ? data.id.value : this.id,
+      routineId: data.routineId.present ? data.routineId.value : this.routineId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      intervalId: data.intervalId.present
+          ? data.intervalId.value
+          : this.intervalId,
+      reminderId: data.reminderId.present
+          ? data.reminderId.value
+          : this.reminderId,
+      date: data.date.present ? data.date.value : this.date,
+      executedAt: data.executedAt.present
+          ? data.executedAt.value
+          : this.executedAt,
+      origin: data.origin.present ? data.origin.value : this.origin,
+      dedupeKey: data.dedupeKey.present ? data.dedupeKey.value : this.dedupeKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineExecutionRow(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('itemId: $itemId, ')
+          ..write('intervalId: $intervalId, ')
+          ..write('reminderId: $reminderId, ')
+          ..write('date: $date, ')
+          ..write('executedAt: $executedAt, ')
+          ..write('origin: $origin, ')
+          ..write('dedupeKey: $dedupeKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    routineId,
+    itemId,
+    intervalId,
+    reminderId,
+    date,
+    executedAt,
+    origin,
+    dedupeKey,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoutineExecutionRow &&
+          other.id == this.id &&
+          other.routineId == this.routineId &&
+          other.itemId == this.itemId &&
+          other.intervalId == this.intervalId &&
+          other.reminderId == this.reminderId &&
+          other.date == this.date &&
+          other.executedAt == this.executedAt &&
+          other.origin == this.origin &&
+          other.dedupeKey == this.dedupeKey);
+}
+
+class RoutineExecutionsCompanion extends UpdateCompanion<RoutineExecutionRow> {
+  final Value<String> id;
+  final Value<String> routineId;
+  final Value<String?> itemId;
+  final Value<String?> intervalId;
+  final Value<String?> reminderId;
+  final Value<DateOnly> date;
+  final Value<int> executedAt;
+  final Value<RoutineExecutionOrigin> origin;
+  final Value<String> dedupeKey;
+  final Value<int> rowid;
+  const RoutineExecutionsCompanion({
+    this.id = const Value.absent(),
+    this.routineId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.intervalId = const Value.absent(),
+    this.reminderId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.executedAt = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.dedupeKey = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RoutineExecutionsCompanion.insert({
+    required String id,
+    required String routineId,
+    this.itemId = const Value.absent(),
+    this.intervalId = const Value.absent(),
+    this.reminderId = const Value.absent(),
+    required DateOnly date,
+    required int executedAt,
+    required RoutineExecutionOrigin origin,
+    required String dedupeKey,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       routineId = Value(routineId),
+       date = Value(date),
+       executedAt = Value(executedAt),
+       origin = Value(origin),
+       dedupeKey = Value(dedupeKey);
+  static Insertable<RoutineExecutionRow> custom({
+    Expression<String>? id,
+    Expression<String>? routineId,
+    Expression<String>? itemId,
+    Expression<String>? intervalId,
+    Expression<String>? reminderId,
+    Expression<String>? date,
+    Expression<int>? executedAt,
+    Expression<String>? origin,
+    Expression<String>? dedupeKey,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (routineId != null) 'routine_id': routineId,
+      if (itemId != null) 'item_id': itemId,
+      if (intervalId != null) 'interval_id': intervalId,
+      if (reminderId != null) 'reminder_id': reminderId,
+      if (date != null) 'date': date,
+      if (executedAt != null) 'executed_at': executedAt,
+      if (origin != null) 'origin': origin,
+      if (dedupeKey != null) 'dedupe_key': dedupeKey,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RoutineExecutionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? routineId,
+    Value<String?>? itemId,
+    Value<String?>? intervalId,
+    Value<String?>? reminderId,
+    Value<DateOnly>? date,
+    Value<int>? executedAt,
+    Value<RoutineExecutionOrigin>? origin,
+    Value<String>? dedupeKey,
+    Value<int>? rowid,
+  }) {
+    return RoutineExecutionsCompanion(
+      id: id ?? this.id,
+      routineId: routineId ?? this.routineId,
+      itemId: itemId ?? this.itemId,
+      intervalId: intervalId ?? this.intervalId,
+      reminderId: reminderId ?? this.reminderId,
+      date: date ?? this.date,
+      executedAt: executedAt ?? this.executedAt,
+      origin: origin ?? this.origin,
+      dedupeKey: dedupeKey ?? this.dedupeKey,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (routineId.present) {
+      map['routine_id'] = Variable<String>(routineId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (intervalId.present) {
+      map['interval_id'] = Variable<String>(intervalId.value);
+    }
+    if (reminderId.present) {
+      map['reminder_id'] = Variable<String>(reminderId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(
+        $RoutineExecutionsTable.$converterdate.toSql(date.value),
+      );
+    }
+    if (executedAt.present) {
+      map['executed_at'] = Variable<int>(executedAt.value);
+    }
+    if (origin.present) {
+      map['origin'] = Variable<String>(
+        $RoutineExecutionsTable.$converterorigin.toSql(origin.value),
+      );
+    }
+    if (dedupeKey.present) {
+      map['dedupe_key'] = Variable<String>(dedupeKey.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoutineExecutionsCompanion(')
+          ..write('id: $id, ')
+          ..write('routineId: $routineId, ')
+          ..write('itemId: $itemId, ')
+          ..write('intervalId: $intervalId, ')
+          ..write('reminderId: $reminderId, ')
+          ..write('date: $date, ')
+          ..write('executedAt: $executedAt, ')
+          ..write('origin: $origin, ')
+          ..write('dedupeKey: $dedupeKey, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncOutboxTable extends SyncOutbox
     with TableInfo<$SyncOutboxTable, SyncOutboxRow> {
   @override
@@ -7168,6 +8609,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $RoutineIntervalCompletionsTable routineIntervalCompletions =
       $RoutineIntervalCompletionsTable(this);
+  late final $RoutineRemindersTable routineReminders = $RoutineRemindersTable(
+    this,
+  );
+  late final $RoutineExecutionsTable routineExecutions =
+      $RoutineExecutionsTable(this);
   late final $SyncOutboxTable syncOutbox = $SyncOutboxTable(this);
   late final $SyncRowStatesTable syncRowStates = $SyncRowStatesTable(this);
   late final $SyncBasesTable syncBases = $SyncBasesTable(this);
@@ -7216,6 +8662,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_routine_interval_completions_interval',
     'CREATE INDEX idx_routine_interval_completions_interval ON routine_interval_completions (interval_id)',
   );
+  late final Index idxRoutineRemindersRoutine = Index(
+    'idx_routine_reminders_routine',
+    'CREATE INDEX idx_routine_reminders_routine ON routine_reminders (routine_id)',
+  );
+  late final Index idxRoutineExecutionsDate = Index(
+    'idx_routine_executions_date',
+    'CREATE INDEX idx_routine_executions_date ON routine_executions (date)',
+  );
+  late final Index idxRoutineExecutionsRoutine = Index(
+    'idx_routine_executions_routine',
+    'CREATE INDEX idx_routine_executions_routine ON routine_executions (routine_id)',
+  );
+  late final Index idxRoutineExecutionsDedupe = Index(
+    'idx_routine_executions_dedupe',
+    'CREATE UNIQUE INDEX idx_routine_executions_dedupe ON routine_executions (dedupe_key)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7233,6 +8695,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     routineSections,
     routineIntervals,
     routineIntervalCompletions,
+    routineReminders,
+    routineExecutions,
     syncOutbox,
     syncRowStates,
     syncBases,
@@ -7248,6 +8712,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxRoutineSectionsRoutineId,
     idxRoutineIntervalsSectionId,
     idxRoutineIntervalCompletionsInterval,
+    idxRoutineRemindersRoutine,
+    idxRoutineExecutionsDate,
+    idxRoutineExecutionsRoutine,
+    idxRoutineExecutionsDedupe,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8214,6 +9682,7 @@ typedef $$PostItsTableCreateCompanionBuilder = PostItsCompanion Function({
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
   Value<DateOnly?> recurrenceEndDate,
+  Value<String?> seriesId,
   Value<Map<DateOnly, PostItStatus>> occurrenceStatuses,
   Value<int?> timeMinutes,
   Value<int?> reminderMinutes,
@@ -8240,6 +9709,7 @@ typedef $$PostItsTableUpdateCompanionBuilder = PostItsCompanion Function({
   Value<EventRecurrence> recurrence,
   Value<int> recurrenceInterval,
   Value<DateOnly?> recurrenceEndDate,
+  Value<String?> seriesId,
   Value<Map<DateOnly, PostItStatus>> occurrenceStatuses,
   Value<int?> timeMinutes,
   Value<int?> reminderMinutes,
@@ -8374,6 +9844,11 @@ class $$PostItsTableFilterComposer
   get recurrenceEndDate => $composableBuilder(
     column: $table.recurrenceEndDate,
     builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnFilters(column),
   );
 
   ColumnWithTypeConverterFilters<
@@ -8550,6 +10025,11 @@ class $$PostItsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get occurrenceStatuses => $composableBuilder(
     column: $table.occurrenceStatuses,
     builder: (column) => ColumnOrderings(column),
@@ -8681,6 +10161,9 @@ class $$PostItsTableAnnotationComposer
         builder: (column) => column,
       );
 
+  GeneratedColumn<String> get seriesId =>
+      $composableBuilder(column: $table.seriesId, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<Map<DateOnly, PostItStatus>, String>
   get occurrenceStatuses => $composableBuilder(
     column: $table.occurrenceStatuses,
@@ -8809,6 +10292,7 @@ class $$PostItsTableTableManager
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
                 Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+                Value<String?> seriesId = const Value.absent(),
                 Value<Map<DateOnly, PostItStatus>> occurrenceStatuses =
                     const Value.absent(),
                 Value<int?> timeMinutes = const Value.absent(),
@@ -8835,6 +10319,7 @@ class $$PostItsTableTableManager
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
                 recurrenceEndDate: recurrenceEndDate,
+                seriesId: seriesId,
                 occurrenceStatuses: occurrenceStatuses,
                 timeMinutes: timeMinutes,
                 reminderMinutes: reminderMinutes,
@@ -8862,6 +10347,7 @@ class $$PostItsTableTableManager
                 Value<EventRecurrence> recurrence = const Value.absent(),
                 Value<int> recurrenceInterval = const Value.absent(),
                 Value<DateOnly?> recurrenceEndDate = const Value.absent(),
+                Value<String?> seriesId = const Value.absent(),
                 Value<Map<DateOnly, PostItStatus>> occurrenceStatuses =
                     const Value.absent(),
                 Value<int?> timeMinutes = const Value.absent(),
@@ -8888,6 +10374,7 @@ class $$PostItsTableTableManager
                 recurrence: recurrence,
                 recurrenceInterval: recurrenceInterval,
                 recurrenceEndDate: recurrenceEndDate,
+                seriesId: seriesId,
                 occurrenceStatuses: occurrenceStatuses,
                 timeMinutes: timeMinutes,
                 reminderMinutes: reminderMinutes,
@@ -12068,6 +13555,724 @@ typedef $$RoutineIntervalCompletionsTableProcessedTableManager =
       RoutineIntervalCompletionRow,
       PrefetchHooks Function({bool intervalId})
     >;
+typedef $$RoutineRemindersTableCreateCompanionBuilder =
+    RoutineRemindersCompanion Function({
+      required String id,
+      required String routineId,
+      Value<String?> itemId,
+      Value<String?> intervalId,
+      required RoutineReminderMode mode,
+      Value<int> timesPerDay,
+      Value<int> startMinutes,
+      Value<int> endMinutes,
+      Value<List<int>> times,
+      Value<int> weekdays,
+      Value<bool> enabled,
+      Value<bool> paused,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$RoutineRemindersTableUpdateCompanionBuilder =
+    RoutineRemindersCompanion Function({
+      Value<String> id,
+      Value<String> routineId,
+      Value<String?> itemId,
+      Value<String?> intervalId,
+      Value<RoutineReminderMode> mode,
+      Value<int> timesPerDay,
+      Value<int> startMinutes,
+      Value<int> endMinutes,
+      Value<List<int>> times,
+      Value<int> weekdays,
+      Value<bool> enabled,
+      Value<bool> paused,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$RoutineRemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $RoutineRemindersTable> {
+  $$RoutineRemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get routineId => $composableBuilder(
+    column: $table.routineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    RoutineReminderMode,
+    RoutineReminderMode,
+    String
+  >
+  get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get timesPerDay => $composableBuilder(
+    column: $table.timesPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<int>, List<int>, String> get times =>
+      $composableBuilder(
+        column: $table.times,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RoutineRemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RoutineRemindersTable> {
+  $$RoutineRemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get routineId => $composableBuilder(
+    column: $table.routineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timesPerDay => $composableBuilder(
+    column: $table.timesPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get times => $composableBuilder(
+    column: $table.times,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RoutineRemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RoutineRemindersTable> {
+  $$RoutineRemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get routineId =>
+      $composableBuilder(column: $table.routineId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<RoutineReminderMode, String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<int> get timesPerDay => $composableBuilder(
+    column: $table.timesPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startMinutes => $composableBuilder(
+    column: $table.startMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endMinutes => $composableBuilder(
+    column: $table.endMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<int>, String> get times =>
+      $composableBuilder(column: $table.times, builder: (column) => column);
+
+  GeneratedColumn<int> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<bool> get paused =>
+      $composableBuilder(column: $table.paused, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$RoutineRemindersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RoutineRemindersTable,
+          RoutineReminderRow,
+          $$RoutineRemindersTableFilterComposer,
+          $$RoutineRemindersTableOrderingComposer,
+          $$RoutineRemindersTableAnnotationComposer,
+          $$RoutineRemindersTableCreateCompanionBuilder,
+          $$RoutineRemindersTableUpdateCompanionBuilder,
+          (
+            RoutineReminderRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RoutineRemindersTable,
+              RoutineReminderRow
+            >,
+          ),
+          RoutineReminderRow,
+          PrefetchHooks Function()
+        > {
+  $$RoutineRemindersTableTableManager(
+    _$AppDatabase db,
+    $RoutineRemindersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoutineRemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoutineRemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoutineRemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> routineId = const Value.absent(),
+                Value<String?> itemId = const Value.absent(),
+                Value<String?> intervalId = const Value.absent(),
+                Value<RoutineReminderMode> mode = const Value.absent(),
+                Value<int> timesPerDay = const Value.absent(),
+                Value<int> startMinutes = const Value.absent(),
+                Value<int> endMinutes = const Value.absent(),
+                Value<List<int>> times = const Value.absent(),
+                Value<int> weekdays = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<bool> paused = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineRemindersCompanion(
+                id: id,
+                routineId: routineId,
+                itemId: itemId,
+                intervalId: intervalId,
+                mode: mode,
+                timesPerDay: timesPerDay,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                times: times,
+                weekdays: weekdays,
+                enabled: enabled,
+                paused: paused,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String routineId,
+                Value<String?> itemId = const Value.absent(),
+                Value<String?> intervalId = const Value.absent(),
+                required RoutineReminderMode mode,
+                Value<int> timesPerDay = const Value.absent(),
+                Value<int> startMinutes = const Value.absent(),
+                Value<int> endMinutes = const Value.absent(),
+                Value<List<int>> times = const Value.absent(),
+                Value<int> weekdays = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<bool> paused = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineRemindersCompanion.insert(
+                id: id,
+                routineId: routineId,
+                itemId: itemId,
+                intervalId: intervalId,
+                mode: mode,
+                timesPerDay: timesPerDay,
+                startMinutes: startMinutes,
+                endMinutes: endMinutes,
+                times: times,
+                weekdays: weekdays,
+                enabled: enabled,
+                paused: paused,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RoutineRemindersTable, RoutineReminderRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RoutineRemindersTable,
+                    RoutineReminderRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RoutineRemindersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RoutineRemindersTable,
+      RoutineReminderRow,
+      $$RoutineRemindersTableFilterComposer,
+      $$RoutineRemindersTableOrderingComposer,
+      $$RoutineRemindersTableAnnotationComposer,
+      $$RoutineRemindersTableCreateCompanionBuilder,
+      $$RoutineRemindersTableUpdateCompanionBuilder,
+      (
+        RoutineReminderRow,
+        BaseReferences<
+          _$AppDatabase,
+          $RoutineRemindersTable,
+          RoutineReminderRow
+        >,
+      ),
+      RoutineReminderRow,
+      PrefetchHooks Function()
+    >;
+typedef $$RoutineExecutionsTableCreateCompanionBuilder =
+    RoutineExecutionsCompanion Function({
+      required String id,
+      required String routineId,
+      Value<String?> itemId,
+      Value<String?> intervalId,
+      Value<String?> reminderId,
+      required DateOnly date,
+      required int executedAt,
+      required RoutineExecutionOrigin origin,
+      required String dedupeKey,
+      Value<int> rowid,
+    });
+typedef $$RoutineExecutionsTableUpdateCompanionBuilder =
+    RoutineExecutionsCompanion Function({
+      Value<String> id,
+      Value<String> routineId,
+      Value<String?> itemId,
+      Value<String?> intervalId,
+      Value<String?> reminderId,
+      Value<DateOnly> date,
+      Value<int> executedAt,
+      Value<RoutineExecutionOrigin> origin,
+      Value<String> dedupeKey,
+      Value<int> rowid,
+    });
+
+class $$RoutineExecutionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RoutineExecutionsTable> {
+  $$RoutineExecutionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get routineId => $composableBuilder(
+    column: $table.routineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderId => $composableBuilder(
+    column: $table.reminderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateOnly, DateOnly, String> get date =>
+      $composableBuilder(
+        column: $table.date,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get executedAt => $composableBuilder(
+    column: $table.executedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    RoutineExecutionOrigin,
+    RoutineExecutionOrigin,
+    String
+  >
+  get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RoutineExecutionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RoutineExecutionsTable> {
+  $$RoutineExecutionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get routineId => $composableBuilder(
+    column: $table.routineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reminderId => $composableBuilder(
+    column: $table.reminderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get executedAt => $composableBuilder(
+    column: $table.executedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RoutineExecutionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RoutineExecutionsTable> {
+  $$RoutineExecutionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get routineId =>
+      $composableBuilder(column: $table.routineId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get intervalId => $composableBuilder(
+    column: $table.intervalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reminderId => $composableBuilder(
+    column: $table.reminderId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<DateOnly, String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get executedAt => $composableBuilder(
+    column: $table.executedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<RoutineExecutionOrigin, String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
+  GeneratedColumn<String> get dedupeKey =>
+      $composableBuilder(column: $table.dedupeKey, builder: (column) => column);
+}
+
+class $$RoutineExecutionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RoutineExecutionsTable,
+          RoutineExecutionRow,
+          $$RoutineExecutionsTableFilterComposer,
+          $$RoutineExecutionsTableOrderingComposer,
+          $$RoutineExecutionsTableAnnotationComposer,
+          $$RoutineExecutionsTableCreateCompanionBuilder,
+          $$RoutineExecutionsTableUpdateCompanionBuilder,
+          (
+            RoutineExecutionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RoutineExecutionsTable,
+              RoutineExecutionRow
+            >,
+          ),
+          RoutineExecutionRow,
+          PrefetchHooks Function()
+        > {
+  $$RoutineExecutionsTableTableManager(
+    _$AppDatabase db,
+    $RoutineExecutionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RoutineExecutionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RoutineExecutionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RoutineExecutionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> routineId = const Value.absent(),
+                Value<String?> itemId = const Value.absent(),
+                Value<String?> intervalId = const Value.absent(),
+                Value<String?> reminderId = const Value.absent(),
+                Value<DateOnly> date = const Value.absent(),
+                Value<int> executedAt = const Value.absent(),
+                Value<RoutineExecutionOrigin> origin = const Value.absent(),
+                Value<String> dedupeKey = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineExecutionsCompanion(
+                id: id,
+                routineId: routineId,
+                itemId: itemId,
+                intervalId: intervalId,
+                reminderId: reminderId,
+                date: date,
+                executedAt: executedAt,
+                origin: origin,
+                dedupeKey: dedupeKey,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String routineId,
+                Value<String?> itemId = const Value.absent(),
+                Value<String?> intervalId = const Value.absent(),
+                Value<String?> reminderId = const Value.absent(),
+                required DateOnly date,
+                required int executedAt,
+                required RoutineExecutionOrigin origin,
+                required String dedupeKey,
+                Value<int> rowid = const Value.absent(),
+              }) => RoutineExecutionsCompanion.insert(
+                id: id,
+                routineId: routineId,
+                itemId: itemId,
+                intervalId: intervalId,
+                reminderId: reminderId,
+                date: date,
+                executedAt: executedAt,
+                origin: origin,
+                dedupeKey: dedupeKey,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RoutineExecutionsTable, RoutineExecutionRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RoutineExecutionsTable,
+                    RoutineExecutionRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RoutineExecutionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RoutineExecutionsTable,
+      RoutineExecutionRow,
+      $$RoutineExecutionsTableFilterComposer,
+      $$RoutineExecutionsTableOrderingComposer,
+      $$RoutineExecutionsTableAnnotationComposer,
+      $$RoutineExecutionsTableCreateCompanionBuilder,
+      $$RoutineExecutionsTableUpdateCompanionBuilder,
+      (
+        RoutineExecutionRow,
+        BaseReferences<
+          _$AppDatabase,
+          $RoutineExecutionsTable,
+          RoutineExecutionRow
+        >,
+      ),
+      RoutineExecutionRow,
+      PrefetchHooks Function()
+    >;
 typedef $$SyncOutboxTableCreateCompanionBuilder = SyncOutboxCompanion Function({
   required String entity,
   required String entityId,
@@ -12888,6 +15093,10 @@ class $AppDatabaseManager {
         _db,
         _db.routineIntervalCompletions,
       );
+  $$RoutineRemindersTableTableManager get routineReminders =>
+      $$RoutineRemindersTableTableManager(_db, _db.routineReminders);
+  $$RoutineExecutionsTableTableManager get routineExecutions =>
+      $$RoutineExecutionsTableTableManager(_db, _db.routineExecutions);
   $$SyncOutboxTableTableManager get syncOutbox =>
       $$SyncOutboxTableTableManager(_db, _db.syncOutbox);
   $$SyncRowStatesTableTableManager get syncRowStates =>

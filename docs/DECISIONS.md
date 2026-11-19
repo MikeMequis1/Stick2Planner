@@ -447,6 +447,35 @@ stages. Each item: context, decision, consequence.
   stays in one centered column because the drag handle reorders a single list;
   a grid would make drop targets ambiguous.
 
+## Series segments, routine reminders and execution history (schema v13)
+
+- A recurring event split is represented by two rows sharing `seriesId`
+  (`null` means the row itself is the root). The original ends on the day before
+  the moved occurrence; the new segment starts on the target date with the same
+  recurrence rule and end date. This preserves the relationship instead of
+  creating disconnected events.
+- Completion/cancellation statuses before the split stay on the original row.
+  Future statuses are remapped by recurrence index, so a cancelled fourth
+  occurrence remains the fourth occurrence after the weekday changes.
+- Reminders live in `routine_reminders` and travel inside the `routine` payload,
+  keeping routine configuration atomic. Frequency reminders distribute times
+  across `[startMinutes, endMinutes)`; explicit reminders store a sorted set of
+  minutes. The Android notification ID is derived from reminder/date/slot and is
+  never synchronized.
+- `routine_executions` is an append-only execution log independent from the
+  current checkbox state. `dedupeKey` prevents duplicate manual toggles or
+  repeated notification actions; IDs are stable and synchronized as the
+  `routineExecution` entity. No FK points to routines or activities, so deleting
+  a routine does not erase history.
+- Migration v13 backfills old completion rows into `routine_executions` with
+  origin `legacy`, using the stored `completedAt` and a generated stable key.
+- Notification actions record executions and mark completion only when the user
+  taps **Concluir**. Receiving, dismissing or ignoring a notification never marks
+  anything. Scheduling is local and rescheduled after edits, app resume and boot
+  through the plugin's boot receiver.
+- The dashboard reads persisted executions, not the current task state. Legacy
+  completions therefore appear in history immediately after migration.
+
 ## Recurring occurrences, Feito and global hints
 
 - Recurring occurrences are expanded views of one series record. Per-occurrence

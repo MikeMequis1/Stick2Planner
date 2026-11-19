@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -6,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/clock.dart';
+import '../core/date_only.dart';
 import '../data/backup/backup_file_gateway.dart';
 import '../data/backup/backup_service.dart';
 import '../data/db/app_database.dart';
@@ -15,6 +17,7 @@ import '../data/repositories/drift_settings_repository.dart';
 import '../data/repositories/drift_tag_repository.dart';
 import '../data/repositories/drift_routine_repository.dart';
 import '../data/sync/sync_state_store.dart';
+import '../domain/entities/routine.dart';
 import 'controllers/app_navigation_controller.dart';
 import 'controllers/app_settings_controller.dart';
 import 'controllers/notes_controller.dart';
@@ -157,11 +160,34 @@ final class AppDependencies {
       settings.initialize(),
     ]);
     await notifications.initialize(enabled: settings.notificationsEnabled);
+    notifications.setRoutineActionHandler(_handleRoutineReminderAction);
     planner.addListener(_onDataChanged);
     routines.addListener(_onDataChanged);
     settings.addListener(_onDataChanged);
     await refreshNotifications();
     await sync.initialize();
+  }
+
+  Future<void> _handleRoutineReminderAction(String rawPayload) async {
+    try {
+      final payload = jsonDecode(rawPayload);
+      if (payload is! Map) return;
+      final routineId = payload['routineId'];
+      final dateRaw = payload['date'];
+      final reminderId = payload['reminderId'];
+      if (routineId is! String || dateRaw is! String) return;
+      await routines.recordExecution(
+        routineId: routineId,
+        date: DateOnly.parse(dateRaw),
+        origin: RoutineExecutionOrigin.notification,
+        itemId: payload['itemId'] as String?,
+        intervalId: payload['intervalId'] as String?,
+        reminderId: reminderId as String?,
+        slotMinutes: payload['slotMinutes'] as int?,
+      );
+    } on Object {
+      // Ação de notificação nunca deve derrubar o aplicativo.
+    }
   }
 
   /// Reagenda resumo/lembretes depois de retomada ou alteração relevante.

@@ -128,6 +128,9 @@ final class SyncApplyService {
           _db.routineSections,
         )..where((table) => table.routineId.equals(routineId))).go();
         await (_db.delete(
+          _db.routineReminders,
+        )..where((table) => table.routineId.equals(routineId))).go();
+        await (_db.delete(
           _db.routines,
         )..where((table) => table.id.equals(routineId))).go();
         await _recordRev(syncEntityRoutine, routineId, rev);
@@ -289,7 +292,73 @@ final class SyncApplyService {
           }
         }
       }
+
+      final keepReminders = {
+        for (final reminder in routine.reminders) reminder.id,
+      };
+      final existingReminders = await (_db.select(
+        _db.routineReminders,
+      )..where((table) => table.routineId.equals(routine.id))).get();
+      for (final row in existingReminders) {
+        if (keepReminders.contains(row.id)) continue;
+        await (_db.delete(
+          _db.routineReminders,
+        )..where((table) => table.id.equals(row.id))).go();
+      }
+      for (final reminder in routine.reminders) {
+        await _db
+            .into(_db.routineReminders)
+            .insertOnConflictUpdate(
+              RoutineRemindersCompanion(
+                id: Value(reminder.id),
+                routineId: Value(routine.id),
+                itemId: Value(reminder.itemId),
+                intervalId: Value(reminder.intervalId),
+                mode: Value(reminder.mode),
+                timesPerDay: Value(reminder.timesPerDay),
+                startMinutes: Value(reminder.startMinutes),
+                endMinutes: Value(reminder.endMinutes),
+                times: Value(reminder.times),
+                weekdays: Value(routineWeekdayMask(reminder.weekdays)),
+                enabled: Value(reminder.enabled),
+                paused: Value(reminder.paused),
+                createdAt: Value(dateTimeToStorage(routine.createdAt)),
+                updatedAt: Value(dateTimeToStorage(routine.updatedAt)),
+              ),
+            );
+      }
       await _recordRev(syncEntityRoutine, routine.id, rev);
+    });
+  }
+
+  Future<void> applyRoutineExecution(
+    Map<String, Object?> payload,
+    int rev,
+  ) async {
+    final execution = routineExecutionFromPayload(payload);
+    await _db.transaction(() async {
+      final byDedupe =
+          await (_db.select(_db.routineExecutions)
+                ..where((table) => table.dedupeKey.equals(execution.dedupeKey)))
+              .getSingleOrNull();
+      if (byDedupe == null) {
+        await _db
+            .into(_db.routineExecutions)
+            .insertOnConflictUpdate(
+              RoutineExecutionsCompanion(
+                id: Value(execution.id),
+                routineId: Value(execution.routineId),
+                itemId: Value(execution.itemId),
+                intervalId: Value(execution.intervalId),
+                reminderId: Value(execution.reminderId),
+                date: Value(execution.date),
+                executedAt: Value(dateTimeToStorage(execution.executedAt)),
+                origin: Value(execution.origin),
+                dedupeKey: Value(execution.dedupeKey),
+              ),
+            );
+      }
+      await _recordRev(syncEntityRoutineExecution, execution.id, rev);
     });
   }
 

@@ -13,6 +13,7 @@ enum PostItHistoryAction {
   noteLinked,
   noteUnlinked,
   restored,
+  seriesSplit,
 }
 
 /// Registro imutável de auditoria de um post-it.

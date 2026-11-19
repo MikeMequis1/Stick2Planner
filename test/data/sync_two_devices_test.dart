@@ -451,6 +451,107 @@ void main() {
     expect(onB.occurrenceStatuses[DateOnly(2026, 11, 5)], PostItStatus.done);
   });
 
+  test('segmento de série viaja com seriesId e término preservado', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftPostItRepository(dbA);
+    final repoB = DriftPostItRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final root = PostIt(
+      id: 'series-root',
+      title: 'Reunião',
+      type: PostItType.event,
+      status: PostItStatus.active,
+      startDate: DateOnly(2026, 11, 3),
+      recurrence: EventRecurrence.weekly,
+      recurrenceEndDate: DateOnly(2026, 11, 16),
+      seriesId: 'series-root',
+      createdAt: t0,
+      updatedAt: t0,
+    );
+    final segment = PostIt(
+      id: 'series-segment',
+      title: 'Reunião',
+      type: PostItType.event,
+      status: PostItStatus.active,
+      startDate: DateOnly(2026, 11, 18),
+      recurrence: EventRecurrence.weekly,
+      recurrenceEndDate: DateOnly(2026, 12, 31),
+      seriesId: 'series-root',
+      createdAt: t0,
+      updatedAt: t0,
+    );
+
+    await repoA.saveBatch([root, segment]);
+    await engineA.run();
+    await engineB.run();
+
+    final onB = await repoB.loadAll();
+    expect(
+      onB.map((item) => item.id),
+      containsAll(['series-root', 'series-segment']),
+    );
+    final restored = onB.singleWhere((item) => item.id == 'series-segment');
+    expect(restored.seriesId, 'series-root');
+    expect(restored.effectiveSeriesId, 'series-root');
+    expect(restored.recurrenceEndDate, DateOnly(2026, 12, 31));
+  });
+
+  test('execuções de rotina sincronizam sem duplicar', () async {
+    final server = MemorySyncServer();
+    final dbA = openDb();
+    final dbB = openDb();
+    final repoA = DriftRoutineRepository(dbA);
+    final repoB = DriftRoutineRepository(dbB);
+    final engineA = SyncEngine(
+      database: dbA,
+      transport: DeviceTransport(server, 'A'),
+      state: SyncStateStore(dbA),
+      now: () => t0,
+    );
+    final engineB = SyncEngine(
+      database: dbB,
+      transport: DeviceTransport(server, 'B'),
+      state: SyncStateStore(dbB),
+      now: () => t0,
+    );
+    final execution = RoutineExecution(
+      id: 'exec-1',
+      routineId: 'r1',
+      itemId: 'water',
+      reminderId: 'rem1',
+      date: DateOnly(2026, 11, 4),
+      executedAt: t0,
+      origin: RoutineExecutionOrigin.notification,
+      dedupeKey: 'item|water|2026-11-04|reminder|rem1|480',
+    );
+
+    expect(await repoA.recordExecution(execution), isTrue);
+    expect(await repoA.recordExecution(execution), isFalse);
+    await engineA.run();
+    await engineB.run();
+    await engineB.run();
+
+    final onB = await repoB.loadExecutions();
+    expect(onB, hasLength(1));
+    expect(onB.single.id, 'exec-1');
+    expect(onB.single.origin, RoutineExecutionOrigin.notification);
+    expect(onB.single.reminderId, 'rem1');
+    expect(await repoB.recordExecution(onB.single), isFalse);
+  });
+
   test('rotina completa sincroniza cards, intervalos e tarefas', () async {
     final server = MemorySyncServer();
     final dbA = openDb();

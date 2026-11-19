@@ -24,6 +24,7 @@ PostIt postItFromRow(PostItRow row) => PostIt(
   recurrence: row.recurrence,
   recurrenceInterval: row.recurrenceInterval,
   recurrenceEndDate: row.recurrenceEndDate,
+  seriesId: row.seriesId,
   occurrenceStatuses: row.occurrenceStatuses,
   timeMinutes: row.timeMinutes,
   reminderMinutes: row.reminderMinutes,
@@ -52,6 +53,7 @@ PostItsCompanion postItToCompanion(PostIt postIt) => PostItsCompanion(
   recurrence: Value(postIt.recurrence),
   recurrenceInterval: Value(postIt.recurrenceInterval),
   recurrenceEndDate: Value<DateOnly?>(postIt.recurrenceEndDate),
+  seriesId: Value(postIt.seriesId),
   occurrenceStatuses: Value(postIt.occurrenceStatuses),
   timeMinutes: Value(postIt.timeMinutes),
   reminderMinutes: Value(postIt.reminderMinutes),
@@ -155,6 +157,7 @@ Routine routineFromRows(
   List<RoutineItemRow> itemRows,
   Map<String, Set<DateOnly>> completions, {
   List<RoutineSection> sections = const [],
+  List<RoutineReminder> reminders = const [],
 }) => Routine(
   id: row.id,
   name: row.name,
@@ -176,6 +179,7 @@ Routine routineFromRows(
       ),
   ],
   sections: sections,
+  reminders: reminders,
   createdAt: dateTimeFromStorage(row.createdAt),
   updatedAt: dateTimeFromStorage(row.updatedAt),
 );

@@ -27,6 +27,7 @@ final class DriftRoutineRepository implements RoutineRepository {
     )..orderBy([(table) => OrderingTerm(expression: table.position)])).get();
     final completionRows = await _db.select(_db.routineCompletions).get();
     final sections = await _loadAllSections();
+    final reminders = await _loadAllReminders();
 
     final itemsByRoutine = <String, List<RoutineItemRow>>{};
     for (final row in itemRows) {
@@ -40,6 +41,12 @@ final class DriftRoutineRepository implements RoutineRepository {
     for (final section in sections) {
       sectionsByRoutine.putIfAbsent(section.routineId, () => []).add(section);
     }
+    final remindersByRoutine = <String, List<RoutineReminder>>{};
+    for (final reminder in reminders) {
+      remindersByRoutine
+          .putIfAbsent(reminder.routineId, () => [])
+          .add(reminder);
+    }
 
     return [
       for (final row in routineRows)
@@ -48,6 +55,7 @@ final class DriftRoutineRepository implements RoutineRepository {
           itemsByRoutine[row.id] ?? const [],
           completions,
           sections: sectionsByRoutine[row.id] ?? const [],
+          reminders: remindersByRoutine[row.id] ?? const [],
         ),
     ];
   }
@@ -198,6 +206,48 @@ final class DriftRoutineRepository implements RoutineRepository {
         }
       }
 
+      final reminderIds = [
+        for (final reminder in routine.reminders) reminder.id,
+      ];
+      if (reminderIds.isEmpty) {
+        await (_db.delete(
+          _db.routineReminders,
+        )..where((table) => table.routineId.equals(routine.id))).go();
+      } else {
+        await (_db.delete(_db.routineReminders)..where(
+              (table) =>
+                  table.routineId.equals(routine.id) &
+                  table.id.isNotIn(reminderIds),
+            ))
+            .go();
+      }
+      for (final reminder in routine.reminders) {
+        await _db
+            .into(_db.routineReminders)
+            .insertOnConflictUpdate(
+              RoutineRemindersCompanion(
+                id: Value(reminder.id),
+                routineId: Value(routine.id),
+                itemId: Value(reminder.itemId),
+                intervalId: Value(reminder.intervalId),
+                mode: Value(reminder.mode),
+                timesPerDay: Value(reminder.timesPerDay),
+                startMinutes: Value(reminder.startMinutes),
+                endMinutes: Value(reminder.endMinutes),
+                times: Value(reminder.times),
+                weekdays: Value(routineWeekdayMask(reminder.weekdays)),
+                enabled: Value(reminder.enabled),
+                paused: Value(reminder.paused),
+                createdAt: Value(
+                  dateTimeToStorage(reminder.createdAt ?? routine.createdAt),
+                ),
+                updatedAt: Value(
+                  dateTimeToStorage(reminder.updatedAt ?? routine.updatedAt),
+                ),
+              ),
+            );
+      }
+
       await _outbox.recordRoutine(routine);
     });
   }
@@ -343,6 +393,81 @@ final class DriftRoutineRepository implements RoutineRepository {
                 updatedAt: dateTimeFromStorage(interval.updatedAt),
               ),
           ],
+        ),
+    ];
+  }
+
+  Future<List<RoutineReminder>> _loadAllReminders() async {
+    final rows = await _db.select(_db.routineReminders).get();
+    return [
+      for (final row in rows)
+        RoutineReminder(
+          id: row.id,
+          routineId: row.routineId,
+          itemId: row.itemId,
+          intervalId: row.intervalId,
+          mode: row.mode,
+          timesPerDay: row.timesPerDay,
+          startMinutes: row.startMinutes,
+          endMinutes: row.endMinutes,
+          times: row.times,
+          weekdays: {
+            for (var day = 1; day <= 7; day++)
+              if (row.weekdays & (1 << (day - 1)) != 0) day,
+          },
+          enabled: row.enabled,
+          paused: row.paused,
+          createdAt: dateTimeFromStorage(row.createdAt),
+          updatedAt: dateTimeFromStorage(row.updatedAt),
+        ),
+    ];
+  }
+
+  @override
+  Future<bool> recordExecution(RoutineExecution execution) {
+    return _db.transaction(() async {
+      final existing =
+          await (_db.select(_db.routineExecutions)
+                ..where((table) => table.dedupeKey.equals(execution.dedupeKey)))
+              .getSingleOrNull();
+      if (existing != null) return false;
+      await _db
+          .into(_db.routineExecutions)
+          .insert(
+            RoutineExecutionsCompanion.insert(
+              id: execution.id,
+              routineId: execution.routineId,
+              itemId: Value(execution.itemId),
+              intervalId: Value(execution.intervalId),
+              reminderId: Value(execution.reminderId),
+              date: execution.date,
+              executedAt: dateTimeToStorage(execution.executedAt),
+              origin: execution.origin,
+              dedupeKey: execution.dedupeKey,
+            ),
+          );
+      await _outbox.recordRoutineExecution(execution);
+      return true;
+    });
+  }
+
+  @override
+  Future<List<RoutineExecution>> loadExecutions() async {
+    final rows = await (_db.select(
+      _db.routineExecutions,
+    )..orderBy([(table) => OrderingTerm(expression: table.executedAt)])).get();
+    return [
+      for (final row in rows)
+        RoutineExecution(
+          id: row.id,
+          routineId: row.routineId,
+          itemId: row.itemId,
+          intervalId: row.intervalId,
+          reminderId: row.reminderId,
+          date: row.date,
+          executedAt: dateTimeFromStorage(row.executedAt),
+          origin: row.origin,
+          dedupeKey: row.dedupeKey,
         ),
     ];
   }

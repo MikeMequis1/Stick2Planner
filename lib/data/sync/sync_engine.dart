@@ -416,7 +416,8 @@ final class SyncEngine {
   bool _needsCopy(SyncOutboxRow row, SyncRemoteChange server) {
     final local = _decode(row.payload);
     if (_isDeleted(row.entity, local)) return false;
-    return row.entity != syncEntityHistory;
+    return row.entity != syncEntityHistory &&
+        row.entity != syncEntityRoutineExecution;
   }
 
   Future<int> _copyLocal(SyncOutboxRow row) async {
@@ -621,6 +622,8 @@ final class SyncEngine {
         await _apply.applyTag(change.payload, change.rev);
       case syncEntityRoutine:
         await _apply.applyRoutine(change.payload, change.rev);
+      case syncEntityRoutineExecution:
+        await _apply.applyRoutineExecution(change.payload, change.rev);
       default:
         throw SyncException('entidade desconhecida ${change.entity}');
     }

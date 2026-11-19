@@ -58,6 +58,7 @@ final class SyncDatasetService {
     final historyRows = await _db.select(_db.postItHistoryEntries).get();
     final tagRows = await _db.select(_db.tags).get();
     final routines = await DriftRoutineRepository(_db).loadAll();
+    final executions = await DriftRoutineRepository(_db).loadExecutions();
 
     final linesByNote = <String, List<NoteLineRow>>{};
     for (final row in lineRows) {
@@ -103,6 +104,14 @@ final class SyncDatasetService {
           routine.id,
           routinePayload(routine),
           routine.updatedAt,
+          false,
+        ),
+      for (final execution in executions)
+        _entity(
+          syncEntityRoutineExecution,
+          execution.id,
+          routineExecutionPayload(execution),
+          execution.executedAt,
           false,
         ),
     ];

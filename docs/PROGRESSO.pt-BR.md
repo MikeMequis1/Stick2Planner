@@ -1646,6 +1646,38 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Stick2Server: **17 testes aprovados**.
 - Build: versão **0.9.0+17**.
 
+## Navegação da agenda, divisão de séries, lembretes e dashboard (0.10.0)
+
+- O deslize horizontal da agenda agora usa transição de carrossel que acompanha
+  a direção do gesto, em vez de giro 3D. Respeita a configuração de animações e
+  a redução de movimento do sistema.
+- Tocar no rótulo do período abre um seletor Material de mês/ano em grade. O dia
+  do mês é preservado e a agenda salta direto para o mês escolhido.
+- A listagem **+X mais** existente foi verificada: mostra todos os itens ocultos,
+  preserva a tipografia/cores dos post-its e abre somente pelo indicador.
+- Eventos recorrentes podem ser divididos arrastando uma ocorrência para outro
+  dia. Após confirmação, a série anterior termina no dia anterior e um novo
+  segmento começa no novo dia da semana, preservando estados anteriores e
+  remapeando conclusões futuras. Os dois segmentos mantêm o mesmo `seriesId`, e a
+  operação é transacional.
+- Esquema **v13** adiciona `post_its.series_id`, `routine_reminders` e
+  `routine_executions`. Conclusões existentes são migradas para o histórico de
+  execuções.
+- Lembretes de rotina aceitam frequência diária (distribuída entre início/fim)
+  ou horários explícitos, dias da semana, ativação/pausa e atividade alvo. As
+  notificações são locais, cobrem os próximos sete dias e incluem a ação
+  **Concluir**; concluir registra uma execução idempotente.
+- O dashboard de progresso mostra totais, dias ativos, sequência, média, linha de
+  evolução, barras por período, heatmap de 90 dias e totais por atividade, com
+  filtros 7/30/90/tudo e seleção de rotina/atividade.
+- Execuções sincronizam como `routineExecution`, com IDs estáveis e `dedupeKey`
+  para nunca duplicar histórico em pushes ou toques repetidos.
+- Stick2Server **0.2.3** aceita `routineExecution` e continua armazenando
+  payloads aninhados de rotina/lembretes de forma opaca.
+- `flutter analyze`: sem issues; `flutter test`: **349 testes aprovados**.
+  Stick2Server `dart analyze`: sem issues; `dart test`: **19 testes aprovados**.
+- Build: versão **0.10.0+18**.
+
 ## Revisão do release desktop (pendente)
 
 - O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release

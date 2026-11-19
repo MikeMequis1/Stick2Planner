@@ -71,6 +71,24 @@ final class OccurrenceStatusesConverter
   }
 }
 
+/// Persiste listas de horários (minutos desde a meia-noite) como JSON.
+final class MinutesListConverter extends TypeConverter<List<int>, String> {
+  const MinutesListConverter();
+
+  @override
+  List<int> fromSql(String fromDb) {
+    final decoded = jsonDecode(fromDb);
+    if (decoded is! List) return const [];
+    return [
+      for (final value in decoded)
+        if (value is int && value >= 0 && value < 24 * 60) value,
+    ];
+  }
+
+  @override
+  String toSql(List<int> value) => jsonEncode(value);
+}
+
 int dateTimeToStorage(DateTime value) => value.toUtc().millisecondsSinceEpoch;
 
 DateTime dateTimeFromStorage(int value) =>

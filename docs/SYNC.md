@@ -225,6 +225,13 @@ suspended until the user decides.
 - Stick2Server preserves stored complete cards when an update from a pre-0.8
   client arrives without `mode`/`sections`. Legacy clients still cannot display
   cards, but their routine edits no longer erase the nested structure.
+- Reminder configuration travels inside the routine payload (`reminders`).
+  Execution history is the separate `routineExecution` entity (server 0.2.3+):
+  immutable payloads with stable IDs and a `dedupeKey`, so reapplying or tapping
+  a notification twice cannot duplicate an execution.
+- A split recurring event is two `postIt` rows sharing `seriesId`. The previous
+  segment ends before the moved occurrence and the new segment carries the new
+  weekday; both preserve `recurrenceEndDate`, occurrence statuses and history.
 - `createdAt` is the routine record creation instant and is preserved on edits.
   Occurrences are only shown on or after its local calendar date, so an offline
   gap or a delayed sync can never generate activities before the routine

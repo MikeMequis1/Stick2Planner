@@ -453,6 +453,35 @@ etapas. Cada item: contexto, decisão, consequência.
   editor permanece em uma coluna centralizada porque a alça reordena uma lista
   única; uma grade tornaria os alvos de soltura ambíguos.
 
+## Segmentos de série, lembretes e histórico de execução (esquema v13)
+
+- A divisão de um evento recorrente é representada por duas linhas que
+  compartilham `seriesId` (`null` significa que a própria linha é a raiz). A
+  original termina no dia anterior à ocorrência movida; o novo segmento começa
+  na data alvo com a mesma regra e data final. Isso preserva a relação em vez de
+  criar eventos desconectados.
+- Estados de conclusão/cancelamento anteriores à divisão ficam na linha original.
+  Estados futuros são remapeados por índice de recorrência, então uma quarta
+  ocorrência cancelada continua sendo a quarta após mudar o dia da semana.
+- Lembretes ficam em `routine_reminders` e viajam no payload `routine`, mantendo
+  a configuração atômica. Frequência distribui horários em
+  `[startMinutes, endMinutes)`; horários explícitos guardam um conjunto ordenado.
+  O ID de notificação do Android é derivado de lembrete/data/horário e nunca é
+  sincronizado.
+- `routine_executions` é um log append-only independente do checkbox atual.
+  `dedupeKey` impede duplicação de toques manuais ou ações repetidas de
+  notificação; IDs são estáveis e sincronizados como entidade
+  `routineExecution`. Não há FK para rotina/atividade, então excluir uma rotina
+  não apaga o histórico.
+- A migração v13 preenche `routine_executions` a partir das conclusões antigas
+  com origem `legacy`, usando `completedAt` e uma chave gerada.
+- Ações de notificação registram execução e marcam conclusão somente quando o
+  usuário toca **Concluir**. Receber, dispensar ou ignorar nunca marca nada. O
+  agendamento é local e é refeito após edições, retomada do app e boot pelo
+  receiver do plugin.
+- O dashboard lê execuções persistidas, não o estado atual das tarefas. Por isso
+  conclusões antigas já aparecem no histórico após a migração.
+
 ## Ocorrências recorrentes, Feito e dicas globais
 
 - Ocorrências recorrentes são visões expandidas de um único registro de série.

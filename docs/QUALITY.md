@@ -144,8 +144,8 @@ Desktop migration validation (2026-11-12):
   Mode and installing the Visual Studio C++ desktop workload. The portable ZIP
   and an unsigned MSIX were generated. The ZIP is directly usable; the unsigned
   MSIX requires signing (or a development-only unsigned-namespace publisher).
-- Android data compatibility: schema v12 migrates v1-v11 without resetting
-  `planner.sqlite`; migration, simple/complete routine, merge and backup tests
-  passed.
-- Stick2Server: 17 tests passed, including receiving/returning a complete
-  routine and preserving nested cards against a legacy-client update.
+- Android data compatibility: schema v13 migrates v1-v12 without resetting
+  `planner.sqlite`; migration, routines, reminders, executions, merge and backup
+  tests passed.
+- Stick2Server 0.2.3: 19 tests passed, including complete routines, series IDs,
+  execution history and legacy-card preservation.

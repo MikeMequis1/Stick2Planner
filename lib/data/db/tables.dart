@@ -89,6 +89,7 @@ class PostIts extends Table {
       integer().withDefault(const Constant(1))();
   TextColumn get recurrenceEndDate =>
       text().map(const DateOnlyConverter()).nullable()();
+  TextColumn get seriesId => text().nullable()();
   TextColumn get occurrenceStatuses => text()
       .map(const OccurrenceStatusesConverter())
       .withDefault(const Constant('{}'))();
@@ -221,8 +222,59 @@ class RoutineIntervalCompletions extends Table {
   Set<Column<Object>> get primaryKey => {intervalId, date};
 }
 
-/// Fila local de alterações pendentes de envio ao servidor.
+/// Lembretes configurados para rotinas ou atividades.
+@DataClassName('RoutineReminderRow')
+@TableIndex(name: 'idx_routine_reminders_routine', columns: {#routineId})
+class RoutineReminders extends Table {
+  TextColumn get id => text()();
+  TextColumn get routineId => text()();
+  TextColumn get itemId => text().nullable()();
+  TextColumn get intervalId => text().nullable()();
+  TextColumn get mode => textEnum<RoutineReminderMode>()();
+  IntColumn get timesPerDay => integer().withDefault(const Constant(1))();
+  IntColumn get startMinutes => integer().withDefault(const Constant(480))();
+  IntColumn get endMinutes => integer().withDefault(const Constant(1200))();
+  TextColumn get times => text()
+      .map(const MinutesListConverter())
+      .withDefault(const Constant('[]'))();
+  IntColumn get weekdays => integer().withDefault(const Constant(0))();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get paused => boolean().withDefault(const Constant(false))();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Histórico imutável de execuções de atividades de rotina.
 ///
+/// Não usa FK para rotina/atividade: excluir uma rotina não pode apagar o
+/// histórico já registrado.
+@DataClassName('RoutineExecutionRow')
+@TableIndex(name: 'idx_routine_executions_date', columns: {#date})
+@TableIndex(name: 'idx_routine_executions_routine', columns: {#routineId})
+@TableIndex(
+  name: 'idx_routine_executions_dedupe',
+  columns: {#dedupeKey},
+  unique: true,
+)
+class RoutineExecutions extends Table {
+  TextColumn get id => text()();
+  TextColumn get routineId => text()();
+  TextColumn get itemId => text().nullable()();
+  TextColumn get intervalId => text().nullable()();
+  TextColumn get reminderId => text().nullable()();
+  TextColumn get date => text().map(const DateOnlyConverter())();
+  IntColumn get executedAt => integer()();
+  TextColumn get origin => textEnum<RoutineExecutionOrigin>()();
+  TextColumn get dedupeKey => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Fila local de alterações pendentes de envio ao servidor.
 /// O payload é o estado completo da entidade em JSON canônico; edições
 /// sucessivas coalescem em uma única linha por `(entity, entityId)`.
 @DataClassName('SyncOutboxRow')

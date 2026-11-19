@@ -19,6 +19,8 @@ abstract final class AppStrings {
 
   static AppLanguage get language => _language;
 
+  static bool get isEnglish => _language == AppLanguage.en;
+
   static void setLanguage(AppLanguage language) {
     _language = language;
   }
@@ -622,6 +624,73 @@ abstract final class AppStrings {
   static String repeatSummaryMonthly(int count) => count == 1
       ? _t('Repete todo mês', 'Repeats every month')
       : _t('Repete a cada $count meses', 'Repeats every $count months');
+  static String get splitSeriesTitle =>
+      _t('Mover ocorrência recorrente?', 'Move recurring occurrence?');
+  static String get splitSeriesBody => _t(
+    'As ocorrências anteriores serão mantidas e a recorrência será atualizada '
+        'a partir da ocorrência selecionada.',
+    'Previous occurrences will be kept and the recurrence will be updated '
+        'from the selected occurrence.',
+  );
+  static String get splitSeriesConfirm =>
+      _t('Mover e atualizar', 'Move and update');
+  static String get splitSeriesInvalidTarget => _t(
+    'Escolha uma data posterior ao início desta ocorrência.',
+    'Choose a date after the start of this occurrence.',
+  );
+  static String get routineReminderTitle =>
+      _t('Lembrete de rotina', 'Routine reminder');
+  static String routineReminderBody(String target, int index, int total) =>
+      _t('$target · $index de $total', '$target · $index of $total');
+  static String get routineReminderDone => _t('Concluir', 'Complete');
+  static String get reminders => _t('Lembretes', 'Reminders');
+  static String get addReminder => _t('Novo lembrete', 'New reminder');
+  static String get noReminders =>
+      _t('Nenhum lembrete configurado.', 'No reminders configured.');
+  static String get reminderTarget => _t('Atividade', 'Activity');
+  static String get reminderWholeRoutine =>
+      _t('Rotina inteira', 'Whole routine');
+  static String get reminderMode => _t('Modalidade', 'Mode');
+  static String get reminderByFrequency =>
+      _t('Frequência diária', 'Daily frequency');
+  static String get reminderByTimes =>
+      _t('Horários definidos', 'Specific times');
+  static String get reminderTimesPerDay => _t('Vezes por dia', 'Times per day');
+  static String get reminderPeriodStart =>
+      _t('Início do período', 'Period start');
+  static String get reminderPeriodEnd => _t('Fim do período', 'Period end');
+  static String get reminderTimes => _t('Horários', 'Times');
+  static String get reminderAddTime => _t('Adicionar horário', 'Add time');
+  static String get reminderDays => _t('Dias da semana', 'Weekdays');
+  static String get reminderEnabled => _t('Ativo', 'Enabled');
+  static String get reminderPaused => _t('Pausado', 'Paused');
+  static String get reminderInvalid => _t(
+    'Informe pelo menos um horário válido e um período correto.',
+    'Enter at least one valid time and a valid period.',
+  );
+  static String get reminderDelete =>
+      _t('Excluir lembrete?', 'Delete reminder?');
+  static String get saveReminders => _t('Salvar lembretes', 'Save reminders');
+  static String get dashboard =>
+      _t('Progresso das rotinas', 'Routine progress');
+  static String get dashboardActivity =>
+      _t('Rotina ou atividade', 'Routine or activity');
+  static String get dashboardAllActivities =>
+      _t('Todas as atividades', 'All activities');
+  static String get dashboardExecutions => _t('Execuções', 'Executions');
+  static String get dashboardActiveDays => _t('Dias ativos', 'Active days');
+  static String get dashboardStreak => _t('Sequência', 'Streak');
+  static String get dashboardAverage =>
+      _t('Média por dia ativo', 'Average per active day');
+  static String get dashboardEvolution => _t('Evolução', 'Evolution');
+  static String get dashboardByPeriod => _t('Por período', 'By period');
+  static String get dashboardHeatmap =>
+      _t('Frequência diária', 'Daily frequency');
+  static String get dashboardActivities => _t('Atividades', 'Activities');
+  static String get dashboardEmpty => _t(
+    'Ainda não há execuções registradas neste período.',
+    'No executions recorded in this period yet.',
+  );
   static String get repeatSummaryYearly =>
       _t('Repete anualmente', 'Repeats yearly');
   static String get recurringHelp => _t(
@@ -829,8 +898,10 @@ abstract final class AppStrings {
   static String get routineSectionEnd => _t('Fim', 'End');
   static String get routineSectionAddTime =>
       _t('Adicionar horário', 'Add time');
-  static String get routineSectionNoTime =>
-      _t('Defina início e fim para configurar os intervalos.', 'Set start and end to configure intervals.');
+  static String get routineSectionNoTime => _t(
+    'Defina início e fim para configurar os intervalos.',
+    'Set start and end to configure intervals.',
+  );
   static String get routineSectionNoIntervals => _t(
     'Nenhum intervalo. Defina os horários do card.',
     'No intervals. Set the card times.',
@@ -854,22 +925,21 @@ abstract final class AppStrings {
     'As tarefas deste card serão removidas da rotina.',
     'Tasks in this card will be removed from the routine.',
   );
-  static String get routineSectionMissingBoundary => _t(
-    'Defina os dois horários do card.',
-    'Set both card times.',
-  );
+  static String get routineSectionMissingBoundary =>
+      _t('Defina os dois horários do card.', 'Set both card times.');
   static String get routineSectionEndBeforeStart => _t(
     'O fim do card deve ser posterior ao início.',
     'The card end must be after the start.',
   );
-  static String get routineSectionInvalidInterval => _t(
-    'Os horários do card são inválidos.',
-    'The card times are invalid.',
-  );
-  static String get routineSectionTitleRequired => _t(
-    'Informe o título do card.',
-    'Enter the card title.',
-  );
+  static String get routineSectionInvalidInterval =>
+      _t('Os horários do card são inválidos.', 'The card times are invalid.');
+  static String get routineSectionTitleRequired =>
+      _t('Informe o título do card.', 'Enter the card title.');
+  static String get selectMonthYear =>
+      _t('Selecionar mês e ano', 'Select month and year');
+  static String get previousYear => _t('Ano anterior', 'Previous year');
+  static String get nextYear => _t('Próximo ano', 'Next year');
+  static String get chooseMonth => _t('Escolha um mês', 'Choose a month');
   static String get routineName => _t('Nome da rotina', 'Routine name');
   static String get routineDescription =>
       _t('Descrição (opcional)', 'Description (optional)');

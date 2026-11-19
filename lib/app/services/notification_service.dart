@@ -1,5 +1,8 @@
 // ignore_for_file: prefer_initializing_formals
 
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -20,12 +23,14 @@ final class PlannedNotification {
     required this.at,
     required this.title,
     required this.body,
+    this.payload,
   });
 
   final int id;
   final DateTime at;
   final String title;
   final String body;
+  final String? payload;
 }
 
 /// Calcula resumo diário e lembretes sem tocar em plugins (testável).
@@ -105,7 +110,72 @@ List<PlannedNotification> buildNotificationPlan({
     );
   }
 
+  for (final routine in routines) {
+    for (final reminder in routine.reminders) {
+      if (!reminder.isActive) continue;
+      final target = _reminderTargetTitle(routine, reminder);
+      final times = reminder.effectiveTimes;
+      for (var offset = 0; offset < 7; offset++) {
+        final date = today.addDays(offset);
+        if (!routine.runsOn(date) || !reminder.appliesOn(date)) continue;
+        for (var index = 0; index < times.length; index++) {
+          final minutes = times[index];
+          final at = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            minutes ~/ 60,
+            minutes % 60,
+          );
+          if (!at.isAfter(now)) continue;
+          final payload = jsonEncode({
+            'routineId': routine.id,
+            'itemId': reminder.itemId,
+            'intervalId': reminder.intervalId,
+            'reminderId': reminder.id,
+            'date': date.toIso8601String(),
+            'slotMinutes': minutes,
+          });
+          final key = '${reminder.id}|${date.toIso8601String()}|$minutes';
+          result.add(
+            PlannedNotification(
+              id: 300000 + (key.hashCode.abs() % 100000000),
+              at: at,
+              title: AppStrings.routineReminderTitle,
+              body: AppStrings.routineReminderBody(
+                target,
+                index + 1,
+                times.length,
+              ),
+              payload: payload,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   return result;
+}
+
+String _reminderTargetTitle(Routine routine, RoutineReminder reminder) {
+  final itemId = reminder.itemId;
+  if (itemId != null) {
+    for (final item in routine.items) {
+      if (item.id == itemId) return item.title;
+    }
+  }
+  final intervalId = reminder.intervalId;
+  if (intervalId != null) {
+    for (final section in routine.sections) {
+      for (final interval in section.intervals) {
+        if (interval.id == intervalId && interval.hasTask) {
+          return interval.title!;
+        }
+      }
+    }
+  }
+  return routine.name;
 }
 
 bool _covers(PostIt postIt, DateOnly date) {
@@ -126,6 +196,11 @@ final class AppNotificationService {
   bool _enabled = false;
   bool _exactAllowed = false;
   String? _lastError;
+  Future<void> Function(String payload)? _onRoutineAction;
+
+  void setRoutineActionHandler(Future<void> Function(String payload)? handler) {
+    _onRoutineAction = handler;
+  }
 
   bool get isSupported => supportsAndroidNotifications;
   bool get isReady => _ready;
@@ -144,6 +219,34 @@ final class AppNotificationService {
     ),
   );
 
+  NotificationDetails get _routineNotificationDetails => NotificationDetails(
+    android: AndroidNotificationDetails(
+      'planner_reminders',
+      'Lembretes do Planner',
+      channelDescription:
+          'Resumo diário e lembretes de eventos, tarefas e rotinas.',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: 'ic_stat_planner',
+      actions: [
+        AndroidNotificationAction(
+          'done',
+          AppStrings.routineReminderDone,
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ],
+    ),
+  );
+
+  void _handleResponse(NotificationResponse response) {
+    if (response.actionId != 'done') return;
+    final payload = response.payload;
+    final handler = _onRoutineAction;
+    if (payload == null || handler == null) return;
+    unawaited(handler(payload));
+  }
+
   Future<void> initialize({required bool enabled}) async {
     _enabled = enabled;
     _lastError = null;
@@ -159,7 +262,10 @@ final class AppNotificationService {
     const android = AndroidInitializationSettings('ic_stat_planner');
     const settings = InitializationSettings(android: android);
     try {
-      final initialized = await _plugin.initialize(settings: settings);
+      final initialized = await _plugin.initialize(
+        settings: settings,
+        onDidReceiveNotificationResponse: _handleResponse,
+      );
       _ready = initialized ?? true;
       _exactAllowed = await _canScheduleExact();
       if (!_ready) _lastError = 'notification_initialize_failed';
@@ -263,7 +369,10 @@ final class AppNotificationService {
           body: notification.body,
           scheduledDate: _toTz(notification.at),
           androidScheduleMode: _scheduleMode,
-          notificationDetails: _notificationDetails,
+          notificationDetails: notification.payload == null
+              ? _notificationDetails
+              : _routineNotificationDetails,
+          payload: notification.payload,
         );
       }
       _lastError = null;

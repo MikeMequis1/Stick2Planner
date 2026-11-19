@@ -32,10 +32,12 @@ final class RoutinesController extends ChangeNotifier {
   final Uuid _uuid;
 
   List<Routine> _routines = const [];
+  List<RoutineExecution> _executions = const [];
   bool _loading = true;
   String? _error;
 
   List<Routine> get routines => List.unmodifiable(_routines);
+  List<RoutineExecution> get executions => List.unmodifiable(_executions);
   bool get isLoading => _loading;
   String? get error => _error;
 
@@ -44,6 +46,7 @@ final class RoutinesController extends ChangeNotifier {
   Future<void> refresh() async {
     try {
       _routines = await _repository.loadAll();
+      _executions = await _repository.loadExecutions();
       _error = null;
     } on Object {
       _error = 'load_failed';
@@ -66,6 +69,7 @@ final class RoutinesController extends ChangeNotifier {
     required Set<int> weekdays,
     required List<RoutineItemInput> items,
     List<RoutineSection> sections = const [],
+    List<RoutineReminder>? reminders,
   }) async {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
@@ -137,6 +141,43 @@ final class RoutinesController extends ChangeNotifier {
       }
     }
 
+    final itemIds = {
+      for (final draft in drafts)
+        if (draft.input.id != null) draft.input.id!,
+    };
+    final intervalIds = {
+      for (final section in normalizedSections)
+        for (final interval in section.intervals) interval.id,
+    };
+    final normalizedReminders = [
+      for (final reminder in reminders ?? existing?.reminders ?? const [])
+        if ((reminder.itemId == null && reminder.intervalId == null) ||
+            (reminder.itemId != null && itemIds.contains(reminder.itemId)) ||
+            (reminder.intervalId != null &&
+                intervalIds.contains(reminder.intervalId)))
+          RoutineReminder(
+            id: reminder.id,
+            routineId: routineId,
+            itemId: reminder.itemId,
+            intervalId: reminder.intervalId,
+            mode: reminder.mode,
+            timesPerDay: reminder.timesPerDay.clamp(1, 48),
+            startMinutes: reminder.startMinutes.clamp(0, 24 * 60 - 1),
+            endMinutes: reminder.endMinutes.clamp(
+              reminder.startMinutes.clamp(0, 24 * 60 - 1) + 1,
+              24 * 60,
+            ),
+            times: reminder.times.toSet().toList()..sort(),
+            weekdays: reminder.weekdays.isEmpty
+                ? weekdays
+                : {...reminder.weekdays},
+            enabled: reminder.enabled,
+            paused: reminder.paused,
+            createdAt: reminder.createdAt ?? now,
+            updatedAt: now,
+          ),
+    ];
+
     final routine = Routine(
       id: routineId,
       name: normalizedName,
@@ -158,6 +199,7 @@ final class RoutinesController extends ChangeNotifier {
             ]
           : const [],
       sections: normalizedSections,
+      reminders: normalizedReminders,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     );
@@ -208,12 +250,23 @@ final class RoutinesController extends ChangeNotifier {
     final routine = _routineById(item.routineId);
     if (routine == null || !routine.runsOn(date)) return;
     final completed = item.isCompletedOn(date);
+    final at = _clock.now().toUtc();
     await _repository.setCompletion(
       routineItemId: item.id,
       date: date,
       completed: !completed,
-      at: _clock.now().toUtc(),
+      at: at,
     );
+    if (!completed) {
+      await _recordExecution(
+        routineId: routine.id,
+        itemId: item.id,
+        date: date,
+        at: at,
+        origin: RoutineExecutionOrigin.app,
+        dedupeKey: 'item|${item.id}|${date.toIso8601String()}|manual',
+      );
+    }
     await refresh();
   }
 
@@ -231,13 +284,100 @@ final class RoutinesController extends ChangeNotifier {
       }
     }
     if (routine == null || !routine.runsOn(date)) return;
+    final completed = interval.isCompletedOn(date);
+    final at = _clock.now().toUtc();
     await _repository.setIntervalCompletion(
       intervalId: interval.id,
       date: date,
-      completed: !interval.isCompletedOn(date),
-      at: _clock.now().toUtc(),
+      completed: !completed,
+      at: at,
     );
+    if (!completed) {
+      await _recordExecution(
+        routineId: routine.id,
+        intervalId: interval.id,
+        date: date,
+        at: at,
+        origin: RoutineExecutionOrigin.app,
+        dedupeKey: 'interval|${interval.id}|${date.toIso8601String()}|manual',
+      );
+    }
     await refresh();
+  }
+
+  /// Registra uma execução idempotente (interface, notificação ou legado).
+  Future<bool> recordExecution({
+    required String routineId,
+    required DateOnly date,
+    required RoutineExecutionOrigin origin,
+    String? itemId,
+    String? intervalId,
+    String? reminderId,
+    int? slotMinutes,
+  }) async {
+    final routine = _routineById(routineId);
+    if (routine == null || !routine.runsOn(date)) return false;
+    final at = _clock.now().toUtc();
+    final target = intervalId != null
+        ? 'interval|$intervalId'
+        : itemId != null
+        ? 'item|$itemId'
+        : 'routine|$routineId';
+    final suffix = reminderId == null
+        ? 'manual'
+        : 'reminder|$reminderId|${slotMinutes ?? 0}';
+    final created = await _recordExecution(
+      routineId: routineId,
+      itemId: itemId,
+      intervalId: intervalId,
+      reminderId: reminderId,
+      date: date,
+      at: at,
+      origin: origin,
+      dedupeKey: '$target|${date.toIso8601String()}|$suffix',
+    );
+    if (intervalId != null) {
+      await _repository.setIntervalCompletion(
+        intervalId: intervalId,
+        date: date,
+        completed: true,
+        at: at,
+      );
+    } else if (itemId != null) {
+      await _repository.setCompletion(
+        routineItemId: itemId,
+        date: date,
+        completed: true,
+        at: at,
+      );
+    }
+    if (created) await refresh();
+    return created;
+  }
+
+  Future<bool> _recordExecution({
+    required String routineId,
+    required DateOnly date,
+    required DateTime at,
+    required RoutineExecutionOrigin origin,
+    required String dedupeKey,
+    String? itemId,
+    String? intervalId,
+    String? reminderId,
+  }) {
+    return _repository.recordExecution(
+      RoutineExecution(
+        id: _uuid.v4(),
+        routineId: routineId,
+        itemId: itemId,
+        intervalId: intervalId,
+        reminderId: reminderId,
+        date: date,
+        executedAt: at,
+        origin: origin,
+        dedupeKey: dedupeKey,
+      ),
+    );
   }
 
   Routine? _routineById(String id) {

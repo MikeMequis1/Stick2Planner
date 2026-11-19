@@ -11,6 +11,7 @@ const syncEntityNote = 'note';
 const syncEntityHistory = 'history';
 const syncEntityTag = 'tag';
 const syncEntityRoutine = 'routine';
+const syncEntityRoutineExecution = 'routineExecution';
 
 Map<String, Object?> postItPayload(PostIt postIt) => {
   'id': postIt.id,
@@ -27,6 +28,7 @@ Map<String, Object?> postItPayload(PostIt postIt) => {
   'recurrence': postIt.recurrence.name,
   'recurrenceInterval': postIt.recurrenceInterval,
   'recurrenceEndDate': postIt.recurrenceEndDate?.toIso8601String(),
+  'seriesId': postIt.seriesId,
   'occurrenceStatuses': {
     for (final entry in postIt.occurrenceStatuses.entries)
       entry.key.toIso8601String(): entry.value.name,
@@ -60,6 +62,7 @@ PostIt postItFromPayload(Map<String, Object?> payload) => PostIt(
   ),
   recurrenceInterval: _optionalInteger(payload, 'recurrenceInterval', 1),
   recurrenceEndDate: _optionalDate(payload, 'recurrenceEndDate'),
+  seriesId: _optionalText(payload, 'seriesId'),
   occurrenceStatuses: _occurrenceStatuses(payload['occurrenceStatuses']),
   timeMinutes: _optionalNullableInteger(payload, 'timeMinutes'),
   reminderMinutes: _optionalNullableInteger(payload, 'reminderMinutes'),
@@ -140,6 +143,37 @@ PostItHistoryEntry historyFromPayload(Map<String, Object?> payload) =>
       createdAt: _time(payload, 'createdAt'),
     );
 
+Map<String, Object?> routineExecutionPayload(RoutineExecution execution) => {
+  'id': execution.id,
+  'routineId': execution.routineId,
+  'itemId': execution.itemId,
+  'intervalId': execution.intervalId,
+  'reminderId': execution.reminderId,
+  'date': execution.date.toIso8601String(),
+  'executedAt': execution.executedAt.toUtc().toIso8601String(),
+  'origin': execution.origin.name,
+  'dedupeKey': execution.dedupeKey,
+};
+
+RoutineExecution routineExecutionFromPayload(Map<String, Object?> payload) =>
+    RoutineExecution(
+      id: _text(payload, 'id'),
+      routineId: _text(payload, 'routineId'),
+      itemId: _optionalText(payload, 'itemId'),
+      intervalId: _optionalText(payload, 'intervalId'),
+      reminderId: _optionalText(payload, 'reminderId'),
+      date:
+          _optionalDate(payload, 'date') ??
+          (throw const FormatException('routineExecution.date inválido')),
+      executedAt: _time(payload, 'executedAt'),
+      origin: _optionalEnum(
+        RoutineExecutionOrigin.values,
+        payload['origin'],
+        RoutineExecutionOrigin.app,
+      ),
+      dedupeKey: _text(payload, 'dedupeKey'),
+    );
+
 Map<String, Object?> tagPayload(Tag tag) => {
   'id': tag.id,
   'name': tag.name,
@@ -186,6 +220,28 @@ Map<String, Object?> routinePayload(Routine routine, {DateTime? deletedAt}) => {
   'createdAt': routine.createdAt.toUtc().toIso8601String(),
   'updatedAt': routine.updatedAt.toUtc().toIso8601String(),
   'deletedAt': deletedAt?.toUtc().toIso8601String(),
+  'reminders': [
+    for (final reminder in routine.reminders)
+      {
+        'id': reminder.id,
+        'itemId': reminder.itemId,
+        'intervalId': reminder.intervalId,
+        'mode': reminder.mode.name,
+        'timesPerDay': reminder.timesPerDay,
+        'startMinutes': reminder.startMinutes,
+        'endMinutes': reminder.endMinutes,
+        'times': reminder.times,
+        'weekdays': reminder.weekdays.toList()..sort(),
+        'enabled': reminder.enabled,
+        'paused': reminder.paused,
+        'createdAt': (reminder.createdAt ?? routine.createdAt)
+            .toUtc()
+            .toIso8601String(),
+        'updatedAt': (reminder.updatedAt ?? routine.updatedAt)
+            .toUtc()
+            .toIso8601String(),
+      },
+  ],
   'sections': [
     for (final section in routine.sections)
       {
@@ -236,6 +292,7 @@ Routine routineFromPayload(Map<String, Object?> payload) {
   }
   items.sort((a, b) => a.position.compareTo(b.position));
   final sections = _sectionsFromPayload(payload['sections'], routineId);
+  final reminders = _remindersFromPayload(payload['reminders'], routineId);
   return Routine(
     id: routineId,
     name: _text(payload, 'name'),
@@ -248,6 +305,7 @@ Routine routineFromPayload(Map<String, Object?> payload) {
     weekdays: _integerList(payload['weekdays']).toSet(),
     items: items,
     sections: sections,
+    reminders: reminders,
     createdAt: _time(payload, 'createdAt'),
     updatedAt: _time(payload, 'updatedAt'),
   );
@@ -301,6 +359,39 @@ List<RoutineSection> _sectionsFromPayload(Object? raw, String routineId) {
   }
   sections.sort((a, b) => a.position.compareTo(b.position));
   return sections;
+}
+
+List<RoutineReminder> _remindersFromPayload(Object? raw, String routineId) {
+  if (raw is! List) return const [];
+  final reminders = <RoutineReminder>[];
+  for (final entry in raw) {
+    if (entry is! Map) continue;
+    final reminder = Map<String, Object?>.from(entry);
+    final weekdays = _integerList(reminder['weekdays']).toSet();
+    reminders.add(
+      RoutineReminder(
+        id: _text(reminder, 'id'),
+        routineId: routineId,
+        itemId: _optionalText(reminder, 'itemId'),
+        intervalId: _optionalText(reminder, 'intervalId'),
+        mode: _optionalEnum(
+          RoutineReminderMode.values,
+          reminder['mode'],
+          RoutineReminderMode.frequency,
+        ),
+        timesPerDay: _optionalInteger(reminder, 'timesPerDay', 1),
+        startMinutes: _optionalInteger(reminder, 'startMinutes', 8 * 60),
+        endMinutes: _optionalInteger(reminder, 'endMinutes', 20 * 60),
+        times: _integerList(reminder['times']),
+        weekdays: weekdays.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : weekdays,
+        enabled: reminder['enabled'] != false,
+        paused: reminder['paused'] == true,
+        createdAt: _time(reminder, 'createdAt'),
+        updatedAt: _time(reminder, 'updatedAt'),
+      ),
+    );
+  }
+  return reminders;
 }
 
 String _text(Map<String, Object?> payload, String key) {

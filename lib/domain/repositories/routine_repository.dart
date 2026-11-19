@@ -23,4 +23,9 @@ abstract interface class RoutineRepository {
     required bool completed,
     required DateTime at,
   });
+
+  /// Registra uma execução; `dedupeKey` garante idempotência.
+  Future<bool> recordExecution(RoutineExecution execution);
+
+  Future<List<RoutineExecution>> loadExecutions();
 }

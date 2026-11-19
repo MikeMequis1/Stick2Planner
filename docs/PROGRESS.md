@@ -1643,6 +1643,38 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Stick2Server: **17 tests passing**.
 - Build: version **0.9.0+17**.
 
+## Agenda navigation, series split, reminders and dashboard (0.10.0)
+
+- Agenda swipes now use a horizontal carousel transition that follows the
+  gesture direction instead of a 3D page flip. It respects the animation setting
+  and the system "reduce motion" flag.
+- Tapping the period label opens a Material month/year grid picker. The selected
+  day-of-month is preserved and the agenda jumps directly to that month.
+- The existing **+X mais** day sheet was verified: it lists every hidden item,
+  keeps post-it typography/colors and opens only from the overflow indicator.
+- Recurring events can be split by dragging one occurrence to another day. After
+  confirmation, the previous series ends the day before the moved occurrence and
+  a new segment starts on the new weekday, preserving prior statuses and
+  remapping future completion states. Both segments keep the same `seriesId`
+  and the operation is transactional.
+- Schema **v13** adds `post_its.series_id`, `routine_reminders` and
+  `routine_executions`. Existing completions are backfilled into the execution
+  history during migration.
+- Routine reminders support daily frequency (evenly distributed between a start
+  and end time) or explicit times, weekday selection, enable/pause and optional
+  target activity. Notifications are scheduled locally for the next seven days
+  and include a **Concluir** action; completing records an idempotent execution.
+- The new routine progress dashboard shows totals, active days, streak, average,
+  evolution line, period bars, a 90-day heatmap and per-activity totals, with
+  7/30/90/all filters and routine/activity selection.
+- Executions sync as `routineExecution`, with stable IDs and `dedupeKey` so
+  repeated pushes or notification taps never duplicate history.
+- Stick2Server **0.2.3** accepts `routineExecution` and keeps storing nested
+  routine/reminder payloads opaquely.
+- `flutter analyze`: no issues; `flutter test`: **349 tests passing**.
+  Stick2Server `dart analyze`: no issues; `dart test`: **19 tests passing**.
+- Build: version **0.10.0+18**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

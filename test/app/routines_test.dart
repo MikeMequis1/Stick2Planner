@@ -168,6 +168,68 @@ void main() {
     expect(current.items.map((item) => item.position), [0, 1]);
   });
 
+  test('lembretes persistem e execuções são idempotentes', () async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+    final routines = dependencies.routines;
+    final monday = DateOnly(2026, 11, 9);
+
+    final routine = await routines.saveRoutine(
+      name: 'Água',
+      weekdays: {1, 2, 3, 4, 5, 6, 7},
+      items: const [RoutineItemInput(id: 'water', title: 'Beber água')],
+      reminders: [
+        const RoutineReminder(
+          id: 'rem-water',
+          routineId: '',
+          itemId: 'water',
+          mode: RoutineReminderMode.frequency,
+          timesPerDay: 8,
+          startMinutes: 8 * 60,
+          endMinutes: 20 * 60,
+          weekdays: {1, 2, 3, 4, 5, 6, 7},
+        ),
+      ],
+    );
+
+    expect(routine.reminders.single.itemId, 'water');
+    expect(routine.reminders.single.effectiveTimes, hasLength(8));
+    expect(routine.reminders.single.effectiveTimes.first, 8 * 60);
+
+    await routines.toggleCompletion(routine.items.single, monday);
+    expect(routines.executions, hasLength(1));
+    await routines.toggleCompletion(
+      routines.routines.single.items.single,
+      monday,
+    );
+    await routines.toggleCompletion(
+      routines.routines.single.items.single,
+      monday,
+    );
+    expect(routines.executions, hasLength(1));
+
+    final recorded = await routines.recordExecution(
+      routineId: routine.id,
+      date: monday,
+      origin: RoutineExecutionOrigin.notification,
+      itemId: 'water',
+      reminderId: 'rem-water',
+      slotMinutes: 480,
+    );
+    expect(recorded, isTrue);
+    final duplicate = await routines.recordExecution(
+      routineId: routine.id,
+      date: monday,
+      origin: RoutineExecutionOrigin.notification,
+      itemId: 'water',
+      reminderId: 'rem-water',
+      slotMinutes: 480,
+    );
+    expect(duplicate, isFalse);
+    expect(routines.executions, hasLength(2));
+  });
+
   test('rotina completa persiste cards, intervalos e conclusão', () async {
     final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
     await dependencies.initialize();
@@ -217,8 +279,14 @@ void main() {
       monday,
     );
     final current = routines.routines.single;
-    expect(current.sections.single.intervals.first.isCompletedOn(monday), isTrue);
-    expect(current.sections.single.intervals.last.isCompletedOn(monday), isFalse);
+    expect(
+      current.sections.single.intervals.first.isCompletedOn(monday),
+      isTrue,
+    );
+    expect(
+      current.sections.single.intervals.last.isCompletedOn(monday),
+      isFalse,
+    );
     expect(current.completedOn(monday), 1);
     expect(current.taskCount, 2);
   });

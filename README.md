@@ -37,8 +37,8 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 - **Inbox:** search, status filters, tag filters, sorting and undated post-its.
 - **Routines:** simple weekly checklist or complete cards with start/end times,
   free intermediate times and one task per interval. Per-day completion,
-  drag-and-drop reordering, occurrences that never predate the routine's
-  creation, element-level conflict merging, server sync and JSON backup.
+  drag-and-drop reordering, element-level conflict merging, local reminders with
+  a completion action, a progress dashboard and JSON backup.
 - **Notifications:** optional daily summary and per-item reminders (minutes
   before), scheduled locally on Android without internet.
 - **Navigation:** adaptive single rail in landscape/desktop (Config/Sync at the
@@ -63,7 +63,7 @@ Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/rel
 ## Tech stack
 
 - Flutter / Dart; Android SDK, Windows desktop C++ toolchain and Linux GTK 3.
-- Drift + SQLite (schema v12, migrations v1 → v12). The same schema is used on
+- Drift + SQLite (schema v13, migrations v1 → v13). The same schema is used on
   Android, Windows and Linux; desktop data lives in each platform's application
   support directory.
 - Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:

@@ -611,6 +611,178 @@ final class PlannerController extends ChangeNotifier {
     });
   }
 
+  /// Move uma ocorrência e corta a série a partir dela.
+  ///
+  /// A série original termina no dia anterior à ocorrência escolhida; um novo
+  /// segmento começa em [newStart] e mantém o mesmo [PostIt.seriesId], regra de
+  /// recorrência, término e estados futuros remapeados por índice.
+  Future<PostIt?> splitRecurringEvent(PostIt occurrence, DateOnly newStart) {
+    return _exclusive(() async {
+      await _applyDailyMaintenance();
+      final current = _findCurrent(occurrence.id);
+      final occurrenceStart = occurrence.startDate;
+      if (current == null ||
+          occurrenceStart == null ||
+          !current.isRecurringEvent ||
+          current.isHighlight ||
+          current.status != PostItStatus.active) {
+        return null;
+      }
+      if (newStart.isSameDay(occurrenceStart)) return current;
+      if (newStart.isBefore(occurrenceStart)) return null;
+      final recurrenceEnd = current.recurrenceEndDate;
+      if (recurrenceEnd != null && newStart.isAfter(recurrenceEnd)) {
+        return null;
+      }
+
+      final now = _clock.now().toUtc();
+      final rootId = current.effectiveSeriesId;
+      final duration = current.durationInDays.clamp(1, 3660);
+      final newEndDate = duration > 1 ? newStart.addDays(duration - 1) : null;
+
+      if (current.startDate != null &&
+          occurrenceStart.isSameDay(current.startDate!)) {
+        final statuses = _remapStatuses(
+          current,
+          fromBase: current.startDate!,
+          toBase: newStart,
+        );
+        final moved = current.copyWith(
+          startDate: newStart,
+          endDate: newEndDate,
+          seriesId: current.seriesId,
+          occurrenceStatuses: statuses,
+          updatedAt: now,
+        );
+        await _postItRepository.save(
+          moved,
+          history: _history(
+            current.id,
+            PostItHistoryAction.moved,
+            now,
+            fromValue: current.startDate?.toIso8601String(),
+            toValue: newStart.toIso8601String(),
+          ),
+        );
+        await _reload();
+        await selectDate(newStart);
+        return moved;
+      }
+
+      final oldStatuses = <DateOnly, PostItStatus>{
+        for (final entry in current.occurrenceStatuses.entries)
+          if (entry.key.isBefore(occurrenceStart)) entry.key: entry.value,
+      };
+      final futureStatuses = <DateOnly, PostItStatus>{};
+      for (final entry in current.occurrenceStatuses.entries) {
+        if (entry.key.isBefore(occurrenceStart)) continue;
+        final index = occurrenceIndexFor(
+          current.recurrence,
+          current.startDate!,
+          entry.key,
+          current.safeRecurrenceInterval,
+        );
+        final mapped = occurrenceStartFor(
+          current.recurrence,
+          newStart,
+          current.safeRecurrenceInterval,
+          index,
+        );
+        if (recurrenceEnd != null && mapped.isAfter(recurrenceEnd)) continue;
+        futureStatuses[mapped] = entry.value;
+      }
+
+      final head = current.copyWith(
+        recurrenceEndDate: occurrenceStart.addDays(-1),
+        seriesId: rootId,
+        occurrenceStatuses: oldStatuses,
+        updatedAt: now,
+      );
+      final segment = PostIt(
+        id: const Uuid().v4(),
+        title: current.title,
+        type: current.type,
+        status: current.status,
+        isHighlight: current.isHighlight,
+        details: current.details,
+        noteId: current.noteId,
+        noteExcerpt: current.noteExcerpt,
+        sourceNoteId: current.sourceNoteId,
+        startDate: newStart,
+        endDate: newEndDate,
+        recurrence: current.recurrence,
+        recurrenceInterval: current.recurrenceInterval,
+        recurrenceEndDate: current.recurrenceEndDate,
+        seriesId: rootId,
+        occurrenceStatuses: futureStatuses,
+        timeMinutes: current.timeMinutes,
+        reminderMinutes: current.reminderMinutes,
+        tagIds: current.tagIds,
+        sortOrder: current.sortOrder,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final previous = _postIts;
+      _postIts = [..._postIts, segment];
+      notifyListeners();
+      try {
+        await _postItRepository.saveBatch(
+          [head, segment],
+          history: [
+            _history(
+              current.id,
+              PostItHistoryAction.seriesSplit,
+              now,
+              fromValue: occurrenceStart.toIso8601String(),
+              toValue: '${segment.id}@${newStart.toIso8601String()}',
+            ),
+            _history(
+              segment.id,
+              PostItHistoryAction.seriesSplit,
+              now,
+              fromValue: '${current.id}@${occurrenceStart.toIso8601String()}',
+              toValue: newStart.toIso8601String(),
+            ),
+          ],
+        );
+      } on Object {
+        _postIts = previous;
+        notifyListeners();
+        rethrow;
+      }
+      await _reload();
+      await selectDate(newStart);
+      return segment;
+    });
+  }
+
+  Map<DateOnly, PostItStatus> _remapStatuses(
+    PostIt series, {
+    required DateOnly fromBase,
+    required DateOnly toBase,
+  }) {
+    final result = <DateOnly, PostItStatus>{};
+    final recurrenceEnd = series.recurrenceEndDate;
+    for (final entry in series.occurrenceStatuses.entries) {
+      final index = occurrenceIndexFor(
+        series.recurrence,
+        fromBase,
+        entry.key,
+        series.safeRecurrenceInterval,
+      );
+      final mapped = occurrenceStartFor(
+        series.recurrence,
+        toBase,
+        series.safeRecurrenceInterval,
+        index,
+      );
+      if (recurrenceEnd != null && mapped.isAfter(recurrenceEnd)) continue;
+      result[mapped] = entry.value;
+    }
+    return result;
+  }
+
   /// Redimensiona um evento, ajustando início e/ou fim.
   Future<void> resizeEvent(
     PostIt postIt, {

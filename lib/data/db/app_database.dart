@@ -35,6 +35,8 @@ part 'app_database.g.dart';
     RoutineSections,
     RoutineIntervals,
     RoutineIntervalCompletions,
+    RoutineReminders,
+    RoutineExecutions,
     SyncOutbox,
     SyncRowStates,
     SyncBases,
@@ -45,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -161,6 +163,43 @@ class AppDatabase extends _$AppDatabase {
       if (from < 12) {
         if (!await _hasTable('sync_bases')) {
           await migrator.createTable(syncBases);
+        }
+      }
+      if (from < 13) {
+        if (await _hasTable('post_its') &&
+            !await _hasColumn('post_its', 'series_id')) {
+          await migrator.addColumn(postIts, postIts.seriesId);
+        }
+        if (!await _hasTable('routine_reminders')) {
+          await migrator.createTable(routineReminders);
+        }
+        if (!await _hasTable('routine_executions')) {
+          await migrator.createTable(routineExecutions);
+          if (await _hasTable('routine_completions')) {
+            await customStatement('''
+              INSERT OR IGNORE INTO routine_executions
+                (id, routine_id, item_id, interval_id, reminder_id, date,
+                 executed_at, origin, dedupe_key)
+              SELECT lower(hex(randomblob(16))), ri.routine_id, rc.routine_item_id,
+                     NULL, NULL, rc.date, rc.completed_at, 'legacy',
+                     'item|' || rc.routine_item_id || '|' || rc.date || '|legacy'
+              FROM routine_completions rc
+              JOIN routine_items ri ON ri.id = rc.routine_item_id
+            ''');
+          }
+          if (await _hasTable('routine_interval_completions')) {
+            await customStatement('''
+              INSERT OR IGNORE INTO routine_executions
+                (id, routine_id, item_id, interval_id, reminder_id, date,
+                 executed_at, origin, dedupe_key)
+              SELECT lower(hex(randomblob(16))), rs.routine_id, NULL,
+                     ric.interval_id, NULL, ric.date, ric.completed_at, 'legacy',
+                     'interval|' || ric.interval_id || '|' || ric.date || '|legacy'
+              FROM routine_interval_completions ric
+              JOIN routine_intervals ri ON ri.id = ric.interval_id
+              JOIN routine_sections rs ON rs.id = ri.section_id
+            ''');
+          }
         }
       }
     },

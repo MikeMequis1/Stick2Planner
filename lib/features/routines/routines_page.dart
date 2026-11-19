@@ -11,9 +11,11 @@ import '../shared/desktop_context_menu.dart';
 import '../shared/empty_state.dart';
 import '../shared/hold_to_delete_button.dart';
 import '../shared/reorder_helpers.dart';
+import 'routine_dashboard_page.dart';
 import 'routine_editor_page.dart';
+import 'routine_reminders_page.dart';
 
-enum _RoutineContextAction { edit, delete }
+enum _RoutineContextAction { edit, reminders, delete }
 
 enum _RoutineItemContextAction { toggle, delete }
 
@@ -59,6 +61,13 @@ class _RoutinesPageState extends State<RoutinesPage> {
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => RoutineEditorPage(existing: routine)),
     );
+  }
+
+  Future<void> _openReminders(Routine routine) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => RoutineRemindersPage(routine: routine)),
+    );
+    if (mounted) await AppScope.of(context).routines.refresh();
   }
 
   Future<void> _delete(Routine routine) async {
@@ -206,6 +215,14 @@ class _RoutinesPageState extends State<RoutinesPage> {
                 : () => _setDate(today, date.isAfter(today) ? -1 : 1),
             child: Text(AppStrings.today),
           ),
+          IconButton(
+            key: const Key('open-routine-dashboard'),
+            tooltip: AppStrings.dashboard,
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const RoutineDashboardPage()),
+            ),
+            icon: const Icon(Icons.insights_outlined),
+          ),
         ],
       ),
     );
@@ -312,6 +329,7 @@ class _RoutinesPageState extends State<RoutinesPage> {
                 showHints: showHints,
                 onToggleExpanded: () => _toggleExpanded(routine),
                 onEdit: () => _openEditor(routine),
+                onReminders: () => _openReminders(routine),
                 onDelete: () => _delete(routine),
               ),
             ),
@@ -445,6 +463,7 @@ class _RoutineCard extends StatelessWidget {
     required this.showHints,
     required this.onToggleExpanded,
     required this.onEdit,
+    required this.onReminders,
     required this.onDelete,
   });
 
@@ -455,6 +474,7 @@ class _RoutineCard extends StatelessWidget {
   final bool showHints;
   final VoidCallback onToggleExpanded;
   final VoidCallback onEdit;
+  final VoidCallback onReminders;
   final VoidCallback onDelete;
 
   @override
@@ -573,12 +593,17 @@ class _RoutineCard extends StatelessWidget {
                           iconColor: scheme.onSecondaryContainer,
                           onSelected: (value) {
                             if (value == 'edit') onEdit();
+                            if (value == 'reminders') onReminders();
                             if (value == 'delete') onDelete();
                           },
                           itemBuilder: (context) => [
                             PopupMenuItem(
                               value: 'edit',
                               child: Text(AppStrings.edit),
+                            ),
+                            PopupMenuItem(
+                              value: 'reminders',
+                              child: Text(AppStrings.reminders),
                             ),
                             PopupMenuItem(
                               value: 'delete',
@@ -715,6 +740,10 @@ class _RoutineCard extends StatelessWidget {
           value: _RoutineContextAction.edit,
           child: Text(AppStrings.edit),
         ),
+        PopupMenuItem(
+          value: _RoutineContextAction.reminders,
+          child: Text(AppStrings.reminders),
+        ),
         PopupMenuDivider(),
         PopupMenuItem(
           value: _RoutineContextAction.delete,
@@ -725,6 +754,8 @@ class _RoutineCard extends StatelessWidget {
     switch (action) {
       case _RoutineContextAction.edit:
         onEdit();
+      case _RoutineContextAction.reminders:
+        onReminders();
       case _RoutineContextAction.delete:
         onDelete();
       case null:

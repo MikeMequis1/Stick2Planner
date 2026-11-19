@@ -13,6 +13,7 @@ class CalendarToolbar extends StatelessWidget {
     required this.canIncreaseMode,
     required this.onPreviousPeriod,
     required this.onNextPeriod,
+    required this.onPeriodLabelTap,
     required this.onToday,
     required this.onDecreaseMode,
     required this.onIncreaseMode,
@@ -24,6 +25,7 @@ class CalendarToolbar extends StatelessWidget {
   final bool canIncreaseMode;
   final VoidCallback onPreviousPeriod;
   final VoidCallback onNextPeriod;
+  final VoidCallback onPeriodLabelTap;
   final VoidCallback onToday;
   final VoidCallback onDecreaseMode;
   final VoidCallback onIncreaseMode;
@@ -50,27 +52,44 @@ class CalendarToolbar extends StatelessWidget {
           Flexible(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 8),
-              child: AnimatedSwitcher(
-                duration: motion,
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, animation) {
-                  final offset = Tween<Offset>(
-                    begin: Offset(0.08, 0),
-                    end: Offset.zero,
-                  ).animate(animation);
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(position: offset, child: child),
-                  );
-                },
-                child: Text(
-                  periodLabel,
-                  key: ValueKey(periodLabel),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+              child: Tooltip(
+                message: AppStrings.selectMonthYear,
+                child: InkWell(
+                  key: const Key('calendar-period-label'),
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: onPeriodLabelTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: motion,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        final offset = Tween<Offset>(
+                          begin: Offset(0.08, 0),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: offset,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        periodLabel,
+                        key: ValueKey(periodLabel),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

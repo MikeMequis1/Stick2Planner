@@ -226,6 +226,45 @@ void main() {
     );
   });
 
+  testWidgets('configura lembrete por frequência e salva', (tester) async {
+    final dependencies = testDependencies(now: DateTime(2026, 11, 9, 8));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    final routine = await dependencies.routines.saveRoutine(
+      name: 'Hidratação',
+      weekdays: {1, 2, 3, 4, 5},
+      items: const [RoutineItemInput(id: 'water', title: 'Beber água')],
+    );
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text(AppStrings.routines),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('routine-menu-${routine.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.reminders));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-reminder')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-reminder')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-reminders')));
+    await tester.pumpAndSettle();
+
+    final saved = dependencies.routines.routines.single;
+    expect(saved.reminders, hasLength(1));
+    expect(saved.reminders.single.mode, RoutineReminderMode.frequency);
+    expect(saved.reminders.single.timesPerDay, 3);
+    expect(saved.reminders.single.weekdays, {1, 2, 3, 4, 5});
+  });
+
   testWidgets('cards completos usam duas colunas em tela larga', (
     tester,
   ) async {

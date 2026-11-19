@@ -94,6 +94,24 @@ final class BackupService {
         'history': [for (final row in history) _historyToJson(row)],
         'tags': [for (final row in tags) _tagToJson(row)],
         'routines': [for (final routine in routines) _routineToJson(routine)],
+        'routineExecutions': [
+          for (final row
+              in await (_db.select(_db.routineExecutions)..orderBy([
+                    (table) => OrderingTerm(expression: table.executedAt),
+                  ]))
+                  .get())
+            {
+              'id': row.id,
+              'routineId': row.routineId,
+              'itemId': row.itemId,
+              'intervalId': row.intervalId,
+              'reminderId': row.reminderId,
+              'date': row.date.toIso8601String(),
+              'executedAt': _iso(row.executedAt),
+              'origin': row.origin.name,
+              'dedupeKey': row.dedupeKey,
+            },
+        ],
         'settings': [
           for (final row in settings) {'key': row.key, 'value': row.value},
         ],
@@ -122,6 +140,8 @@ final class BackupService {
         await _db.delete(_db.routineSections).go();
         await _db.delete(_db.routineCompletions).go();
         await _db.delete(_db.routineItems).go();
+        await _db.delete(_db.routineReminders).go();
+        await _db.delete(_db.routineExecutions).go();
         await _db.delete(_db.routines).go();
         await _db.customStatement(
           "DELETE FROM app_settings WHERE key NOT LIKE 'planner.sync.%'",
@@ -180,6 +200,7 @@ final class BackupService {
               ),
               recurrenceInterval: _optionalInt(entry, 'recurrenceInterval', 1),
               recurrenceEndDate: _nullableDate(entry, 'recurrenceEndDate'),
+              seriesId: _nullableString(entry, 'seriesId'),
               occurrenceStatuses: _occurrenceStatuses(
                 entry['occurrenceStatuses'],
               ),
@@ -338,6 +359,51 @@ final class BackupService {
               }
             }
           }
+
+          for (final reminderEntry in _rowsOrEmpty(entry, 'reminders')) {
+            await _db
+                .into(_db.routineReminders)
+                .insert(
+                  RoutineRemindersCompanion.insert(
+                    id: _string(reminderEntry, 'id'),
+                    routineId: routineId,
+                    itemId: Value(_nullableString(reminderEntry, 'itemId')),
+                    intervalId: Value(
+                      _nullableString(reminderEntry, 'intervalId'),
+                    ),
+                    mode: _routineReminderMode(_string(reminderEntry, 'mode')),
+                    timesPerDay: Value(_int(reminderEntry, 'timesPerDay')),
+                    startMinutes: Value(_int(reminderEntry, 'startMinutes')),
+                    endMinutes: Value(_int(reminderEntry, 'endMinutes')),
+                    times: Value(_intList(reminderEntry['times'])),
+                    weekdays: Value(
+                      routineWeekdayMask(_weekdays(reminderEntry['weekdays'])),
+                    ),
+                    enabled: Value(reminderEntry['enabled'] != false),
+                    paused: Value(reminderEntry['paused'] == true),
+                    createdAt: routineCreatedAt,
+                    updatedAt: routineUpdatedAt,
+                  ),
+                );
+          }
+        }
+
+        for (final entry in _rowsOrEmpty(document.data, 'routineExecutions')) {
+          await _db
+              .into(_db.routineExecutions)
+              .insertOnConflictUpdate(
+                RoutineExecutionsCompanion.insert(
+                  id: _string(entry, 'id'),
+                  routineId: _string(entry, 'routineId'),
+                  itemId: Value(_nullableString(entry, 'itemId')),
+                  intervalId: Value(_nullableString(entry, 'intervalId')),
+                  reminderId: Value(_nullableString(entry, 'reminderId')),
+                  date: _nullableDate(entry, 'date')!,
+                  executedAt: _timestamp(entry, 'executedAt'),
+                  origin: _routineExecutionOrigin(_string(entry, 'origin')),
+                  dedupeKey: _string(entry, 'dedupeKey'),
+                ),
+              );
         }
       });
     } on BackupException {
@@ -461,6 +527,7 @@ final class BackupService {
     'recurrence': row.recurrence.name,
     'recurrenceInterval': row.recurrenceInterval,
     'recurrenceEndDate': row.recurrenceEndDate?.toIso8601String(),
+    'seriesId': row.seriesId,
     'occurrenceStatuses': {
       for (final entry in row.occurrenceStatuses.entries)
         entry.key.toIso8601String(): entry.value.name,
@@ -553,6 +620,22 @@ final class BackupService {
                 ],
               },
           ],
+        },
+    ],
+    'reminders': [
+      for (final reminder in routine.reminders)
+        {
+          'id': reminder.id,
+          'itemId': reminder.itemId,
+          'intervalId': reminder.intervalId,
+          'mode': reminder.mode.name,
+          'timesPerDay': reminder.timesPerDay,
+          'startMinutes': reminder.startMinutes,
+          'endMinutes': reminder.endMinutes,
+          'times': reminder.times,
+          'weekdays': reminder.weekdays.toList()..sort(),
+          'enabled': reminder.enabled,
+          'paused': reminder.paused,
         },
     ],
     'createdAt': _iso(dateTimeToStorage(routine.createdAt)),
@@ -784,6 +867,34 @@ final class BackupService {
       if (day is int && day >= 1 && day <= 7) days.add(day);
     }
     return days;
+  }
+
+  static List<int> _intList(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final item in value)
+        if (item is int && item >= 0 && item < 24 * 60) item,
+    ];
+  }
+
+  static RoutineReminderMode _routineReminderMode(String name) {
+    for (final value in RoutineReminderMode.values) {
+      if (value.name == name) return value;
+    }
+    throw BackupException(
+      BackupErrorCode.invalidData,
+      'modalidade de lembrete $name',
+    );
+  }
+
+  static RoutineExecutionOrigin _routineExecutionOrigin(String name) {
+    for (final value in RoutineExecutionOrigin.values) {
+      if (value.name == name) return value;
+    }
+    throw BackupException(
+      BackupErrorCode.invalidData,
+      'origem de execução $name',
+    );
   }
 
   static List<DateOnly> _dateList(Object? value) {

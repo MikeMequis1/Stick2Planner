@@ -64,6 +64,13 @@ final class SyncOutboxRecorder {
     deletedAt ?? routine.updatedAt,
   );
 
+  Future<void> recordRoutineExecution(RoutineExecution execution) => _record(
+    syncEntityRoutineExecution,
+    execution.id,
+    routineExecutionPayload(execution),
+    execution.executedAt,
+  );
+
   /// Enfileira rotinas locais que ainda não têm outbox nem estado de sync.
   ///
   /// Instalações anteriores à 0.6.0 criavam rotinas sem gravar outbox. Sem este

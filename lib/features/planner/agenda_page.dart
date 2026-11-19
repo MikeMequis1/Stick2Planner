@@ -15,6 +15,7 @@ import 'widgets/calendar_labels.dart';
 import 'widgets/calendar_toolbar.dart';
 import 'widgets/day_details_sheet.dart';
 import 'widgets/hidden_events_sheet.dart';
+import 'widgets/month_year_picker.dart';
 import 'widgets/post_it_editor_sheet.dart';
 import 'widgets/post_it_drag_data.dart';
 import 'widgets/post_it_navigation.dart';
@@ -90,6 +91,7 @@ class _AgendaPageState extends State<AgendaPage> {
             canIncreaseMode: planner.canIncreaseMode(orientation),
             onPreviousPeriod: () => _changePeriod(planner, mode, -1),
             onNextPeriod: () => _changePeriod(planner, mode, 1),
+            onPeriodLabelTap: () => _pickMonthYear(planner),
             onToday: () => _turnPage(1, planner.goToToday),
             onDecreaseMode: () => _turnPage(
               -1,
@@ -145,10 +147,12 @@ class _AgendaPageState extends State<AgendaPage> {
                       );
                     },
                     child: AnimatedSwitcher(
-                      duration: settings.animationsEnabled
+                      duration:
+                          settings.animationsEnabled &&
+                              !MediaQuery.disableAnimationsOf(context)
                           ? Duration(
                               milliseconds: _gridMotion == _GridMotion.page
-                                  ? 520
+                                  ? 420
                                   : 360,
                             )
                           : Duration.zero,
@@ -160,11 +164,7 @@ class _AgendaPageState extends State<AgendaPage> {
                       ),
                       transitionBuilder: (child, animation) =>
                           _gridMotion == _GridMotion.page
-                          ? _pageTurnTransition(
-                              child,
-                              animation,
-                              settings.animationsEnabled,
-                            )
+                          ? _carouselTransition(child, animation)
                           : _morphTransition(
                               child,
                               animation,
@@ -194,11 +194,8 @@ class _AgendaPageState extends State<AgendaPage> {
                             onPostItSelected: (postIt) =>
                                 _openDetails(context, planner, postIt),
                           ),
-                          onMovePostIt: (postIt, date) => _runGuarded(
-                            context,
-                            () => planner.movePostIt(postIt, date),
-                            AppStrings.errorMove,
-                          ),
+                          onMovePostIt: (postIt, date) =>
+                              _handleMove(context, planner, postIt, date),
                           onReorderTo: (postIt, date, index) => _runGuarded(
                             context,
                             () => planner.movePostIt(
@@ -311,6 +308,57 @@ class _AgendaPageState extends State<AgendaPage> {
     );
   }
 
+  Future<void> _handleMove(
+    BuildContext context,
+    PlannerController planner,
+    PostIt postIt,
+    DateOnly target,
+  ) async {
+    final occurrenceStart = postIt.startDate;
+    if (postIt.isRecurringEvent &&
+        occurrenceStart != null &&
+        !target.isSameDay(occurrenceStart)) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          key: const Key('split-series-dialog'),
+          title: Text(AppStrings.splitSeriesTitle),
+          content: Text(AppStrings.splitSeriesBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(AppStrings.cancel),
+            ),
+            FilledButton(
+              key: const Key('split-series-confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(AppStrings.splitSeriesConfirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      try {
+        final segment = await planner.splitRecurringEvent(postIt, target);
+        if (segment == null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppStrings.splitSeriesInvalidTarget)),
+          );
+        }
+      } on Object {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(AppStrings.errorMove)));
+      }
+      return;
+    }
+    await _runGuarded(
+      context,
+      () => planner.movePostIt(postIt, target),
+      AppStrings.errorMove,
+    );
+  }
+
   Future<void> _moveEventByWeek(
     BuildContext context,
     PlannerController planner,
@@ -373,6 +421,19 @@ class _AgendaPageState extends State<AgendaPage> {
     return CalendarPeriod.fourDays(selectedDate: selected, start: start);
   }
 
+  Future<void> _pickMonthYear(PlannerController planner) async {
+    final selected = planner.selectedDate;
+    final picked = await showMonthYearPicker(context, initial: selected);
+    if (picked == null || !mounted) return;
+    final day = selected.day.clamp(
+      1,
+      DateOnly.daysInMonth(picked.year, picked.month),
+    );
+    final target = DateOnly(picked.year, picked.month, day);
+    final direction = target.isBefore(selected) ? -1 : 1;
+    _turnPage(direction, () => planner.selectDate(target));
+  }
+
   /// Folheia um período inteiro, deslocando a janela de 4 dias se necessário.
   void _changePeriod(
     PlannerController planner,
@@ -429,32 +490,27 @@ class _AgendaPageState extends State<AgendaPage> {
     );
   }
 
-  Widget _pageTurnTransition(
-    Widget child,
-    Animation<double> animation,
-    bool animationsEnabled,
-  ) {
-    if (!animationsEnabled) return child;
-    return AnimatedBuilder(
-      animation: animation,
-      child: child,
-      builder: (context, child) {
-        final value = Curves.easeInOutCubic.transform(animation.value);
-        final angle = (1 - value) * 0.8 * _pageTurnDirection;
-        final transform = Matrix4.identity()
-          ..setEntry(3, 2, 0.0012)
-          ..rotateY(angle);
-        return Opacity(
-          opacity: value.clamp(0, 1),
-          child: Transform(
-            alignment: _pageTurnDirection >= 0
-                ? Alignment.centerLeft
-                : Alignment.centerRight,
-            transform: transform,
-            child: child,
-          ),
-        );
-      },
+  Widget _carouselTransition(Widget child, Animation<double> animation) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final outgoing = animation.status == AnimationStatus.reverse;
+    final direction = outgoing ? -_pageTurnDirection : _pageTurnDirection;
+    final slide = Tween<Offset>(
+      begin: Offset(0.22 * direction, 0),
+      end: Offset.zero,
+    ).animate(curved);
+    return SlideTransition(
+      position: slide,
+      child: FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
+          child: child,
+        ),
+      ),
     );
   }
 
