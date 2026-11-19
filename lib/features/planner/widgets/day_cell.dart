@@ -312,6 +312,11 @@ class _DayTapRegionState extends State<_DayTapRegion> {
     _tapCount++;
     widget.onTap();
 
+    if (widget.itemsFor(widget.date).isNotEmpty) {
+      _tapCount = 0;
+      return;
+    }
+
     if (_tapCount >= 3) {
       _tapCount = 0;
       HapticFeedback.mediumImpact();

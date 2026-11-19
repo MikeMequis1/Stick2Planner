@@ -1678,6 +1678,23 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Stick2Server `dart analyze`: sem issues; `dart test`: **19 testes aprovados**.
 - Build: versão **0.10.0+18**.
 
+## Carrossel contínuo e popup por toque único (0.10.1)
+
+- A agenda agora acompanha o dedo no arraste horizontal. A página atual se
+  desloca imediatamente, a grade anterior/seguinte relevante é construída sob
+  demanda e, ao soltar, distância e velocidade decidem entre concluir ou voltar.
+  Um `ValueNotifier` atualiza apenas as transformações do carrossel, sem
+  reconstruir as grades a cada movimento.
+- Os períodos vizinhos preservam a data selecionada, a âncora de 4 dias, o
+  seletor de mês/ano e todos os callbacks de eventos. Mudança vertical de modo,
+  redução de movimento e animações existentes continuam funcionando.
+- Um toque único em um dia com itens seleciona a data e abre imediatamente a
+  listagem completa, incluindo itens ocultos/recorrentes. Dias sem itens apenas
+  mudam a seleção. Tocar em post-it ou arrastar não abre a listagem. O indicador
+  `+X mais` continua como caminho adicional.
+- `flutter analyze`: sem issues; `flutter test`: **356 testes aprovados**.
+- Build: versão **0.10.1+19**.
+
 ## Revisão do release desktop (pendente)
 
 - O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release

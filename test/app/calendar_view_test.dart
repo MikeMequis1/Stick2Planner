@@ -715,6 +715,171 @@ void main() {
     );
   });
 
+  testWidgets('toque único no dia abre o popup com os eventos', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tap1',
+          title: 'Evento do dia',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 9 * 60,
+        ),
+        buildPostIt(
+          id: 'tap2',
+          title: 'Tarefa do dia',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('day-2026-11-04')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+    expect(find.text('Evento do dia'), findsWidgets);
+    expect(find.text('Tarefa do dia'), findsWidgets);
+  });
+
+  testWidgets('dia sem eventos só seleciona e não abre lista vazia', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+
+    await tester.tap(find.byKey(const Key('day-2026-11-05')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+  });
+
+  testWidgets('toque em post-it não abre o popup do dia', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tile1',
+          title: 'Comprar pão',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const ValueKey('post-it-tile1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+  });
+
+  testWidgets('arraste contínuo acompanha o dedo e cancela abaixo do limite', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+    final initial = dependencies.planner.selectedDate;
+    final area = find.byKey(const Key('calendar-swipe-area'));
+    final start = tester.getCenter(area);
+    final initialLeft = tester.getTopLeft(
+      find.byKey(const ValueKey('carousel-current-grid')),
+    );
+
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(-30, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-50, 0));
+    await tester.pump();
+
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+    final left = tester.getTopLeft(
+      find.byKey(const ValueKey('carousel-current-grid')),
+    );
+    expect(left.dx, lessThan(initialLeft.dx));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.selectedDate, initial);
+    expect(find.byType(CalendarGrid), findsOneWidget);
+  });
+
+  testWidgets('arraste suficiente conclui a página', (tester) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+    final initial = dependencies.planner.selectedDate;
+    final start = tester.getCenter(
+      find.byKey(const Key('calendar-swipe-area')),
+    );
+
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(-200, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-260, 0));
+    await tester.pump();
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.selectedDate, initial.addDays(7));
+    expect(find.byType(CalendarGrid), findsOneWidget);
+  });
+
+  testWidgets('arraste para a direita revela a página anterior', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+    final initialLeft = tester.getTopLeft(
+      find.byKey(const ValueKey('carousel-current-grid')),
+    );
+    final start = tester.getCenter(
+      find.byKey(const Key('calendar-swipe-area')),
+    );
+
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(60, 0));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('carousel-previous')), findsOneWidget);
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+    final moved = tester.getTopLeft(
+      find.byKey(const ValueKey('carousel-current-grid')),
+    );
+    expect(moved.dx, greaterThan(initialLeft.dx));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.selectedDate, isNotNull);
+    expect(find.byType(CalendarGrid), findsOneWidget);
+  });
+
+  testWidgets('arraste não abre o popup do dia', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'drag1',
+          title: 'Evento',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    final start = tester.getCenter(
+      find.byKey(const Key('calendar-swipe-area')),
+    );
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+  });
+
   testWidgets('celular em retrato não estoura', (tester) async {
     await pumpPlanner(tester, size: const Size(360, 780));
 

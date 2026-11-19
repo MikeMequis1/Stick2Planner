@@ -1675,6 +1675,23 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   Stick2Server `dart analyze`: no issues; `dart test`: **19 tests passing**.
 - Build: version **0.10.0+18**.
 
+## Continuous agenda carousel and single-tap day sheet (0.10.1)
+
+- The agenda now moves with the finger during horizontal drags. The current
+  page translates immediately, the relevant previous/next grid is built on
+  demand, and release chooses between completing or returning based on distance
+  plus velocity. A `ValueNotifier` updates only the carousel transforms, so the
+  grid widgets are not rebuilt on every pointer move.
+- Neighbor periods preserve the selected date, 4-day anchor, month/year picker
+  state and all event callbacks. Vertical mode changes, reduce-motion and
+  existing animations remain supported.
+- A single tap on a day with items selects the date and opens the full day sheet
+  immediately, including hidden/recurring items. Days without items only change
+  the selection. Tapping a post-it or dragging does not open the day sheet.
+  The `+X mais` indicator remains as an additional entry point.
+- `flutter analyze`: no issues; `flutter test`: **356 tests passing**.
+- Build: version **0.10.1+19**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

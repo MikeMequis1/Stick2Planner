@@ -28,15 +28,80 @@ class AgendaPage extends StatefulWidget {
   State<AgendaPage> createState() => _AgendaPageState();
 }
 
-class _AgendaPageState extends State<AgendaPage> {
+class _AgendaPageState extends State<AgendaPage>
+    with SingleTickerProviderStateMixin {
   int _pageTurnDirection = 1;
   _GridMotion _gridMotion = _GridMotion.page;
   bool _eventDragActive = false;
+
+  late final AnimationController _settleController;
+  late final ValueNotifier<double> _dragOffset;
+  Animation<double>? _settleAnimation;
+  bool _draggingCarousel = false;
+  double _dragDx = 0;
+  double _carouselWidth = 0;
+  int _settleDirection = 0;
+  CalendarPeriod? _previousPeriod;
+  CalendarPeriod? _nextPeriod;
+  List<PostIt> _previousPostIts = const [];
+  List<PostIt> _nextPostIts = const [];
 
   /// Início da janela de 4 dias. Mantém a grade estável ao selecionar um dia
   /// dentro dela em vez de recomeçar na data tocada.
   DateOnly? _fourDayStart;
   AgendaViewMode? _anchoredMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _settleController =
+        AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 260),
+          )
+          ..addListener(_onSettleTick)
+          ..addStatusListener(_onSettleStatus);
+    _dragOffset = ValueNotifier<double>(0);
+  }
+
+  @override
+  void dispose() {
+    _settleController.dispose();
+    _dragOffset.dispose();
+    super.dispose();
+  }
+
+  void _onSettleTick() {
+    final animation = _settleAnimation;
+    if (animation == null || !mounted) return;
+    _dragDx = animation.value;
+    _dragOffset.value = animation.value;
+  }
+
+  void _onSettleStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    final direction = _settleDirection;
+    final planner = AppScope.of(context).planner;
+    final mode = planner.modeFor(MediaQuery.orientationOf(context));
+    setState(() {
+      _draggingCarousel = false;
+      _dragDx = 0;
+      _dragOffset.value = 0;
+      _settleDirection = 0;
+      _previousPeriod = null;
+      _nextPeriod = null;
+      _previousPostIts = const [];
+      _nextPostIts = const [];
+      if (direction != 0) _gridMotion = _GridMotion.instant;
+    });
+    if (direction != 0) {
+      _commitCarousel(planner, mode, direction);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _gridMotion != _GridMotion.instant) return;
+        setState(() => _gridMotion = _GridMotion.page);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,11 +190,12 @@ class _AgendaPageState extends State<AgendaPage> {
                   child: GestureDetector(
                     key: const Key('calendar-swipe-area'),
                     behavior: HitTestBehavior.translucent,
-                    onHorizontalDragEnd: (details) {
-                      final dx = details.velocity.pixelsPerSecond.dx;
-                      if (dx.abs() < 220) return;
-                      _changePeriod(planner, mode, dx < 0 ? 1 : -1);
-                    },
+                    onHorizontalDragStart: (details) =>
+                        _beginCarouselDrag(planner, mode, period),
+                    onHorizontalDragUpdate: _updateCarouselDrag,
+                    onHorizontalDragEnd: (details) =>
+                        _endCarouselDrag(planner, mode, details),
+                    onHorizontalDragCancel: _cancelCarouselDrag,
                     onVerticalDragEnd: (details) {
                       final dy = details.velocity.pixelsPerSecond.dy;
                       if (dy.abs() < 220) return;
@@ -146,98 +212,114 @@ class _AgendaPageState extends State<AgendaPage> {
                         morph: true,
                       );
                     },
-                    child: AnimatedSwitcher(
-                      duration:
-                          settings.animationsEnabled &&
-                              !MediaQuery.disableAnimationsOf(context)
-                          ? Duration(
-                              milliseconds: _gridMotion == _GridMotion.page
-                                  ? 420
-                                  : 360,
-                            )
-                          : Duration.zero,
-                      switchInCurve: Curves.easeInOutCubic,
-                      switchOutCurve: Curves.easeInOutCubic,
-                      layoutBuilder: (current, previous) => Stack(
-                        fit: StackFit.expand,
-                        children: [...previous, ?current],
-                      ),
-                      transitionBuilder: (child, animation) =>
-                          _gridMotion == _GridMotion.page
-                          ? _carouselTransition(child, animation)
-                          : _morphTransition(
-                              child,
-                              animation,
-                              settings.animationsEnabled,
-                            ),
-                      child: RepaintBoundary(
-                        key: ValueKey(
-                          'calendar-grid-${mode.name}-'
-                          '${period.start.toIso8601String()}-'
-                          '${period.end.toIso8601String()}',
-                        ),
-                        child: CalendarGrid(
-                          period: period,
-                          focusedPostItId: AppScope.of(context)
-                              .navigation
-                              .focusedPostItId,
-                          postIts: visiblePostIts,
-                          today: planner.today,
-                          selectedDate: planner.selectedDate,
-                          onDaySelected: planner.selectDate,
-                          onPostItTap: (postIt) =>
-                              _openDetails(context, planner, postIt),
-                          onShowDay: (date) => showDayDetailsSheet(
-                            context,
-                            date: date,
-                            postIts: planner.postItsOn(date),
-                            onPostItSelected: (postIt) =>
-                                _openDetails(context, planner, postIt),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        _carouselWidth = constraints.maxWidth;
+                        final width = constraints.maxWidth;
+                        final previous = _previousPeriod == null
+                            ? null
+                            : IgnorePointer(
+                                child: RepaintBoundary(
+                                  child: _buildGrid(
+                                    context,
+                                    planner,
+                                    _previousPeriod!,
+                                    _previousPostIts,
+                                  ),
+                                ),
+                              );
+                        final next = _nextPeriod == null
+                            ? null
+                            : IgnorePointer(
+                                child: RepaintBoundary(
+                                  child: _buildGrid(
+                                    context,
+                                    planner,
+                                    _nextPeriod!,
+                                    _nextPostIts,
+                                  ),
+                                ),
+                              );
+                        final current = AnimatedSwitcher(
+                          duration:
+                              settings.animationsEnabled &&
+                                  !MediaQuery.disableAnimationsOf(context)
+                              ? Duration(
+                                  milliseconds: _gridMotion == _GridMotion.page
+                                      ? 420
+                                      : 360,
+                                )
+                              : Duration.zero,
+                          switchInCurve: Curves.easeInOutCubic,
+                          switchOutCurve: Curves.easeInOutCubic,
+                          layoutBuilder: (current, previous) => Stack(
+                            fit: StackFit.expand,
+                            children: [...previous, ?current],
                           ),
-                          onMovePostIt: (postIt, date) =>
-                              _handleMove(context, planner, postIt, date),
-                          onReorderTo: (postIt, date, index) => _runGuarded(
-                            context,
-                            () => planner.movePostIt(
-                              postIt,
-                              date,
-                              targetIndex: index,
-                            ),
-                            AppStrings.errorMove,
-                          ),
-                          onResizeEvent: (postIt, start, end) => _runGuarded(
-                            context,
-                            () => planner.resizeEvent(
-                              postIt,
-                              startDate: start,
-                              endDate: end,
-                            ),
-                            AppStrings.errorResize,
-                          ),
-                          onShowHiddenEvents: (events) => showHiddenEventsSheet(
-                            context,
-                            events: events,
-                            onPostItSelected: (postIt) =>
-                                _openDetails(context, planner, postIt),
-                          ),
-                          onQuickCreateTask: (date) => _openQuickCreate(
-                            context,
-                            planner,
-                            date,
-                            PostItType.task,
-                          ),
-                          onQuickCreateEvent: (date) => _openQuickCreate(
-                            context,
-                            planner,
-                            date,
-                            PostItType.event,
-                          ),
-                          onEventDragActive: (active) {
-                            if (!mounted || _eventDragActive == active) return;
-                            setState(() => _eventDragActive = active);
+                          transitionBuilder: (child, animation) {
+                            if (_gridMotion == _GridMotion.instant) {
+                              return child;
+                            }
+                            return _gridMotion == _GridMotion.page
+                                ? _carouselTransition(child, animation)
+                                : _morphTransition(
+                                    child,
+                                    animation,
+                                    settings.animationsEnabled,
+                                  );
                           },
-                        ),
-                      ),
+                          child: RepaintBoundary(
+                            key: ValueKey(
+                              'calendar-grid-${mode.name}-'
+                              '${period.start.toIso8601String()}-'
+                              '${period.end.toIso8601String()}',
+                            ),
+                            child: KeyedSubtree(
+                              key: const ValueKey('carousel-current-grid'),
+                              child: _buildGrid(
+                                context,
+                                planner,
+                                period,
+                                visiblePostIts,
+                              ),
+                            ),
+                          ),
+                        );
+                        return ValueListenableBuilder<double>(
+                          valueListenable: _dragOffset,
+                          builder: (context, offset, _) => Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (previous != null && offset > 0)
+                                Positioned.fill(
+                                  key: const ValueKey('carousel-previous'),
+                                  child: Transform.translate(
+                                    offset: Offset(offset - width, 0),
+                                    child: previous,
+                                  ),
+                                ),
+                              Positioned.fill(
+                                key: const ValueKey('carousel-current'),
+                                child: Transform.translate(
+                                  key: const ValueKey(
+                                    'carousel-current-transform',
+                                  ),
+                                  offset: Offset(offset, 0),
+                                  child: current,
+                                ),
+                              ),
+                              if (next != null && offset < 0)
+                                Positioned.fill(
+                                  key: const ValueKey('carousel-next'),
+                                  child: Transform.translate(
+                                    offset: Offset(offset + width, 0),
+                                    child: next,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -305,6 +387,22 @@ class _AgendaPageState extends State<AgendaPage> {
             ),
         ],
       ),
+    );
+  }
+
+  void _selectDay(
+    BuildContext context,
+    PlannerController planner,
+    DateOnly date,
+  ) {
+    planner.selectDate(date);
+    final items = planner.postItsOn(date);
+    if (items.isEmpty) return;
+    showDayDetailsSheet(
+      context,
+      date: date,
+      postIts: items,
+      onPostItSelected: (postIt) => _openDetails(context, planner, postIt),
     );
   }
 
@@ -419,6 +517,189 @@ class _AgendaPageState extends State<AgendaPage> {
     }
     _fourDayStart = start;
     return CalendarPeriod.fourDays(selectedDate: selected, start: start);
+  }
+
+  Widget _buildGrid(
+    BuildContext context,
+    PlannerController planner,
+    CalendarPeriod period,
+    List<PostIt> postIts,
+  ) {
+    return CalendarGrid(
+      period: period,
+      focusedPostItId: AppScope.of(context).navigation.focusedPostItId,
+      postIts: postIts,
+      today: planner.today,
+      selectedDate: period.selectedDate,
+      onDaySelected: (date) => _selectDay(context, planner, date),
+      onPostItTap: (postIt) => _openDetails(context, planner, postIt),
+      onShowDay: (date) => showDayDetailsSheet(
+        context,
+        date: date,
+        postIts: planner.postItsOn(date),
+        onPostItSelected: (postIt) => _openDetails(context, planner, postIt),
+      ),
+      onMovePostIt: (postIt, date) =>
+          _handleMove(context, planner, postIt, date),
+      onReorderTo: (postIt, date, index) => _runGuarded(
+        context,
+        () => planner.movePostIt(postIt, date, targetIndex: index),
+        AppStrings.errorMove,
+      ),
+      onResizeEvent: (postIt, start, end) => _runGuarded(
+        context,
+        () => planner.resizeEvent(postIt, startDate: start, endDate: end),
+        AppStrings.errorResize,
+      ),
+      onShowHiddenEvents: (events) => showHiddenEventsSheet(
+        context,
+        events: events,
+        onPostItSelected: (postIt) => _openDetails(context, planner, postIt),
+      ),
+      onQuickCreateTask: (date) =>
+          _openQuickCreate(context, planner, date, PostItType.task),
+      onQuickCreateEvent: (date) =>
+          _openQuickCreate(context, planner, date, PostItType.event),
+      onEventDragActive: (active) {
+        if (!mounted || _eventDragActive == active) return;
+        setState(() => _eventDragActive = active);
+      },
+    );
+  }
+
+  void _beginCarouselDrag(
+    PlannerController planner,
+    AgendaViewMode mode,
+    CalendarPeriod period,
+  ) {
+    _settleController.stop();
+    _settleAnimation = null;
+    _draggingCarousel = true;
+    _dragDx = 0;
+    _dragOffset.value = 0;
+    _settleDirection = 0;
+    final previous = _neighborPeriod(planner, mode, period, -1);
+    final next = _neighborPeriod(planner, mode, period, 1);
+    setState(() {
+      _previousPeriod = previous;
+      _nextPeriod = next;
+      _previousPostIts = expandEventOccurrences(
+        planner.postIts,
+        from: previous.start,
+        to: previous.end,
+      );
+      _nextPostIts = expandEventOccurrences(
+        planner.postIts,
+        from: next.start,
+        to: next.end,
+      );
+    });
+  }
+
+  CalendarPeriod _neighborPeriod(
+    PlannerController planner,
+    AgendaViewMode mode,
+    CalendarPeriod period,
+    int direction,
+  ) {
+    if (mode == AgendaViewMode.fourDays) {
+      final start = (_fourDayStart ?? period.start).addDays(4 * direction);
+      final selected = planner.selectedDate.addDays(4 * direction);
+      return CalendarPeriod.fourDays(selectedDate: selected, start: start);
+    }
+    final selected = shiftSelectedDate(planner.selectedDate, mode, direction);
+    return CalendarPeriod.compute(selectedDate: selected, mode: mode);
+  }
+
+  void _updateCarouselDrag(DragUpdateDetails details) {
+    if (!_draggingCarousel) return;
+    final width = _carouselWidth > 0
+        ? _carouselWidth
+        : MediaQuery.sizeOf(context).width;
+    _dragDx = (_dragDx + details.delta.dx).clamp(-width, width).toDouble();
+    _dragOffset.value = _dragDx;
+  }
+
+  void _endCarouselDrag(
+    PlannerController planner,
+    AgendaViewMode mode,
+    DragEndDetails details,
+  ) {
+    if (!_draggingCarousel) return;
+    _settleCarousel(
+      planner,
+      mode,
+      velocity: details.velocity.pixelsPerSecond.dx,
+    );
+  }
+
+  void _cancelCarouselDrag() {
+    if (!_draggingCarousel) return;
+    _settleCarousel(
+      AppScope.of(context).planner,
+      AppScope.of(context).planner.modeFor(MediaQuery.orientationOf(context)),
+      velocity: 0,
+      forceCancel: true,
+    );
+  }
+
+  void _settleCarousel(
+    PlannerController planner,
+    AgendaViewMode mode, {
+    required double velocity,
+    bool forceCancel = false,
+  }) {
+    final width = _carouselWidth > 0
+        ? _carouselWidth
+        : MediaQuery.sizeOf(context).width;
+    final drag = _dragDx;
+    var direction = drag > 0
+        ? -1
+        : drag < 0
+        ? 1
+        : 0;
+    if (direction == 0 && velocity.abs() > 500) {
+      direction = velocity < 0 ? 1 : -1;
+    }
+    final shouldCommit =
+        !forceCancel &&
+        (drag.abs() >= width * 0.2 || velocity.abs() > 550) &&
+        direction != 0;
+    final target = shouldCommit ? (direction > 0 ? -width : width) : 0.0;
+    _draggingCarousel = false;
+    _settleDirection = shouldCommit ? direction : 0;
+
+    final animate =
+        AppScope.of(context).settings.animationsEnabled &&
+        !MediaQuery.disableAnimationsOf(context);
+    if (!animate) {
+      _dragDx = target;
+      _dragOffset.value = target;
+      _onSettleStatus(AnimationStatus.completed);
+      return;
+    }
+    _settleAnimation = Tween<double>(begin: drag, end: target).animate(
+      CurvedAnimation(parent: _settleController, curve: Curves.easeOutCubic),
+    );
+    _settleController.forward(from: 0);
+  }
+
+  void _commitCarousel(
+    PlannerController planner,
+    AgendaViewMode mode,
+    int direction,
+  ) {
+    if (mode == AgendaViewMode.fourDays) {
+      final start = _fourDayStart ?? planner.selectedDate;
+      _fourDayStart = start.addDays(4 * direction);
+      planner.selectDate(planner.selectedDate.addDays(4 * direction));
+      return;
+    }
+    if (direction > 0) {
+      planner.nextPeriod(mode);
+    } else {
+      planner.previousPeriod(mode);
+    }
   }
 
   Future<void> _pickMonthYear(PlannerController planner) async {
@@ -557,7 +838,7 @@ class _AgendaPageState extends State<AgendaPage> {
   }
 }
 
-enum _GridMotion { page, morph }
+enum _GridMotion { page, morph, instant }
 
 class _EventWeekDropZone extends StatelessWidget {
   const _EventWeekDropZone({

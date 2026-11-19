@@ -482,6 +482,20 @@ etapas. Cada item: contexto, decisão, consequência.
 - O dashboard lê execuções persistidas, não o estado atual das tarefas. Por isso
   conclusões antigas já aparecem no histórico após a migração.
 
+## Carrossel contínuo e semântica do toque no dia
+
+- O carrossel da agenda usa a grade atual transladada mais uma grade vizinha
+  construída sob demanda, comandadas por um `ValueNotifier`. Atualizações do
+  ponteiro não chamam `setState` na página; apenas as transformações escutam o
+  deslocamento. Ao soltar, 20% de distância ou velocidade decidem a conclusão.
+- Concluir o carrossel troca o período, zera o deslocamento no mesmo frame e
+  restaura o modo de animação padrão após o frame. A transição instantânea ainda
+  usa duração normal de controlador para permitir reversão correta depois.
+- O toque único é a forma principal de consultar um dia. Ele abre a mesma
+  listagem do indicador de overflow quando a data tem itens e apenas seleciona
+  dias vazios. Criação por dois/três toques permanece só em dias vazios; toques
+  em post-its e arrastes nunca abrem a listagem do dia.
+
 ## Ocorrências recorrentes, Feito e dicas globais
 
 - Ocorrências recorrentes são visões expandidas de um único registro de série.
