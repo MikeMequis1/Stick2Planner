@@ -15,6 +15,7 @@ import '../../core/platform_support.dart';
 import '../../domain/entities/post_it.dart';
 import '../../domain/entities/routine.dart';
 import '../app_strings.dart';
+import '../notification_actions.dart';
 
 /// Notificação já calculada, pronta para ser entregue ao plugin.
 final class PlannedNotification {
@@ -265,6 +266,8 @@ final class AppNotificationService {
       final initialized = await _plugin.initialize(
         settings: settings,
         onDidReceiveNotificationResponse: _handleResponse,
+        onDidReceiveBackgroundNotificationResponse:
+            routineNotificationBackgroundAction,
       );
       _ready = initialized ?? true;
       _exactAllowed = await _canScheduleExact();
