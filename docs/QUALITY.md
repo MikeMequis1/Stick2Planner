@@ -147,5 +147,5 @@ Desktop migration validation (2026-11-12):
 - Android data compatibility: schema v13 migrates v1-v12 without resetting
   `planner.sqlite`; migration, routines, reminders, executions, merge and backup
   tests passed.
-- Stick2Server 0.2.3: 19 tests passed, including complete routines, series IDs,
+- Stick2Server 0.2.3: 20 tests passed, including complete routines, series IDs,
   execution history and legacy-card preservation.

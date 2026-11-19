@@ -1735,6 +1735,10 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
   recorrente mostra a mesma confirmação e cria o segmento futuro vinculado.
 - A atualização de estado/conclusão trata tarefas recorrentes como séries, sem
   alterar a rolagem do TO-DO recorrente.
+- Stick2Server **0.2.3** foi publicado e implantado no host ativo `planner`,
+  preservando o volume SQLite existente. O health endpoint ativo informa
+  `0.2.3` com o mesmo `serverId`; `dart analyze` do servidor está limpo e
+  **20 testes passam**, incluindo série de tarefa recorrente e `seriesId`.
 - `flutter analyze`: sem issues; `flutter test`: **362 testes aprovados**.
 - Build: versão **0.10.3+21**.
 

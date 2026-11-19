@@ -1731,6 +1731,10 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
   confirmation dialog and creates the linked future segment.
 - Refresh/status logic now treats recurring tasks like recurring series for
   per-occurrence completion, without changing recurring-TODO rollover.
+- Stick2Server **0.2.3** was published and deployed to the active `planner`
+  host, preserving the existing SQLite volume. The live health endpoint reports
+  `0.2.3` with the same `serverId`; server `dart analyze` is clean and
+  **20 tests pass**, including recurring task series and `seriesId` round-trip.
 - `flutter analyze`: no issues; `flutter test`: **362 tests passing**.
 - Build: version **0.10.3+21**.
 

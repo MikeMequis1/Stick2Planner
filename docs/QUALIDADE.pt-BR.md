@@ -150,5 +150,5 @@ Validação da migração desktop (2026-11-12):
 - Compatibilidade dos dados Android: esquema v13 migra v1-v12 sem resetar
   `planner.sqlite`; testes de migração, rotinas, lembretes, execuções, mesclagem
   e backup passaram.
-- Stick2Server 0.2.3: 19 testes aprovados, incluindo rotinas completas,
+- Stick2Server 0.2.3: 20 testes aprovados, incluindo rotinas completas,
   `seriesId`, histórico de execução e preservação de cards legados.
