@@ -482,10 +482,10 @@ stages. Each item: context, decision, consequence.
   neighbor, driven by a `ValueNotifier`. Pointer updates do not call `setState`
   on the page; only transforms listen to the offset. Release uses 20% distance
   or velocity as complementary commit criteria.
-- Carousel completion changes the period, resets the offset in the same frame
-  and resets the grid motion to the standard page mode after the frame. The
-  instant transition still uses a normal controller duration so subsequent
-  animated transitions can reverse correctly.
+- Carousel completion promotes the revealed page in the same frame as the offset
+  reset. A switcher epoch recreates the `AnimatedSwitcher` with only the new
+  period, so no outgoing old page remains to animate a second time. Resetting
+  `_gridMotion` to page mode is therefore safe.
 - A single tap is the primary way to inspect a day. It opens the same day sheet
   as the overflow indicator when the date has items and only selects empty days.
   Multi-tap quick creation remains available only on empty days; post-it taps

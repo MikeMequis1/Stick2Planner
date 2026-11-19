@@ -824,6 +824,36 @@ void main() {
     expect(find.byType(CalendarGrid), findsOneWidget);
   });
 
+  testWidgets('conclusão do carrossel não reintroduz a página anterior', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+    final initial = dependencies.planner.selectedDate;
+    final start = tester.getCenter(
+      find.byKey(const Key('calendar-swipe-area')),
+    );
+
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(-150, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-300, 0));
+    await tester.pump();
+    expect(find.byType(CalendarGrid), findsNWidgets(2));
+
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(dependencies.planner.selectedDate, initial.addDays(7));
+    expect(find.byType(CalendarGrid), findsOneWidget);
+
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byType(CalendarGrid), findsOneWidget);
+    }
+    await tester.pumpAndSettle();
+    expect(find.byType(CalendarGrid), findsOneWidget);
+  });
+
   testWidgets('arraste para a direita revela a página anterior', (
     tester,
   ) async {

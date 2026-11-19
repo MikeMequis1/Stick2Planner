@@ -488,9 +488,10 @@ etapas. Cada item: contexto, decisão, consequência.
   construída sob demanda, comandadas por um `ValueNotifier`. Atualizações do
   ponteiro não chamam `setState` na página; apenas as transformações escutam o
   deslocamento. Ao soltar, 20% de distância ou velocidade decidem a conclusão.
-- Concluir o carrossel troca o período, zera o deslocamento no mesmo frame e
-  restaura o modo de animação padrão após o frame. A transição instantânea ainda
-  usa duração normal de controlador para permitir reversão correta depois.
+- Concluir o carrossel promove a página revelada no mesmo frame em que o
+  deslocamento é zerado. Uma época do switcher recria o `AnimatedSwitcher` com
+  apenas o novo período, então nenhuma página antiga de saída permanece para ser
+  animada outra vez. Restaurar `_gridMotion` para página é seguro.
 - O toque único é a forma principal de consultar um dia. Ele abre a mesma
   listagem do indicador de overflow quando a data tem itens e apenas seleciona
   dias vazios. Criação por dois/três toques permanece só em dias vazios; toques

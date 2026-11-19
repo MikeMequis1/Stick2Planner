@@ -1692,6 +1692,26 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter analyze`: no issues; `flutter test`: **356 tests passing**.
 - Build: version **0.10.1+19**.
 
+## Carousel completion handoff fix (0.10.2)
+
+- Root cause of the duplicate transition: after the settle animation, the
+  `AnimatedSwitcher` still held the old period as an outgoing child while the
+  carousel offset was reset and `_gridMotion` returned to page mode. The old
+  child was therefore animated a second time.
+- Carousel completion now increments a switcher epoch and builds a fresh
+  `AnimatedSwitcher` containing only the already-revealed period at offset zero.
+  No outgoing old page remains, so the previous grid cannot reappear.
+- The revealed page is committed in the same frame as the offset reset; the
+  incoming/outgoing period identity and presentation no longer overlap.
+- Added a frame-by-frame widget test asserting that only the new page exists
+  during and after the completion animation.
+- Vertical mode navigation still uses its own velocity threshold and is not
+  shared with the horizontal carousel; continuous vertical dragging remains a
+  separate pending task. Multi-tap quick creation also remains restricted to
+  empty days because the first tap on a day with items opens the day sheet.
+- `flutter analyze`: no issues; `flutter test`: **357 tests passing**.
+- Build: version **0.10.2+20**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

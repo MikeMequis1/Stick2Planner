@@ -1695,6 +1695,26 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter analyze`: sem issues; `flutter test`: **356 testes aprovados**.
 - Build: versão **0.10.1+19**.
 
+## Correção da entrega do carrossel (0.10.2)
+
+- Causa da transição duplicada: após a animação de conclusão, o
+  `AnimatedSwitcher` ainda mantinha o período antigo como filho de saída
+  enquanto o deslocamento era zerado e `_gridMotion` voltava ao modo página. O
+  filho antigo era animado uma segunda vez.
+- A conclusão agora incrementa uma época do switcher e cria um
+  `AnimatedSwitcher` novo contendo apenas o período já revelado, no deslocamento
+  zero. Não sobra página antiga de saída, então a grade anterior não reaparece.
+- A página revelada é promovida no mesmo frame em que o deslocamento é zerado;
+  identidade e apresentação não se sobrepõem.
+- Teste de widget frame a frame confirma que só a nova página existe durante e
+  após a animação de conclusão.
+- A navegação vertical entre modos ainda usa limiar de velocidade próprio e não
+  compartilha o carrossel horizontal; arraste vertical contínuo segue como tarefa
+  separada. A criação por múltiplos toques continua restrita a dias vazios porque
+  o primeiro toque em dia com itens abre a listagem.
+- `flutter analyze`: sem issues; `flutter test`: **357 testes aprovados**.
+- Build: versão **0.10.2+20**.
+
 ## Revisão do release desktop (pendente)
 
 - O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release

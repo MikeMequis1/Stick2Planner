@@ -41,6 +41,7 @@ class _AgendaPageState extends State<AgendaPage>
   double _dragDx = 0;
   double _carouselWidth = 0;
   int _settleDirection = 0;
+  int _gridEpoch = 0;
   CalendarPeriod? _previousPeriod;
   CalendarPeriod? _nextPeriod;
   List<PostIt> _previousPostIts = const [];
@@ -92,14 +93,11 @@ class _AgendaPageState extends State<AgendaPage>
       _nextPeriod = null;
       _previousPostIts = const [];
       _nextPostIts = const [];
-      if (direction != 0) _gridMotion = _GridMotion.instant;
+      _gridMotion = _GridMotion.page;
+      if (direction != 0) _gridEpoch++;
     });
     if (direction != 0) {
       _commitCarousel(planner, mode, direction);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _gridMotion != _GridMotion.instant) return;
-        setState(() => _gridMotion = _GridMotion.page);
-      });
     }
   }
 
@@ -241,6 +239,7 @@ class _AgendaPageState extends State<AgendaPage>
                                 ),
                               );
                         final current = AnimatedSwitcher(
+                          key: ValueKey('calendar-switcher-$_gridEpoch'),
                           duration:
                               settings.animationsEnabled &&
                                   !MediaQuery.disableAnimationsOf(context)
@@ -257,9 +256,6 @@ class _AgendaPageState extends State<AgendaPage>
                             children: [...previous, ?current],
                           ),
                           transitionBuilder: (child, animation) {
-                            if (_gridMotion == _GridMotion.instant) {
-                              return child;
-                            }
                             return _gridMotion == _GridMotion.page
                                 ? _carouselTransition(child, animation)
                                 : _morphTransition(
@@ -838,7 +834,7 @@ class _AgendaPageState extends State<AgendaPage>
   }
 }
 
-enum _GridMotion { page, morph, instant }
+enum _GridMotion { page, morph }
 
 class _EventWeekDropZone extends StatelessWidget {
   const _EventWeekDropZone({
