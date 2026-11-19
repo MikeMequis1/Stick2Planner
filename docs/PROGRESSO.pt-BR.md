@@ -1715,6 +1715,29 @@ Arquivos: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter analyze`: sem issues; `flutter test`: **357 testes aprovados**.
 - Build: versão **0.10.2+20**.
 
+## Recorte do carrossel e divisão de tarefas recorrentes (0.10.3)
+
+- Corrigida a grade invadindo a barra lateral. As grades transformadas eram
+  pintadas fora dos limites do `Stack` porque `RenderStack` não considera
+  transformações como overflow de layout. O carrossel agora fica dentro de um
+  `ClipRect` explícito, recortando página atual e vizinha na área real de
+  conteúdo em qualquer largura/orientação.
+- Tarefas recorrentes agora são séries reais: regras de recorrência são aceitas
+  para `task` (não só `event`), ocorrências são expandidas como eventos e o
+  editor mostra a seção de recorrência para tarefas. `recurringTodo` mantém o
+  comportamento separado de rolagem diária.
+- A lógica de divisão existente foi generalizada de eventos para qualquer série
+  recorrente (`isRecurringSeries`), preservando ocorrências anteriores,
+  remapeamento de estados futuros, `seriesId`, `recurrenceEndDate` e
+  transacionalidade.
+- Eventos recorrentes voltaram a poder ser arrastados: a barra de evento não
+  desabilita mais o arraste de ocorrências recorrentes. Arrastar tarefa ou evento
+  recorrente mostra a mesma confirmação e cria o segmento futuro vinculado.
+- A atualização de estado/conclusão trata tarefas recorrentes como séries, sem
+  alterar a rolagem do TO-DO recorrente.
+- `flutter analyze`: sem issues; `flutter test`: **362 testes aprovados**.
+- Build: versão **0.10.3+21**.
+
 ## Revisão do release desktop (pendente)
 
 - O ZIP portátil e o MSIX não assinado do Windows estão anexados ao release

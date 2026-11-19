@@ -14,7 +14,7 @@ List<PostIt> expandEventOccurrences(
 }) {
   final expanded = <PostIt>[];
   for (final postIt in postIts) {
-    if (!postIt.isRecurringEvent) {
+    if (!postIt.hasRecurrence || postIt.isRecurring) {
       expanded.add(postIt);
       continue;
     }

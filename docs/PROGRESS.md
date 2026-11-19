@@ -1712,6 +1712,28 @@ Files: `data/sync/sync_models.dart`, `sync_transport.dart`,
 - `flutter analyze`: no issues; `flutter test`: **357 tests passing**.
 - Build: version **0.10.2+20**.
 
+## Carousel clipping and recurring-task series split (0.10.3)
+
+- Fixed the agenda grid bleeding over the navigation rail. Transformed grids
+  were painted outside the carousel `Stack` bounds because `RenderStack` does
+  not report transform overflow as layout overflow. The carousel now sits inside
+  an explicit `ClipRect`, so current and neighbor pages are clipped to the real
+  content area at every window width and orientation.
+- Recurring tasks are now a real series: recurrence rules are accepted for
+  `task` (not only `event`), occurrences expand like events, and the editor
+  exposes the recurrence section for tasks. `recurringTodo` keeps its separate
+  rollover behavior.
+- The existing series-split logic was generalized from recurring events to any
+  recurring series (`isRecurringSeries`), preserving prior occurrences, future
+  status remapping, `seriesId`, `recurrenceEndDate` and transactionality.
+- Recurring events can be dragged again: the event bar no longer disables drag
+  for recurring occurrences. Dragging a recurring task or event shows the same
+  confirmation dialog and creates the linked future segment.
+- Refresh/status logic now treats recurring tasks like recurring series for
+  per-occurrence completion, without changing recurring-TODO rollover.
+- `flutter analyze`: no issues; `flutter test`: **362 tests passing**.
+- Build: version **0.10.3+21**.
+
 ## Desktop release review (pending)
 
 - Windows portable ZIP and unsigned MSIX are attached to the existing

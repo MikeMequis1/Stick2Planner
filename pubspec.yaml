@@ -2,7 +2,7 @@ name: stick2planner
 description: "Stick2Planner - planner visual offline-first para Android, Windows e Linux."
 publish_to: 'none'
 
-version: 0.10.2+20
+version: 0.10.3+21
 
 environment:
   sdk: ^3.13.7

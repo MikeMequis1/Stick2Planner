@@ -476,6 +476,21 @@ stages. Each item: context, decision, consequence.
 - The dashboard reads persisted executions, not the current task state. Legacy
   completions therefore appear in history immediately after migration.
 
+## Carousel clipping and series generalization (0.10.3)
+
+- The carousel is wrapped in `ClipRect` because a transformed child can paint
+  outside a `Stack` without setting the layout overflow flag. The clip is inside
+  the agenda content constraints, so it dynamically respects the adaptive rail.
+- Recurrence is now a property of series, not of event type alone. `task` rows
+  may carry recurrence rules and are expanded into occurrences; `recurringTodo`
+  remains a single row advanced by the daily rollover. This keeps one split
+  implementation for events and tasks.
+- `isRecurringSeries` is the shared predicate for occurrence status, split and
+  UI scope. Event-only behavior (duration, resize, highlight) remains gated by
+  `isEvent`.
+- Recurring event bars are draggable again. The previous `maxSimultaneousDrags:
+  0` prevented the already-implemented split path from being reachable.
+
 ## Continuous carousel and day-tap semantics
 
 - The agenda carousel uses a translated current grid plus one demand-built

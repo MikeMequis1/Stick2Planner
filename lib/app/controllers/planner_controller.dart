@@ -235,7 +235,9 @@ final class PlannerController extends ChangeNotifier {
     return _exclusive(() async {
       await _applyDailyMaintenance();
       final current = _findCurrent(postIt.id);
-      if (current == null || !current.isRecurringEvent || current.isHighlight) {
+      if (current == null ||
+          !current.isRecurringSeries ||
+          current.isHighlight) {
         return;
       }
       final previous = current.statusOn(occurrenceStart);
@@ -368,9 +370,9 @@ final class PlannerController extends ChangeNotifier {
       final resolvedStart = type == PostItType.recurringTodo
           ? _initialRecurringDate(startDate)
           : (highlight ? (startDate ?? today) : startDate);
-      final effectiveRecurrence = type == PostItType.event && !highlight
-          ? recurrence
-          : EventRecurrence.none;
+      final effectiveRecurrence = type == PostItType.recurringTodo || highlight
+          ? EventRecurrence.none
+          : recurrence;
       final normalizedTime = type == PostItType.recurringTodo
           ? null
           : _normalizeTime(timeMinutes);
@@ -445,9 +447,9 @@ final class PlannerController extends ChangeNotifier {
           ? current.startDate
           : (highlight ? (current.startDate ?? startDate ?? today) : startDate);
       final effectiveRecurrence =
-          effectiveType == PostItType.event && !highlight
-          ? recurrence
-          : EventRecurrence.none;
+          effectiveType == PostItType.recurringTodo || highlight
+          ? EventRecurrence.none
+          : recurrence;
       final dateChanged =
           current.startDate?.toIso8601String() !=
           effectiveStart?.toIso8601String();
@@ -623,7 +625,7 @@ final class PlannerController extends ChangeNotifier {
       final occurrenceStart = occurrence.startDate;
       if (current == null ||
           occurrenceStart == null ||
-          !current.isRecurringEvent ||
+          !current.isRecurringSeries ||
           current.isHighlight ||
           current.status != PostItStatus.active) {
         return null;

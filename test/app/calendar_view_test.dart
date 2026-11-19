@@ -311,6 +311,7 @@ void main() {
     );
     expect(typeChip(AppStrings.taskType).selected, isTrue);
 
+    await tester.ensureVisible(find.text(AppStrings.cancel));
     await tester.tap(find.text(AppStrings.cancel));
     await tester.pumpAndSettle();
 
@@ -713,6 +714,40 @@ void main() {
       find.text(DateFormats.monthYear(DateOnly(2027, 3, 4))),
       findsOneWidget,
     );
+  });
+
+  testWidgets('carrossel fica contido após a barra lateral', (tester) async {
+    await pumpPlanner(tester, size: const Size(1280, 800));
+    final rail = tester.getRect(find.byType(NavigationRail));
+    final clipFinder = find.byKey(const ValueKey('calendar-carousel-clip'));
+
+    expect(clipFinder, findsOneWidget);
+    final clip = tester.widget<ClipRect>(clipFinder);
+    expect(clip.clipBehavior, Clip.hardEdge);
+    final clipRect = tester.getRect(clipFinder);
+    expect(clipRect.left, greaterThanOrEqualTo(rail.right));
+
+    final start = tester.getCenter(
+      find.byKey(const Key('calendar-swipe-area')),
+    );
+    final gesture = await tester.startGesture(start);
+    await gesture.moveBy(const Offset(-180, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-360, 0));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('carousel-next')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: clipFinder,
+        matching: find.byKey(const ValueKey('carousel-next')),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.getRect(clipFinder).left, clipRect.left);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('toque único no dia abre o popup com os eventos', (tester) async {

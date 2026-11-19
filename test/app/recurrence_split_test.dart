@@ -78,6 +78,67 @@ void main() {
     },
   );
 
+  test(
+    'divide série de tarefa recorrente preservando o tipo e o passado',
+    () async {
+      final dependencies = testDependencies(now: DateTime(2026, 11, 2, 8));
+      await dependencies.planner.initialize();
+      addTearDown(dependencies.dispose);
+      final planner = dependencies.planner;
+
+      final task = await planner.createPostIt(
+        title: 'Enviar relatório',
+        type: PostItType.task,
+        startDate: DateOnly(2026, 11, 2),
+        recurrence: EventRecurrence.weekly,
+        recurrenceEndDate: DateOnly(2026, 12, 31),
+      );
+      await planner.setPostItStatus(task, PostItStatus.active);
+      await planner.setEventOccurrenceStatus(
+        task,
+        DateOnly(2026, 11, 9),
+        PostItStatus.done,
+      );
+      await planner.setEventOccurrenceStatus(
+        task,
+        DateOnly(2026, 11, 23),
+        PostItStatus.cancelled,
+      );
+
+      final occurrence = planner
+          .postItsOn(DateOnly(2026, 11, 16))
+          .singleWhere((postIt) => postIt.id == task.id);
+      expect(occurrence.isEvent, isFalse);
+      final segment = await planner.splitRecurringEvent(
+        occurrence,
+        DateOnly(2026, 11, 17),
+      );
+
+      expect(segment, isNotNull);
+      final head = planner.postIts.singleWhere((item) => item.id == task.id);
+      expect(head.type, PostItType.task);
+      expect(head.recurrenceEndDate, DateOnly(2026, 11, 15));
+      expect(head.effectiveSeriesId, head.id);
+      expect(segment!.type, PostItType.task);
+      expect(segment.effectiveSeriesId, head.id);
+      expect(segment.startDate, DateOnly(2026, 11, 17));
+      expect(segment.recurrence, EventRecurrence.weekly);
+      expect(segment.recurrenceEndDate, DateOnly(2026, 12, 31));
+
+      expect(
+        planner.postItsOn(DateOnly(2026, 11, 9)).single.status,
+        PostItStatus.done,
+      );
+      expect(planner.postItsOn(DateOnly(2026, 11, 16)), isEmpty);
+      expect(planner.postItsOn(DateOnly(2026, 11, 17)).single.id, segment.id);
+      expect(planner.postItsOn(DateOnly(2026, 11, 24)).single.id, segment.id);
+      expect(
+        planner.postItsOn(DateOnly(2026, 12, 8)).single.status,
+        PostItStatus.cancelled,
+      );
+    },
+  );
+
   test('mover a primeira ocorrência desloca a série inteira', () async {
     final dependencies = testDependencies(now: DateTime(2026, 11, 3, 8));
     await dependencies.planner.initialize();

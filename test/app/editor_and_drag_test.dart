@@ -48,6 +48,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('tarefa pode repetir semanalmente', (tester) async {
+    final dependencies = await pumpPlanner(tester, size: const Size(360, 780));
+
+    await openEditor(tester);
+    await tester.enterText(find.byKey(const Key('editor-title')), 'Relatório');
+    await tester.ensureVisible(find.byKey(const Key('editor-recurrence')));
+    await tester.tap(find.byKey(const Key('editor-recurrence')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.repeatWeekly).last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('editor-save')));
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pumpAndSettle();
+
+    final task = dependencies.planner.postIts.single;
+    expect(task.type, PostItType.task);
+    expect(task.recurrence, EventRecurrence.weekly);
+  });
+
   testWidgets('evento pode repetir semanalmente', (tester) async {
     final dependencies = await pumpPlanner(tester, size: const Size(360, 780));
 
@@ -268,6 +287,107 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('arrasta ocorrência de tarefa recorrente e divide a série', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'trec',
+          title: 'Relatório',
+          startDate: DateOnly(2026, 10, 26),
+          recurrence: EventRecurrence.weekly,
+          recurrenceEndDate: DateOnly(2026, 12, 31),
+          occurrenceStatuses: {DateOnly(2026, 10, 26): PostItStatus.done},
+        ),
+      ],
+    );
+
+    Future<void> dragTo(Key target) async {
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('post-it-trec'))),
+      );
+      await tester.pump(const Duration(milliseconds: 650));
+      await gesture.moveTo(tester.getCenter(find.byKey(target)));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    await dragTo(const Key('day-2026-11-03'));
+    expect(find.byKey(const Key('split-series-dialog')), findsOneWidget);
+    await tester.tap(find.text(AppStrings.cancel));
+    await tester.pumpAndSettle();
+    expect(dependencies.planner.postIts, hasLength(1));
+    expect(
+      dependencies.planner.postIts.single.recurrenceEndDate,
+      DateOnly(2026, 12, 31),
+    );
+
+    await dragTo(const Key('day-2026-11-03'));
+    await tester.tap(find.byKey(const Key('split-series-confirm')));
+    await tester.pumpAndSettle();
+
+    final all = dependencies.planner.postIts;
+    expect(all, hasLength(2));
+    final head = all.singleWhere((item) => item.id == 'trec');
+    final segment = all.singleWhere((item) => item.id != 'trec');
+    expect(head.recurrenceEndDate, DateOnly(2026, 11, 1));
+    expect(head.effectiveSeriesId, head.id);
+    expect(segment.type, PostItType.task);
+    expect(segment.effectiveSeriesId, head.id);
+    expect(segment.startDate, DateOnly(2026, 11, 3));
+    expect(
+      dependencies.planner.postItsOn(DateOnly(2026, 10, 26)).single.status,
+      PostItStatus.done,
+    );
+    expect(dependencies.planner.postItsOn(DateOnly(2026, 11, 2)), isEmpty);
+    expect(
+      dependencies.planner.postItsOn(DateOnly(2026, 11, 10)).single.id,
+      segment.id,
+    );
+  });
+
+  testWidgets('evento recorrente continua podendo dividir a série', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'erec',
+          title: 'Reunião',
+          type: PostItType.event,
+          startDate: DateOnly(2026, 10, 26),
+          recurrence: EventRecurrence.weekly,
+          recurrenceEndDate: DateOnly(2026, 12, 31),
+        ),
+      ],
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Reunião')),
+    );
+    await tester.pump(const Duration(milliseconds: 650));
+    await gesture.moveTo(
+      tester.getCenter(find.byKey(const Key('day-2026-11-03'))),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('split-series-dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('split-series-confirm')));
+    await tester.pumpAndSettle();
+
+    final all = dependencies.planner.postIts;
+    expect(all, hasLength(2));
+    final segment = all.singleWhere((item) => item.id != 'erec');
+    expect(segment.type, PostItType.event);
+    expect(segment.startDate, DateOnly(2026, 11, 3));
+    expect(segment.effectiveSeriesId, 'erec');
   });
 
   testWidgets('arrasta post-it sobre outro para reordenar', (tester) async {

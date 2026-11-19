@@ -117,6 +117,13 @@ final class PostIt {
 
   bool get isRecurringEvent => isEvent && hasRecurrence;
 
+  /// Qualquer post-it com regra de recorrência que gera ocorrências.
+  ///
+  /// Inclui eventos e tarefas; exclui o TO-DO recorrente, que é um único
+  /// registro rolado diariamente, e registros Feito.
+  bool get isRecurringSeries =>
+      hasRecurrence && type != PostItType.recurringTodo && !isHighlight;
+
   int get safeRecurrenceInterval =>
       recurrenceInterval < 1 ? 1 : recurrenceInterval;
 

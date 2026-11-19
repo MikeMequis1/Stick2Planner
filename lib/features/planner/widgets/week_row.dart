@@ -373,7 +373,6 @@ class _WeekRowState extends State<WeekRow> {
               curve: Curves.easeOutCubic,
               child: AdaptivePostItDraggable(
                 data: PostItDragData(postIt),
-                maxSimultaneousDrags: recurring ? 0 : null,
                 onDragStarted: () => widget.onEventDragActive?.call(true),
                 onDragEnd: (_) => widget.onEventDragActive?.call(false),
                 onDraggableCanceled: () =>

@@ -183,7 +183,7 @@ Future<void> showPostItDetailsSheet(
         if (base.isHighlight) return;
         var applyToSeries = false;
         final occurrenceDate = postIt.startDate;
-        if (postIt.isRecurringEvent && occurrenceDate != null) {
+        if (postIt.isRecurringSeries && occurrenceDate != null) {
           if (base.status != PostItStatus.active) {
             applyToSeries = true;
           } else {
@@ -232,7 +232,7 @@ Future<void> showPostItDetailsSheet(
               status,
               clearOccurrenceStatuses: status == PostItStatus.active,
             );
-          } else if (postIt.isRecurringEvent &&
+          } else if (postIt.isRecurringSeries &&
               occurrenceDate != null &&
               base.status == PostItStatus.active) {
             await planner.setEventOccurrenceStatus(
@@ -414,7 +414,7 @@ Future<void> showPostItDetailsSheet(
                                 : AppStrings.advancesDaily,
                           ),
                         ),
-                      if (postIt.isRecurringEvent)
+                      if (postIt.isRecurringSeries)
                         Chip(
                           avatar: Icon(Icons.event_repeat, size: 18),
                           label: Text(eventRecurrenceLabel(postIt)),

@@ -50,7 +50,7 @@ final class ValidatePostIt {
     if (end != null && start == null) {
       errors.add(PostItValidationError.endDateRequiresStart);
     }
-    if (postIt.hasRecurrence && !postIt.isEvent) {
+    if (postIt.hasRecurrence && postIt.type == PostItType.recurringTodo) {
       errors.add(PostItValidationError.recurrenceRequiresEvent);
     }
     if (postIt.hasRecurrence && postIt.recurrenceInterval < 1) {

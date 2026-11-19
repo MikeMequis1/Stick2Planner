@@ -281,38 +281,42 @@ class _AgendaPageState extends State<AgendaPage>
                             ),
                           ),
                         );
-                        return ValueListenableBuilder<double>(
-                          valueListenable: _dragOffset,
-                          builder: (context, offset, _) => Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (previous != null && offset > 0)
+                        return ClipRect(
+                          key: const ValueKey('calendar-carousel-clip'),
+                          child: ValueListenableBuilder<double>(
+                            valueListenable: _dragOffset,
+                            builder: (context, offset, _) => Stack(
+                              fit: StackFit.expand,
+                              clipBehavior: Clip.hardEdge,
+                              children: [
+                                if (previous != null && offset > 0)
+                                  Positioned.fill(
+                                    key: const ValueKey('carousel-previous'),
+                                    child: Transform.translate(
+                                      offset: Offset(offset - width, 0),
+                                      child: previous,
+                                    ),
+                                  ),
                                 Positioned.fill(
-                                  key: const ValueKey('carousel-previous'),
+                                  key: const ValueKey('carousel-current'),
                                   child: Transform.translate(
-                                    offset: Offset(offset - width, 0),
-                                    child: previous,
+                                    key: const ValueKey(
+                                      'carousel-current-transform',
+                                    ),
+                                    offset: Offset(offset, 0),
+                                    child: current,
                                   ),
                                 ),
-                              Positioned.fill(
-                                key: const ValueKey('carousel-current'),
-                                child: Transform.translate(
-                                  key: const ValueKey(
-                                    'carousel-current-transform',
+                                if (next != null && offset < 0)
+                                  Positioned.fill(
+                                    key: const ValueKey('carousel-next'),
+                                    child: Transform.translate(
+                                      offset: Offset(offset + width, 0),
+                                      child: next,
+                                    ),
                                   ),
-                                  offset: Offset(offset, 0),
-                                  child: current,
-                                ),
-                              ),
-                              if (next != null && offset < 0)
-                                Positioned.fill(
-                                  key: const ValueKey('carousel-next'),
-                                  child: Transform.translate(
-                                    offset: Offset(offset + width, 0),
-                                    child: next,
-                                  ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -409,7 +413,7 @@ class _AgendaPageState extends State<AgendaPage>
     DateOnly target,
   ) async {
     final occurrenceStart = postIt.startDate;
-    if (postIt.isRecurringEvent &&
+    if (postIt.hasRecurrence &&
         occurrenceStart != null &&
         !target.isSameDay(occurrenceStart)) {
       final confirmed = await showDialog<bool>(

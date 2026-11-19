@@ -482,6 +482,23 @@ etapas. Cada item: contexto, decisão, consequência.
 - O dashboard lê execuções persistidas, não o estado atual das tarefas. Por isso
   conclusões antigas já aparecem no histórico após a migração.
 
+## Recorte do carrossel e generalização de séries (0.10.3)
+
+- O carrossel fica dentro de um `ClipRect` porque um filho transformado pode
+  pintar fora de um `Stack` sem marcar overflow de layout. O recorte fica dentro
+  das constraints do conteúdo da agenda, respeitando dinamicamente o trilho
+  adaptativo.
+- Recorrência agora é propriedade de série, não apenas do tipo evento. Linhas
+  `task` podem ter regras de recorrência e são expandidas em ocorrências;
+  `recurringTodo` continua como linha única avançada pela rolagem diária. Assim
+  existe uma única implementação de divisão para eventos e tarefas.
+- `isRecurringSeries` é o predicado compartilhado para estado por ocorrência,
+  divisão e escopo da UI. Comportamentos exclusivos de evento (duração, resize,
+  destaque) continuam sob `isEvent`.
+- Barras de eventos recorrentes voltaram a aceitar arraste. O anterior
+  `maxSimultaneousDrags: 0` impedia que o caminho de divisão já implementado
+  fosse alcançável.
+
 ## Carrossel contínuo e semântica do toque no dia
 
 - O carrossel da agenda usa a grade atual transladada mais uma grade vizinha

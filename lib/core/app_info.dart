@@ -2,4 +2,4 @@
 ///
 /// Mantida em sincronia com `pubspec.yaml` (`version:`); atualizar junto do
 /// bump de versão.
-const appVersionString = '0.10.2+20';
+const appVersionString = '0.10.3+21';

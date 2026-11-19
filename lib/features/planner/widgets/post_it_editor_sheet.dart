@@ -482,13 +482,19 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
           : (timeMinutes == null ? null : _reminderMinutes);
       final recurrence = _isResolved
           ? (existing?.recurrence ?? EventRecurrence.none)
-          : (_isEvent ? _recurrence : EventRecurrence.none);
+          : (!_isHighlight && _type != PostItType.recurringTodo
+                ? _recurrence
+                : EventRecurrence.none);
       final recurrenceInterval = _isResolved
           ? (existing?.recurrenceInterval ?? 1)
-          : (_isEvent ? _recurrenceInterval : 1);
+          : (!_isHighlight && _type != PostItType.recurringTodo
+                ? _recurrenceInterval
+                : 1);
       final recurrenceEndDate = _isResolved
           ? existing?.recurrenceEndDate
-          : (_isEvent && _recurrence != EventRecurrence.none
+          : (!_isHighlight &&
+                    _type != PostItType.recurringTodo &&
+                    _recurrence != EventRecurrence.none
                 ? _recurrenceEndDate
                 : null);
 
@@ -800,8 +806,9 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                       value: _isHighlight,
                       onChanged: _setHighlight,
                     ),
-                    if (!_isHighlight) _recurrenceSection(),
                   ],
+                  if (!_isHighlight && _type != PostItType.recurringTodo)
+                    _recurrenceSection(),
                 ],
                 if (_errors.isNotEmpty) ...[
                   SizedBox(height: 8),
