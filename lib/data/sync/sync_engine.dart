@@ -29,6 +29,7 @@ final class SyncEngine {
     DateTime Function()? now,
     this.batchSize = 200,
     this.supportsRoutines = true,
+    this.supportsRoutineExecutions = true,
   }) : _db = database,
        _transport = transport,
        _state = state,
@@ -49,6 +50,10 @@ final class SyncEngine {
   /// Servidores anteriores à 0.2.2 recusam a entidade `routine`. Nesse caso as
   /// rotinas ficam na outbox local e o restante do sync continua funcionando.
   final bool supportsRoutines;
+
+  /// Servidores anteriores à 0.2.3 não conhecem `routineExecution`; nesse caso
+  /// as execuções ficam retidas na outbox sem invalidar o sync inteiro.
+  final bool supportsRoutineExecutions;
 
   /// Uma rodada completa: push, pull, conflitos e, se preciso, um reenvio.
   Future<SyncReport> run() async {
@@ -93,12 +98,13 @@ final class SyncEngine {
   Future<SyncReport> replaceWithLocal() async {
     final deviceId = await _state.ensureDeviceId();
     final dataset = await SyncDatasetService(_db).snapshot();
-    final entities = supportsRoutines
-        ? dataset
-        : [
-            for (final entity in dataset)
-              if (entity.entity != syncEntityRoutine) entity,
-          ];
+    final entities = [
+      for (final entity in dataset)
+        if (supportsRoutines || entity.entity != syncEntityRoutine)
+          if (supportsRoutineExecutions ||
+              entity.entity != syncEntityRoutineExecution)
+            entity,
+    ];
     try {
       final result = await _transport.replace(
         deviceId: deviceId,
@@ -210,13 +216,21 @@ final class SyncEngine {
     if (!supportsRoutines) {
       pendingQuery.where((table) => table.entity.isNotIn([syncEntityRoutine]));
     }
-    final rows = await (pendingQuery..limit(batchSize)).get();
-    final changes = [for (final row in rows) _toChange(row)];
+    final rows = await (pendingQuery..limit(batchSize * 5)).get();
+    final supportedRows = [
+      for (final row in rows)
+        if (supportsRoutines || row.entity != syncEntityRoutine)
+          if (supportsRoutineExecutions ||
+              row.entity != syncEntityRoutineExecution)
+            row,
+    ].take(batchSize).toList(growable: false);
+    final changes = [for (final row in supportedRows) _toChange(row)];
     final pushedPayloads = {
       for (final change in changes) change.changeId: change.payload,
     };
     final pushedByEntity = {
-      for (final row in rows) '${row.entity}\u0000${row.entityId}': row,
+      for (final row in supportedRows)
+        '${row.entity}\u0000${row.entityId}': row,
     };
 
     final response = await _transport.sync(

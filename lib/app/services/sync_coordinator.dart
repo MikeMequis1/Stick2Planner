@@ -243,12 +243,16 @@ final class SyncCoordinator extends ChangeNotifier {
     try {
       final transport = await _currentTransport();
       final supportsRoutines = await _serverSupportsRoutines(transport);
+      final supportsRoutineExecutions = await _serverSupportsRoutineExecutions(
+        transport,
+      );
       final engine = SyncEngine(
         database: _db,
         transport: transport,
         state: _state,
         now: _now,
         supportsRoutines: supportsRoutines,
+        supportsRoutineExecutions: supportsRoutineExecutions,
       );
       final report = switch (mode) {
         SyncMode.merge => await engine.run(),
@@ -295,6 +299,22 @@ final class SyncCoordinator extends ChangeNotifier {
       if (major != 0) return major > 0;
       if (minor != 2) return minor > 2;
       return patch >= 2;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// `routineExecution` existe a partir de 0.2.3.
+  Future<bool> _serverSupportsRoutineExecutions(SyncTransport transport) async {
+    try {
+      final health = await transport.health();
+      final parts = health.version.split(RegExp(r'[.+-]'));
+      final major = int.tryParse(parts.isNotEmpty ? parts[0] : '') ?? 0;
+      final minor = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+      final patch = int.tryParse(parts.length > 2 ? parts[2] : '') ?? 0;
+      if (major != 0) return major > 0;
+      if (minor != 2) return minor > 2;
+      return patch >= 3;
     } on Object {
       return false;
     }
