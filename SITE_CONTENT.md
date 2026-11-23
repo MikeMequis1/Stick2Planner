@@ -6,7 +6,7 @@ permanecer na documentação técnica do repositório. Ele não é a página fin
 substitui `README.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`,
 `docs/SYNC.md` ou `docs/QUALITY.md`.
 
-Estado de referência: **23 de novembro de 2026**, app **0.10.4+22**, esquema
+Estado de referência: **23 de novembro de 2026**, app **0.10.5+23**, esquema
 SQLite **v13**, Stick2Server **0.2.3**.
 
 ---
@@ -483,8 +483,8 @@ aprovados, incluindo séries de tarefas recorrentes e histórico de execução.
 
 ### Builds
 
-- Android 0.10.4: APK arm64 (~30 MB) e universal (~84 MB), publicados na release.
-- Windows 0.10.4: ZIP portátil (~15 MB) e MSIX não assinado (~15 MB), publicados
+- Android 0.10.5: APK arm64 (~30 MB) e universal (~84 MB), publicados na release.
+- Windows 0.10.5: ZIP portátil (~15 MB) e MSIX não assinado (~15 MB), publicados
   na release.
 - Linux: último build registrado foi 0.6.2 (tar.gz, `.deb` e AppImage) em WSL
   Ubuntu 26.04; não publicado na release atual.
@@ -497,8 +497,8 @@ aprovados, incluindo séries de tarefas recorrentes e histórico de execução.
 - Sync real com tablet e celular via Tailscale/LAN na fase 0.2.x.
 - Windows: build e empacotamento aprovados; revisão em máquina limpa pendente.
 - Linux: empacotamento aprovado; teste real de GUI pendente.
-- Android 0.10.4: APK instalado; carrossel, recorte, toque no dia, cores por tag,
-  rotinas/dashboard e navegação gravada com dados de teste.
+- Android 0.10.5: build de trabalho instalado; carrossel, recorte, toque no dia,
+  cores por tag, rotinas/dashboard e navegação gravada com dados de teste.
 
 ### O que ainda não foi validado manualmente
 
@@ -573,7 +573,7 @@ Resumo de marcos, não um changelog completo:
 
 **Atenção:** todas as imagens de `docs/validacao/` são de 03/11/2026 e mostram uma
 versão anterior a tags, rotinas, notificações, desktop e carrossel. Elas servem
-como referência de linguagem visual, não como retrato fiel da versão 0.10.4.
+como referência de linguagem visual, não como retrato fiel da versão 0.10.5.
 Recomenda-se recapturar antes de publicar a página.
 
 Seleção de transição (7 imagens), mantendo os originais intactos:

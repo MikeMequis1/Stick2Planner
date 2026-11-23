@@ -28,7 +28,7 @@ Stick2Planner device                         Stick2Server
 - Local writes land in SQLite and in the outbox in the same transaction.
 - The device can stay offline indefinitely; pending changes remain queued.
 
-Current compatibility: Stick2Server **0.2.3** targets Stick2Planner **0.10.4**.
+Current compatibility: Stick2Server **0.2.3** targets Stick2Planner **0.10.5**.
 The server keeps accepting older clients.
 
 | Server | App behavior |

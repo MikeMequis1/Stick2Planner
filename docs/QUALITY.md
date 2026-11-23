@@ -4,7 +4,7 @@ This document records what is actually verified at the current state, what is
 only covered by automated tests, and what still needs manual confirmation. It is
 not a development log.
 
-State of this review: **2026-11-23**, app **0.10.4+22**, schema **v13**,
+State of this review: **2026-11-23**, app **0.10.5+23**, schema **v13**,
 Stick2Server **0.2.3**.
 
 ## 1. Validated scope
@@ -96,15 +96,15 @@ Artifacts present in `dist/` at this review (not committed; `dist/` is ignored):
 
 | Target | Version | Artifact | Size |
 | --- | --- | --- | --- |
-| Android arm64 | 0.10.4 | `Stick2Planner-0.10.4-arm64.apk` | ~30.2 MB |
-| Android universal | 0.10.4 | `Stick2Planner-0.10.4-universal.apk` | ~83.9 MB |
-| Windows x64 | 0.10.4 | portable ZIP | ~14.7 MB |
-| Windows x64 | 0.10.4 | unsigned MSIX | ~14.8 MB |
+| Android arm64 | 0.10.5 | `Stick2Planner-0.10.5-arm64.apk` | ~30.3 MB |
+| Android universal | 0.10.5 | `Stick2Planner-0.10.5-universal.apk` | ~84.1 MB |
+| Windows x64 | 0.10.5 | portable ZIP | ~15.4 MB |
+| Windows x64 | 0.10.5 | unsigned MSIX | ~15.5 MB |
 | Linux x64 | 0.6.2 | tar.gz | ~12.0 MB |
 | Linux x64 | 0.6.2 | `.deb` | ~9.7 MB |
 | Linux x64 | 0.6.2 | AppImage | ~11.9 MB |
 
-The GitHub release `v0.10.4` contains the Android APKs and the Windows ZIP/MSIX.
+The GitHub release `v0.10.5` contains the Android APKs and the Windows ZIP/MSIX.
 Linux artifacts are not published in that release. The Linux artifacts above are
 older (0.6.2) and were built in WSL Ubuntu 26.04 with Flutter 3.47.9.
 
@@ -126,11 +126,11 @@ before distributing outside GitHub Releases.
 - Early releases were installed on a phone; Settings and About were checked.
 
 Not manually validated on Android after 0.4.1: series split, routine reminders,
-desktop-specific behavior, TalkBack, stylus and continuous multitouch. The
-0.10.4 release APK was installed and used to validate carousel clipping, the
-selected-day tap/sheet flow, tag-colored events, routines/dashboard and a
-screen-recorded navigation pass with test data; these checks are not a substitute
-for the remaining manual matrix.
+desktop-specific behavior, TalkBack, stylus and continuous multitouch. A 0.10.5
+working build (versionCode 2028) was installed and used to validate carousel
+clipping, the selected-day tap/sheet flow, tag-colored events, routines/dashboard
+and a screen-recorded navigation pass with test data; these checks are not a
+substitute for the remaining manual matrix.
 
 ### Synchronization
 
@@ -200,7 +200,7 @@ for the remaining manual matrix.
 - Linux: secure storage requires a running Secret Service provider; the AppImage
   still depends on host GTK/Secret Service libraries.
 - Linux: latest release artifacts have not been published or GUI-tested at
-  0.10.4.
+  0.10.5.
 
 ### Validation and delivery
 

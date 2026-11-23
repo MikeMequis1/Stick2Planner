@@ -162,8 +162,8 @@ configure a real keystore before distributing outside GitHub Releases.
 
 Versioning lives in two places and must stay synchronized:
 
-- `pubspec.yaml` → `version: 0.10.4+22`
-- `lib/core/app_info.dart` → `appVersionString = '0.10.4+22'`
+- `pubspec.yaml` → `version: 0.10.5+23`
+- `lib/core/app_info.dart` → `appVersionString = '0.10.5+23'`
 
 ### Windows
 
