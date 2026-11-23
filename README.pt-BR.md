@@ -2,122 +2,109 @@
 
 # Stick2Planner
 
-Planner visual offline-first para Android, Windows e Linux. Agenda, Caixinha e
-notas Markdown ficam no aparelho em SQLite; a sincronização com um servidor
-próprio é opcional.
+Planner visual offline-first para Android, Windows e Linux. Agenda, tarefas,
+rotinas e notas Markdown ficam em um banco SQLite local; a sincronização com um
+servidor próprio é opcional.
 
 Código-fonte: [github.com/MikeMequis1/Stick2Planner](https://github.com/MikeMequis1/Stick2Planner)
 
 ## Download
 
-APK mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
+Release mais recente: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**
 
-- `Stick2Planner-*-arm64.apk` — recomendado para a maioria dos celulares e tablets.
+- `Stick2Planner-*-arm64.apk` — Android 7.0+ (`minSdk 24`); recomendado para a
+  maioria dos celulares e tablets.
 - `Stick2Planner-*-universal.apk` — alternativa para outros aparelhos Android.
-- `Stick2Planner-*-windows-x64.zip` — build portátil para Windows 10/11.
-- `Stick2Planner-*-linux-x64.tar.gz` / `stick2planner_*_amd64.deb` — bundle Linux
-  e pacote Debian (AppImage quando publicado).
-- Android 7.0+ (`minSdk 24`). Não é necessária conta na Play Store.
+- `Stick2Planner-*-windows-x64.zip` — build portátil para Windows 10/11 x64. O
+  MSIX opcional da mesma release não é assinado e precisa de assinatura antes da
+  instalação normal.
+- Builds Linux x64 são gerados localmente com `scripts/build_linux.sh`
+  (tar.gz + `.deb`, AppImage quando `appimagetool` estiver disponível). Ainda não
+  há artefatos Linux publicados na release atual.
 
-## Funcionalidades
+## O que faz
 
-- **Agenda:** dia, 4 dias, semana, 2 semanas e mês; eventos multi-dia; arraste,
-  redimensionamento, reordenação e criação rápida; janela de 4 dias ancorada;
-  dias anteriores recebem um tom acinzentado discreto.
-- **Repetição de eventos:** diária, a cada N semanas, a cada N meses ou anual,
-  com data final opcional; cada ocorrência pode ser concluída/cancelada
-  individualmente ou a série inteira de uma vez.
-- **Horário do evento:** horário inicial opcional, sempre visível na barra do
-  evento, sem substituir datas nem timestamps internos.
-- **Tags:** tags compartilhadas entre eventos e tarefas, com cores da paleta,
-  gerenciamento, filtro múltiplo na Caixinha e suporte a sync/backup.
-- **Feito:** eventos positivos usam ícone de lápis e uma explicação curta. São
-  registros de um único dia, sem tags, duração ou recorrência; concluir e
-  redimensionar ficam indisponíveis de propósito.
-- **Caixinha:** busca, filtros por estado, filtros por tag, ordenação e post-its
-  sem data.
-- **Rotinas:** lista semanal simples ou cards completos com horário inicial/final,
-  horários intermediários livres e uma tarefa por intervalo. Conclusão por dia,
-  reordenação por arrastar e soltar, mesclagem de conflitos por elemento,
-  lembretes locais com ação de concluir, dashboard de progresso e backup JSON.
-- **Notificações:** resumo diário e lembretes por item (minutos antes), agendados
-  localmente no Android sem internet.
-- **Navegação:** trilho único adaptativo em paisagem/desktop (Config/Sync no
-  rodapé) e barra inferior igualmente distribuída em retrato. No desktop há
-  atalhos (`Ctrl+1…4`, `Ctrl+Tab`, `Ctrl+N`, `Ctrl+,`, `Ctrl+S`, `Ctrl+←/→`,
-  `Alt+←/→`, `F1`) e arraste imediato com o mouse. Clique direito abre menus de
-  contexto; linhas de checklist aceitam seleção com Ctrl/Shift+clique.
-- **Notas:** renderização Markdown, checklists, seleção de linhas, snapshots e
-  vínculos vivos entre notas e post-its.
-- **Offline-first:** todos os dados ficam em SQLite local. Não há conta e o app
-  continua totalmente utilizável sem servidor.
-- **Sincronização opcional:** pareamento por QR/código, token por dispositivo,
-  sync manual/automático, cópias de conflito e revisão dos dados local/remoto
-  antes de aplicar.
+- **Agenda visual:** modos dia, 4 dias e semana em retrato; semana, 2 semanas e
+  mês em paisagem; eventos multi-dia; arraste, redimensionamento, reordenação e
+  criação rápida; conclusão por ocorrência e divisão da série quando um item
+  recorrente muda de dia.
+- **Tarefas e Caixinha:** estados ativa/concluída/cancelada, itens sem data,
+  busca, filtros, ordenação e tags compartilhadas.
+- **Notas:** Markdown ou checklists, prévia renderizada, seleção de linhas,
+  snapshots e vínculos vivos entre notas e post-its.
+- **Rotinas:** listas semanais simples ou cards completos com faixas de horário e
+  uma tarefa por intervalo; conclusão por dia, lembretes, histórico de execução e
+  dashboard de progresso.
+- **Notificações locais:** resumo diário e lembretes de itens/rotinas no Android,
+  agendados sem internet.
+- **Offline-first:** não exige conta e continua totalmente utilizável sem
+  servidor.
+- **Sincronização opcional:** pareamento por QR ou código, token por dispositivo,
+  sincronização manual/automática, cópias de conflito e revisão local/remota antes
+  de substituir dados.
 - **Backup:** exportação JSON versionada com checksum, importação transacional e
-  snapshots automáticos.
-- **Configurações:** tema claro/escuro/sistema, seis paletas, português/inglês,
-  animações, manter tela ligada e dicas de gestos.
-- **Página web administrativa:** QR de pareamento ao vivo, renomear/revogar
-  dispositivos e interface português/inglês, servida pelo servidor opcional.
+  snapshot verificado antes de cada importação.
+- **Interface adaptativa:** layouts para toque e para mouse/teclado, seis paletas,
+  tema claro/escuro/sistema e português/inglês.
+
+## Plataformas
+
+| Plataforma | Alvo | Observações |
+| --- | --- | --- |
+| Android | 7.0+ (`minSdk 24`) | APK; notificações, pareamento por QR e sync periódico usam APIs Android |
+| Windows | 10/11 x64 | ZIP portátil; atalhos e interações de mouse |
+| Linux | x64 com GTK 3 | Bundle/`.deb`; pareamento por código manual; token seguro exige Secret Service |
 
 ## Stack
 
-- Flutter / Dart; SDK Android, toolchain C++ do Windows e GTK 3 no Linux.
-- Drift + SQLite (esquema v13, migrações v1 → v13). O mesmo esquema é usado no
-  Android, Windows e Linux; no desktop os dados ficam no diretório de suporte de
-  cada plataforma.
-- Servidor de sincronização opcional em Dart/shelf + SQLite, com imagens Docker
-  prontas: [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
+- Flutter/Dart com interface adaptativa em Material 3.
+- Drift + SQLite, esquema v13, migrações desde a v1.
+- Servidor de sincronização opcional em Dart/shelf + SQLite:
+  [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
 - Tokens de dispositivo guardados com `flutter_secure_storage`.
 
-## Principais comandos
+## Início rápido
 
 ```bash
 flutter pub get
-dart run build_runner build
+dart run build_runner build        # apenas após mudanças de esquema/tabelas
 flutter analyze
 flutter test
-flutter build apk --release --split-per-abi
-flutter build apk --release   # APK universal
-
-# Desktop (executar em cada sistema-alvo)
-pwsh -File scripts/build_windows.ps1      # Windows x64 + ZIP portátil
-bash scripts/build_linux.sh               # bundle + .deb (+ AppImage)
+flutter run
 ```
 
-O servidor de sincronização fica no repositório separado
-**[stick2server](https://github.com/MikeMequis1/stick2server)**, com Docker
-Compose e imagem `latest`.
+Builds de release:
 
-Para configuração do servidor, pareamento e deploy, consulte
-[`docs/SINCRONIZACAO.pt-BR.md`](docs/SINCRONIZACAO.pt-BR.md) e o
-[README do stick2server](https://github.com/MikeMequis1/stick2server#readme).
+```bash
+flutter build apk --release --split-per-abi
+pwsh -File scripts/build_windows.ps1     # Windows
+bash scripts/build_linux.sh              # Linux
+```
+
+Requisitos completos, empacotamento e particularidades de cada plataforma estão
+em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Documentação
 
-- [docs/PROGRESSO.pt-BR.md](docs/PROGRESSO.pt-BR.md) — histórico de desenvolvimento.
-- [docs/DECISOES.pt-BR.md](docs/DECISOES.pt-BR.md) — arquitetura e decisões técnicas.
-- [docs/QUALIDADE.pt-BR.md](docs/QUALIDADE.pt-BR.md) — matriz de validação e limitações.
-- [docs/DESKTOP.pt-BR.md](docs/DESKTOP.pt-BR.md) — requisitos Windows/Linux,
-  empacotamento, diretórios de dados e limitações do desktop.
-- [docs/SINCRONIZACAO.pt-BR.md](docs/SINCRONIZACAO.pt-BR.md) — conexão, pareamento e sync.
-- [stick2server](https://github.com/MikeMequis1/stick2server) — servidor de sync,
-  API e deploy.
-- [docs/validacao/](docs/validacao/) — evidências visuais no aparelho.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — camadas, modelo de dados,
+  persistência local, offline-first e arquitetura de sincronização.
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — ambiente, geração de código,
+  testes, builds, scripts e configuração por plataforma.
+- [`docs/SYNC.md`](docs/SYNC.md) — integração com o Stick2Server, pareamento,
+  sincronização, conflitos e diagnóstico.
+- [`docs/QUALITY.md`](docs/QUALITY.md) — estratégia de testes, resultados atuais,
+  validação manual e limitações conhecidas.
+- [Stick2Server](https://github.com/MikeMequis1/stick2server) — configuração do
+  servidor, API, imagens Docker e deploy.
 
-## Requisitos
+## Dados e privacidade
 
-- Android 7.0 ou superior; Windows 10/11 x64; ou desktop Linux x64 com GTK 3.
-- Build Windows: Visual Studio com "Desenvolvimento para desktop com C++" e Modo
-  de Desenvolvedor do Windows (symlinks de plugins do Flutter).
-- Build Linux: `clang`, `cmake`, `ninja-build`, `pkg-config`, `libgtk-3-dev`,
-  `libsecret-1-dev`, `dpkg-dev`; `appimagetool` para o AppImage opcional.
-- Servidor de sync opcional: Dart 3.13+ ou Docker Compose, acessível por LAN, VPN
-  ou proxy reverso com HTTPS.
+Todos os dados do planner ficam em `planner.sqlite`, no diretório de suporte de
+cada plataforma. Tokens de sincronização ficam no armazenamento seguro e nunca
+são gravados em backups, logs ou no banco. O acesso à internet existe apenas para
+a sincronização opcional.
 
-O identificador do aplicativo é `com.mikemequis1.planner`; alterá-lo cria um novo
-app e não migra os dados locais existentes. O Linux usa esse identificador no
-diretório de dados; o Windows mantém os metadados existentes do `Runner.rc`
-(`com.example`) para não mover dados já gravados em `%APPDATA%`. Consulte
-[`docs/DESKTOP.pt-BR.md`](docs/DESKTOP.pt-BR.md).
+Identificador do aplicativo: `com.mikemequis1.planner`. O Linux usa esse
+identificador no diretório de dados; o Windows mantém os metadados legados
+`com.example` para não mover dados existentes em `%APPDATA%`. Consulte
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#9-data-locations).

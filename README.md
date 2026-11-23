@@ -2,121 +2,109 @@
 
 # Stick2Planner
 
-Offline-first visual planner for Android, Windows and Linux. Calendar, inbox and
-Markdown notes stay on the device in SQLite; synchronization with your own server
-is optional.
+Stick2Planner is an offline-first visual planner for Android, Windows and Linux.
+Calendar, tasks, routines and Markdown notes live in a local SQLite database;
+synchronization with a self-hosted server is optional.
 
 Source code: [github.com/MikeMequis1/Stick2Planner](https://github.com/MikeMequis1/Stick2Planner)
 
 ## Download
 
-Latest APK: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**.
+Latest release: **[GitHub Releases](https://github.com/MikeMequis1/Stick2Planner/releases/latest)**
 
-- `Stick2Planner-*-arm64.apk` — recommended for most phones and tablets.
+- `Stick2Planner-*-arm64.apk` — Android 7.0+ (`minSdk 24`); recommended for most
+  phones and tablets.
 - `Stick2Planner-*-universal.apk` — fallback for other Android devices.
-- `Stick2Planner-*-windows-x64.zip` — portable desktop build for Windows 10/11.
-- `Stick2Planner-*-linux-x64.tar.gz` / `stick2planner_*_amd64.deb` — Linux
-  desktop bundle and Debian package (AppImage when published).
-- Android 7.0+ (`minSdk 24`). No Play Store account is required.
+- `Stick2Planner-*-windows-x64.zip` — portable Windows 10/11 x64 build. The
+  optional MSIX in the same release is unsigned and must be signed before normal
+  installation.
+- Linux x64 builds are produced locally with `scripts/build_linux.sh`
+  (tar.gz + `.deb`, AppImage when `appimagetool` is available). Linux artifacts
+  are not published in the current release yet.
 
-## Features
+## What it does
 
-- **Calendar:** day, 4-day, week, 2-week and month views; multi-day events;
-  drag, resize, reorder and quick create; anchored 4-day window; past days use a
-  discreet muted tint.
-- **Event recurrence:** daily, every N weeks, every N months or yearly, with an
-  optional end date; each occurrence can be completed or cancelled individually
-  or the whole series at once.
-- **Event time:** optional start time, always visible on the event bar, without
-  replacing event dates or internal timestamps.
-- **Feat:** positive-moment events use a pencil icon and a short contextual
-  explanation. They are single-day records without tags, duration or recurrence;
-  completion and resize actions are intentionally unavailable.
-- **Tags:** shared tags for events and tasks, with palette-based colors, tag
-  management, multi-tag filtering in the Inbox and sync/backup support.
-- **Inbox:** search, status filters, tag filters, sorting and undated post-its.
-- **Routines:** simple weekly checklist or complete cards with start/end times,
-  free intermediate times and one task per interval. Per-day completion,
-  drag-and-drop reordering, element-level conflict merging, local reminders with
-  a completion action, a progress dashboard and JSON backup.
-- **Notifications:** optional daily summary and per-item reminders (minutes
-  before), scheduled locally on Android without internet.
-- **Navigation:** adaptive single rail in landscape/desktop (Config/Sync at the
-  bottom) and an evenly distributed bottom bar in portrait. Desktop adds
-  keyboard shortcuts (`Ctrl+1…4`, `Ctrl+Tab`, `Ctrl+N`, `Ctrl+,`, `Ctrl+S`,
-  `Ctrl+←/→`, `Alt+←/→`, `F1`) and immediate mouse dragging. Right-click opens
-  context menus; checklist rows support Ctrl/Shift+click selection.
-- **Notes:** Markdown rendering, checklists, line selection, snapshots and live
-  links between notes and post-its.
-- **Offline first:** all data is stored locally in SQLite. No account is
-  required, and the app remains fully usable without a server.
-- **Optional sync:** device pairing by QR code or text code, per-device tokens,
-  manual/automatic sync, conflict copies and a local/remote data review before
-  applying changes.
-- **Backup:** versioned JSON export with checksum, transactional import and
-  automatic snapshots.
-- **Settings:** light/dark/system theme, six color palettes, Portuguese/English,
-  animations, screen wake lock and gesture hints.
-- **Admin web page:** live pairing QR, device rename/revoke and Portuguese/English
-  UI, served by the optional sync server.
+- **Visual calendar:** day, 4-day and week modes in portrait; week, 2-week and
+  month in landscape; multi-day events; drag, resize, reorder and quick
+  creation; per-occurrence completion and series splitting when a recurring item
+  moves.
+- **Tasks and Inbox:** active/done/cancelled states, undated items, search,
+  filters, sorting and shared tags.
+- **Notes:** Markdown or checklists, rendered preview, line selection, snapshots
+  and live links between notes and post-its.
+- **Routines:** simple weekly checklists or complete cards with time blocks and
+  one task per interval; per-day completion, reminders, execution history and a
+  progress dashboard.
+- **Local notifications:** daily summary and per-item/routine reminders on
+  Android, scheduled without an internet connection.
+- **Offline first:** no account required; the app remains fully usable without a
+  server.
+- **Optional sync:** pairing by QR code or text code, per-device tokens,
+  manual/automatic synchronization, conflict copies and a local/remote review
+  before replacing data.
+- **Backup:** versioned JSON export with checksum, transactional import and a
+  verified snapshot before each import.
+- **Adaptive UI:** touch and mouse/keyboard layouts, six palettes, light/dark/
+  system theme and Portuguese/English.
+
+## Platforms
+
+| Platform | Target | Notes |
+| --- | --- | --- |
+| Android | 7.0+ (`minSdk 24`) | APK; notifications, QR pairing and periodic sync use Android APIs |
+| Windows | 10/11 x64 | Portable ZIP; desktop shortcuts and mouse interactions |
+| Linux | x64 with GTK 3 | Bundle/`.deb`; QR pairing uses the manual code; secure tokens need Secret Service |
 
 ## Tech stack
 
-- Flutter / Dart; Android SDK, Windows desktop C++ toolchain and Linux GTK 3.
-- Drift + SQLite (schema v13, migrations v1 → v13). The same schema is used on
-  Android, Windows and Linux; desktop data lives in each platform's application
-  support directory.
-- Optional sync server in Dart/shelf + SQLite, with prebuilt Docker images:
+- Flutter/Dart with an adaptive Material 3 interface.
+- Drift + SQLite, schema v13, migrations from v1 onwards.
+- Optional sync server in Dart/shelf + SQLite:
   [MikeMequis1/stick2server](https://github.com/MikeMequis1/stick2server).
-- Secure device tokens stored with `flutter_secure_storage`.
+- Device tokens stored with `flutter_secure_storage`.
 
-## Main commands
+## Quick start
 
 ```bash
 flutter pub get
-dart run build_runner build
+dart run build_runner build        # only after schema/table changes
 flutter analyze
 flutter test
-flutter build apk --release --split-per-abi
-flutter build apk --release   # universal APK
-
-# Desktop (run on each target OS)
-pwsh -File scripts/build_windows.ps1      # Windows x64 + portable ZIP
-bash scripts/build_linux.sh               # bundle + .deb (+ AppImage)
+flutter run
 ```
 
-Sync server lives in the separate
-**[stick2server](https://github.com/MikeMequis1/stick2server)** repository,
-including Docker Compose and the `latest` image.
+Release builds:
 
-For server configuration, pairing and deployment details, see
-[`docs/SYNC.md`](docs/SYNC.md) and the
-[stick2server README](https://github.com/MikeMequis1/stick2server#readme).
+```bash
+flutter build apk --release --split-per-abi
+pwsh -File scripts/build_windows.ps1     # Windows
+bash scripts/build_linux.sh              # Linux
+```
+
+Full requirements, packaging details and platform caveats are in
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Documentation
 
-- [docs/PROGRESS.md](docs/PROGRESS.md) — development history.
-- [docs/DECISIONS.md](docs/DECISIONS.md) — architecture and technical decisions.
-- [docs/QUALITY.md](docs/QUALITY.md) — validation matrix and limitations.
-- [docs/DESKTOP.md](docs/DESKTOP.md) — Windows/Linux requirements, packaging,
-  data locations and desktop limitations.
-- [docs/SYNC.md](docs/SYNC.md) — connection, pairing and sync.
-- [stick2server](https://github.com/MikeMequis1/stick2server) — sync server, API
-  and deployment.
-- [docs/validacao/](docs/validacao/) — device validation screenshots.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — layers, data model, local
+  persistence, offline-first design and sync architecture.
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — environment, code generation,
+  tests, builds, scripts and platform-specific setup.
+- [`docs/SYNC.md`](docs/SYNC.md) — Stick2Server integration, pairing,
+  synchronization, conflicts and diagnostics.
+- [`docs/QUALITY.md`](docs/QUALITY.md) — test strategy, current results, manual
+  validation and known limitations.
+- [Stick2Server](https://github.com/MikeMequis1/stick2server) — server setup,
+  API, Docker images and deployment.
 
-## Requirements
+## Data and privacy
 
-- Android 7.0 or newer; Windows 10/11 x64; or a Linux x64 desktop with GTK 3.
-- Windows build: Visual Studio "Desktop development with C++" and Windows
-  Developer Mode (Flutter plugin symlinks).
-- Linux build: `clang`, `cmake`, `ninja-build`, `pkg-config`, `libgtk-3-dev`,
-  `libsecret-1-dev`, `dpkg-dev`; `appimagetool` for the optional AppImage.
-- Optional sync server: Dart 3.13+ or Docker Compose, reachable over LAN, VPN or a
-  reverse proxy with HTTPS.
+All planner data is stored locally in `planner.sqlite` inside the platform's
+application support directory. Sync tokens are kept in secure storage and are
+never written to backups, logs or the database. The app requests internet
+access only for optional synchronization.
 
-The application identifier is `com.mikemequis1.planner`; changing it creates a
-new app and does not migrate existing local data. Linux uses that identifier for
-its data directory; Windows keeps the existing `Runner.rc` company metadata
-(`com.example`) so current `%APPDATA%` data is not moved. See
-[`docs/DESKTOP.md`](docs/DESKTOP.md).
+Application identifier: `com.mikemequis1.planner`. Linux uses it for the data
+directory; Windows keeps the legacy `com.example` company metadata so existing
+`%APPDATA%` data is not moved. See
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md#9-data-locations).
