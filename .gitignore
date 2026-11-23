@@ -39,6 +39,10 @@ migrate_working_dir/
 /server/
 *.s2p.json
 
+# Local validation captures and site drafts (not part of the app repository)
+/docs/validacao/
+/SITE_CONTENT.md
+
 # Symbolication related
 app.*.symbols
 

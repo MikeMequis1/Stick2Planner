@@ -331,8 +331,6 @@ pipeline.
 - `docs/DEVELOPMENT.md`: this file; setup, tests, builds and platform notes.
 - `docs/SYNC.md`: server integration and diagnostics.
 - `docs/QUALITY.md`: test results, manual validation and limitations.
-- `SITE_CONTENT.md`: explanatory material for the future project page; not part
-  of the repository's technical documentation.
 
 Update the affected document in the same change. Do not add another file for a
 topic that already has a canonical home.

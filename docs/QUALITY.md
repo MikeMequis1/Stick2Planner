@@ -211,10 +211,10 @@ substitute for the remaining manual matrix.
   a physical device in the recorded rounds.
 - No manual validation of TalkBack, stylus, physical keyboard, sustained
   multi-touch, or every desktop keyring.
-- Screenshots in `docs/validacao/` date from 2026-11-03 and predate tags,
-  routines, notifications, desktop support and the continuous carousel. They are
-  historical evidence, not a current UI reference. One month-view capture also
-  contains a personal messaging notification overlay and must not be published.
+- Local validation captures live in the ignored `docs/validacao/` folder and are
+  not part of the remote repository. They are historical evidence, not a current
+  UI reference; one capture contains a personal notification and must not be
+  published.
 - The code comment at the top of `lib/data/db/app_database.dart` still describes
   schema v5 even though `schemaVersion` is 13; this is a code comment awaiting a
   code change, not a behavioral issue.
