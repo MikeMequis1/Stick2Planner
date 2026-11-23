@@ -14,6 +14,7 @@ import 'day_cell.dart';
 import 'event_bar.dart';
 import 'post_it_context_menu.dart';
 import 'post_it_drag_data.dart';
+import 'post_it_presentation.dart';
 
 /// Linha da grade: faixa de eventos multi-dia + células de dia.
 ///
@@ -310,6 +311,7 @@ class _WeekRowState extends State<WeekRow> {
     required double barGap,
   }) {
     final postIt = segment.postIt;
+    final tag = postItPrimaryTag(context, postIt);
     final recurring = postIt.isRecurringEvent;
     final resizable = !recurring && !postIt.isHighlight;
     final activeResize = _resize;
@@ -343,6 +345,7 @@ class _WeekRowState extends State<WeekRow> {
             : 'event-bar-${postIt.id}-${widget.week.start.toIso8601String()}',
       ),
       postIt: postIt,
+      tag: tag,
       isFocused: widget.focusedPostItId == postIt.id,
       continuesBefore: segment.continuesBefore,
       continuesAfter: segment.continuesAfter,
@@ -392,6 +395,7 @@ class _WeekRowState extends State<WeekRow> {
                       height: barHeight,
                       child: EventBar(
                         postIt: postIt,
+                        tag: tag,
                         continuesBefore: false,
                         continuesAfter: false,
                         showTitle: true,

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_scope.dart';
 import '../../../app/app_strings.dart';
 import '../../../core/date_formatting.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../../domain/entities/tag.dart';
+import '../../tags/tag_presentation.dart';
 
 String postItTypeLabel(PostIt postIt) {
   if (postIt.isHighlight) return AppStrings.highlightType;
@@ -47,8 +50,9 @@ IconData postItIcon(PostIt postIt) {
 
 ({Color background, Color foreground}) postItColors(
   PostIt postIt,
-  ColorScheme scheme,
-) {
+  ColorScheme scheme, {
+  Tag? tag,
+}) {
   if (postIt.status != PostItStatus.active) {
     return (
       background: scheme.surfaceContainerHighest,
@@ -60,6 +64,10 @@ IconData postItIcon(PostIt postIt) {
       background: scheme.tertiaryContainer,
       foreground: scheme.onTertiaryContainer,
     );
+  }
+  if (postIt.isEvent && tag != null) {
+    final tagColors = tagToneColors(tag.tone, scheme);
+    return (background: tagColors.background, foreground: tagColors.foreground);
   }
   return switch (postIt.type) {
     PostItType.task => (
@@ -75,6 +83,20 @@ IconData postItIcon(PostIt postIt) {
       foreground: scheme.onPrimaryContainer,
     ),
   };
+}
+
+/// Primeira tag existente de um evento, na ordem em que foi associada.
+///
+/// Tarefas mantêm a cor do tipo; apenas eventos usam a cor da tag.
+Tag? postItPrimaryTag(BuildContext context, PostIt postIt) {
+  if (!postIt.isEvent || postIt.tagIds.isEmpty) return null;
+  final tags = AppScope.maybeOf(context)?.tags;
+  if (tags == null) return null;
+  for (final tagId in postIt.tagIds) {
+    final tag = tags.byId(tagId);
+    if (tag != null) return tag;
+  }
+  return null;
 }
 
 String postItSemanticLabel(PostIt postIt) {

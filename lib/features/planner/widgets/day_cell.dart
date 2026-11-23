@@ -8,6 +8,7 @@ import '../../../core/date_formatting.dart';
 import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../../domain/entities/tag.dart';
 import '../../shared/desktop_context_menu.dart';
 import 'adaptive_draggable.dart';
 import 'day_preview_registry.dart';
@@ -97,13 +98,15 @@ class DayCell extends StatelessWidget {
               items: items,
               itemsFor: itemsFor,
               today: today,
+              isActive: isSelected,
               onTap: onTap,
+              onShowDay: onShowAll,
               onQuickCreateTask: onQuickCreateTask,
               onQuickCreateEvent: onQuickCreateEvent,
               child: Padding(
                 padding: const EdgeInsets.all(1.5),
                 child: AnimatedScale(
-                  scale: isDropTarget ? 1.04 : (isSelected ? 1.025 : 1),
+                  scale: isDropTarget ? 1.04 : 1,
                   duration: motion,
                   curve: Curves.easeOutCubic,
                   child: AnimatedContainer(
@@ -137,6 +140,7 @@ class DayCell extends StatelessWidget {
                                   alpha: isDropTarget ? 0.32 : 0.18,
                                 ),
                                 blurRadius: isDropTarget ? 16 : 10,
+                                blurStyle: BlurStyle.inner,
                               ),
                             ]
                           : const [],
@@ -222,7 +226,9 @@ class _DayTapRegion extends StatefulWidget {
     required this.items,
     required this.itemsFor,
     required this.today,
+    required this.isActive,
     required this.onTap,
+    required this.onShowDay,
     required this.onQuickCreateTask,
     required this.onQuickCreateEvent,
     required this.child,
@@ -232,7 +238,9 @@ class _DayTapRegion extends StatefulWidget {
   final List<PostIt> items;
   final DayItemsResolver itemsFor;
   final DateOnly today;
+  final bool isActive;
   final VoidCallback onTap;
+  final VoidCallback onShowDay;
   final ValueChanged<DateOnly> onQuickCreateTask;
   final ValueChanged<DateOnly> onQuickCreateEvent;
   final Widget child;
@@ -309,11 +317,23 @@ class _DayTapRegionState extends State<_DayTapRegion> {
 
   void _handleTapUp(TapUpDetails details) {
     _tapTimer?.cancel();
+    final wasActive = widget.isActive;
     _tapCount++;
     widget.onTap();
 
     if (widget.itemsFor(widget.date).isNotEmpty) {
-      _tapCount = 0;
+      if (_tapCount >= 3) {
+        _tapCount = 0;
+        return;
+      }
+      _tapTimer = Timer(_multiTapWindow, () {
+        if (!mounted) return;
+        final count = _tapCount;
+        _tapCount = 0;
+        if (count == 1 && wasActive && widget.isActive) {
+          widget.onShowDay();
+        }
+      });
       return;
     }
 
@@ -325,6 +345,7 @@ class _DayTapRegionState extends State<_DayTapRegion> {
     }
 
     _tapTimer = Timer(_multiTapWindow, () {
+      if (!mounted) return;
       final count = _tapCount;
       _tapCount = 0;
       if (count == 2) {
@@ -733,9 +754,11 @@ class _DraggableItem extends StatelessWidget {
       onWillAcceptWithDetails: (details) => details.data.postIt.id != postIt.id,
       onAcceptWithDetails: (details) => onReorderTo(details.data.postIt, index),
       builder: (context, candidateData, rejectedData) {
+        final tag = postItPrimaryTag(context, postIt);
         final tile = PostItTile(
           key: Key('post-it-${postIt.id}'),
           postIt: postIt,
+          tag: tag,
           compact: compact,
           isPostponed: isPostponed,
           isFocused: isFocused,
@@ -750,7 +773,7 @@ class _DraggableItem extends StatelessWidget {
           ),
           child: AdaptivePostItDraggable(
             data: PostItDragData(postIt),
-            feedback: _DragFeedback(postIt: postIt, compact: compact),
+            feedback: _DragFeedback(postIt: postIt, tag: tag, compact: compact),
             childWhenDragging: TweenAnimationBuilder<double>(
               tween: Tween(begin: 1, end: 0.35),
               duration: const Duration(milliseconds: 160),
@@ -777,10 +800,11 @@ class _DraggableItem extends StatelessWidget {
 }
 
 class _DragFeedback extends StatelessWidget {
-  const _DragFeedback({required this.postIt, required this.compact});
+  const _DragFeedback({required this.postIt, required this.compact, this.tag});
 
   final PostIt postIt;
   final bool compact;
+  final Tag? tag;
 
   @override
   Widget build(BuildContext context) {
@@ -797,7 +821,7 @@ class _DragFeedback extends StatelessWidget {
         child: SizedBox(
           width: 200,
           height: compact ? 26 : 52,
-          child: PostItTile(postIt: postIt, compact: compact),
+          child: PostItTile(postIt: postIt, tag: tag, compact: compact),
         ),
       ),
     );

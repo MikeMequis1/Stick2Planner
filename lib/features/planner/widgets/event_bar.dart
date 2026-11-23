@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/app_strings.dart';
 import '../../../core/date_formatting.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../../domain/entities/tag.dart';
 import 'post_it_presentation.dart';
 
 /// Barra contínua de um evento multi-dia dentro de uma linha da grade.
@@ -17,6 +18,7 @@ class EventBar extends StatefulWidget {
     required this.continuesAfter,
     required this.showTitle,
     required this.compact,
+    this.tag,
     this.onTap,
     this.isFocused = false,
   });
@@ -24,6 +26,12 @@ class EventBar extends StatefulWidget {
   final PostIt postIt;
   final bool continuesBefore;
   final bool continuesAfter;
+
+  /// Tag usada para a cor do evento, quando houver.
+  ///
+  /// O feedback de arraste é montado no overlay; receber a tag evita depender
+  /// do `AppScope` nesse contexto.
+  final Tag? tag;
 
   /// Falso em segmentos de continuação cujo início já apareceu no período;
   /// evita repetir o mesmo conteúdo em outra linha.
@@ -50,7 +58,11 @@ class _EventBarState extends State<EventBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final postIt = widget.postIt;
-    final colors = postItColors(postIt, theme.colorScheme);
+    final colors = postItColors(
+      postIt,
+      theme.colorScheme,
+      tag: widget.tag ?? postItPrimaryTag(context, postIt),
+    );
     final isResolved = postIt.status != PostItStatus.active;
     final motion = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero

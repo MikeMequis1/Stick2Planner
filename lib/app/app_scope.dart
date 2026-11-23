@@ -47,6 +47,9 @@ class AppScope extends InheritedWidget {
     return scope!;
   }
 
+  static AppScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AppScope>();
+
   Future<void> refreshNotifications() async {
     await notifications.setEnabled(settings.notificationsEnabled);
     await notifications.sync(

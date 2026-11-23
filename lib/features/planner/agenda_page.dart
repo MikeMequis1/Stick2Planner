@@ -108,7 +108,12 @@ class _AgendaPageState extends State<AgendaPage>
     final settings = app.settings;
 
     return ListenableBuilder(
-      listenable: Listenable.merge([planner, app.navigation, settings]),
+      listenable: Listenable.merge([
+        planner,
+        app.navigation,
+        settings,
+        app.tags,
+      ]),
       builder: (context, _) => _buildContent(context, planner, settings),
     );
   }
@@ -390,20 +395,8 @@ class _AgendaPageState extends State<AgendaPage>
     );
   }
 
-  void _selectDay(
-    BuildContext context,
-    PlannerController planner,
-    DateOnly date,
-  ) {
+  void _selectDay(PlannerController planner, DateOnly date) {
     planner.selectDate(date);
-    final items = planner.postItsOn(date);
-    if (items.isEmpty) return;
-    showDayDetailsSheet(
-      context,
-      date: date,
-      postIts: items,
-      onPostItSelected: (postIt) => _openDetails(context, planner, postIt),
-    );
   }
 
   Future<void> _handleMove(
@@ -531,7 +524,7 @@ class _AgendaPageState extends State<AgendaPage>
       postIts: postIts,
       today: planner.today,
       selectedDate: period.selectedDate,
-      onDaySelected: (date) => _selectDay(context, planner, date),
+      onDaySelected: (date) => _selectDay(planner, date),
       onPostItTap: (postIt) => _openDetails(context, planner, postIt),
       onShowDay: (date) => showDayDetailsSheet(
         context,

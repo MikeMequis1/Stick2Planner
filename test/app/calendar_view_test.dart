@@ -6,6 +6,7 @@ import 'package:stick2planner/app/planner_view_mode.dart';
 import 'package:stick2planner/core/date_formatting.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/domain/entities/tag.dart';
 import 'package:stick2planner/features/planner/widgets/calendar_grid.dart';
 import 'package:stick2planner/features/planner/widgets/day_cell.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,6 +81,72 @@ void main() {
     expect(find.text('Viagem'), findsOneWidget);
     expect(find.byKey(const ValueKey('post-it-e1')), findsNothing);
     expect(find.byKey(const ValueKey('post-it-t1')), findsOneWidget);
+  });
+
+  testWidgets('evento usa a cor da sua tag na agenda e na Caixinha', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dependencies = testDependencies(now: DateTime(2026, 11, 4, 12));
+    await dependencies.initialize();
+    addTearDown(dependencies.dispose);
+
+    final tag = await dependencies.tags.create(
+      name: 'Casa',
+      tone: TagTone.tertiary,
+    );
+    final event = await dependencies.planner.createPostIt(
+      title: 'Viagem',
+      type: PostItType.event,
+      startDate: DateOnly(2026, 11, 4),
+      endDate: DateOnly(2026, 11, 6),
+      tagIds: [tag.id],
+    );
+    final task = await dependencies.planner.createPostIt(
+      title: 'Compras',
+      type: PostItType.task,
+      startDate: DateOnly(2026, 11, 4),
+      tagIds: [tag.id],
+    );
+
+    await tester.pumpWidget(PlannerApp(dependencies: dependencies));
+    await tester.pumpAndSettle();
+
+    Color materialColor(Finder finder) => tester
+        .widget<Material>(
+          find.descendant(of: finder, matching: find.byType(Material)).first,
+        )
+        .color!;
+
+    final bar = find.byKey(ValueKey('event-bar-${event.id}-2026-11-02'));
+    expect(bar, findsOneWidget);
+    final scheme = Theme.of(tester.element(bar)).colorScheme;
+    expect(materialColor(bar), scheme.tertiaryContainer);
+
+    await dependencies.tags.update(tag, name: 'Casa', tone: TagTone.primary);
+    await tester.pumpAndSettle();
+    expect(materialColor(bar), scheme.primaryContainer);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationRail),
+        matching: find.text(AppStrings.inbox),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      materialColor(find.byKey(Key('inbox-postit-${event.id}'))),
+      scheme.primaryContainer,
+    );
+    expect(
+      materialColor(find.byKey(Key('inbox-postit-${task.id}'))),
+      scheme.surfaceContainerHigh,
+    );
   });
 
   testWidgets('evento entre semanas não repete o título', (tester) async {
@@ -293,6 +360,24 @@ void main() {
 
     expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
     expect(find.text('2 – 8 nov 2026'), findsOneWidget);
+  });
+
+  testWidgets('destaque do dia ativo não estoura o recorte inferior', (
+    tester,
+  ) async {
+    await pumpPlanner(tester, size: const Size(1280, 800));
+    final day = find.byKey(const Key('day-2026-11-04'));
+    final scale = tester.widget<AnimatedScale>(
+      find.descendant(of: day, matching: find.byType(AnimatedScale)).first,
+    );
+    expect(scale.scale, 1);
+
+    final container = tester.widget<AnimatedContainer>(
+      find.descendant(of: day, matching: find.byType(AnimatedContainer)).first,
+    );
+    final decoration = container.decoration! as BoxDecoration;
+    expect(decoration.boxShadow, isNotEmpty);
+    expect(decoration.boxShadow!.single.blurStyle, BlurStyle.inner);
   });
 
   testWidgets('dois toques criam tarefa e três criam evento', (tester) async {
@@ -750,8 +835,10 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('toque único no dia abre o popup com os eventos', (tester) async {
-    await pumpPlanner(
+  testWidgets('dia com conteúdo só abre a listagem no segundo toque', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
       tester,
       size: const Size(1280, 800),
       postIts: [
@@ -759,18 +846,27 @@ void main() {
           id: 'tap1',
           title: 'Evento do dia',
           type: PostItType.event,
-          startDate: DateOnly(2026, 11, 4),
+          startDate: DateOnly(2026, 11, 5),
           timeMinutes: 9 * 60,
         ),
         buildPostIt(
           id: 'tap2',
           title: 'Tarefa do dia',
-          startDate: DateOnly(2026, 11, 4),
+          startDate: DateOnly(2026, 11, 5),
         ),
       ],
     );
+    final day = find.byKey(const Key('day-2026-11-05'));
 
-    await tester.tap(find.byKey(const Key('day-2026-11-04')));
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
@@ -778,16 +874,109 @@ void main() {
     expect(find.text('Tarefa do dia'), findsWidgets);
   });
 
-  testWidgets('dia sem eventos só seleciona e não abre lista vazia', (
+  testWidgets('dois toques em dia ativo com conteúdo não abrem a listagem', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'double1',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final day = find.byKey(const Key('day-2026-11-04'));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+  });
+
+  testWidgets('três toques em dia ativo com conteúdo não abrem a listagem', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'triple1',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final day = find.byKey(const Key('day-2026-11-04'));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+  });
+
+  testWidgets('dia vazio não abre listagem mesmo depois de selecionado', (
     tester,
   ) async {
     final dependencies = await pumpPlanner(tester, size: const Size(1280, 800));
+    final day = find.byKey(const Key('day-2026-11-05'));
 
-    await tester.tap(find.byKey(const Key('day-2026-11-05')));
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('day-details-sheet')), findsNothing);
     expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+  });
+
+  testWidgets('toque em dia ativo com conteúdo abre e reabre a lista', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'active1',
+          title: 'Compromisso ativo',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final day = find.byKey(const Key('day-2026-11-04'));
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+    expect(find.text('Compromisso ativo'), findsWidgets);
   });
 
   testWidgets('toque em post-it não abre o popup do dia', (tester) async {

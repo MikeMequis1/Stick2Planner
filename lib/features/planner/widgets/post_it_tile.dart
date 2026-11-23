@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/app_strings.dart';
 import '../../../core/date_formatting.dart';
 import '../../../domain/entities/post_it.dart';
+import '../../../domain/entities/tag.dart';
 import 'post_it_presentation.dart';
 
 /// Cartão compacto de um post-it dentro de uma célula de dia.
@@ -11,6 +12,7 @@ class PostItTile extends StatefulWidget {
     super.key,
     required this.postIt,
     required this.compact,
+    this.tag,
     this.onTap,
     this.onLongPress,
     this.isPostponed = false,
@@ -19,6 +21,9 @@ class PostItTile extends StatefulWidget {
 
   final PostIt postIt;
   final bool compact;
+
+  /// Tag usada para a cor do evento, quando houver.
+  final Tag? tag;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -45,7 +50,11 @@ class _PostItTileState extends State<PostItTile> {
     final theme = Theme.of(context);
     final postIt = widget.postIt;
     final compact = widget.compact;
-    final colors = postItColors(postIt, theme.colorScheme);
+    final colors = postItColors(
+      postIt,
+      theme.colorScheme,
+      tag: widget.tag ?? postItPrimaryTag(context, postIt),
+    );
     final isResolved = postIt.status != PostItStatus.active;
     final motion = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
