@@ -318,6 +318,17 @@ abstract final class AppStrings {
   static String get eventTime => _t('Horário', 'Time');
   static String get eventTimeAdd => _t('Adicionar horário', 'Add time');
   static String get eventTimeClear => _t('Remover horário', 'Remove time');
+  static String get timeConflictTitle =>
+      _t('Conflito de horário', 'Time conflict');
+  static String get timeConflictBadge =>
+      _t('Conflito de horário', 'Time conflict');
+  static String get timeConflictWarning => _t(
+    'Já existe um post-it neste horário:',
+    'A post-it already exists at this time:',
+  );
+  static String get timeConflictSaveHelp =>
+      _t('Salvar mesmo assim?', 'Save anyway?');
+  static String get timeConflictSave => _t('Salvar mesmo assim', 'Save anyway');
   static String get eventTimeHelp => _t(
     'Opcional, exibido no post-it do evento.',
     'Optional, shown on the event post-it.',

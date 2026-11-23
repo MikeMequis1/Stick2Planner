@@ -7,6 +7,7 @@ import '../../../core/date_only.dart';
 import '../../../domain/calendar/calendar_period.dart';
 import '../../../domain/entities/post_it.dart';
 import 'day_preview_registry.dart';
+import 'day_tap_coordinator.dart';
 import 'week_row.dart';
 
 /// Grade completa do período visível.
@@ -55,6 +56,13 @@ class CalendarGrid extends StatefulWidget {
 
 class _CalendarGridState extends State<CalendarGrid> {
   final DayPreviewRegistry _previewRegistry = DayPreviewRegistry();
+  final DayTapCoordinator _dayTapCoordinator = DayTapCoordinator();
+
+  @override
+  void dispose() {
+    _dayTapCoordinator.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,49 +91,58 @@ class _CalendarGridState extends State<CalendarGrid> {
 
         final content = SizedBox(
           height: height,
-          child: DayPreviewScope(
-            registry: _previewRegistry,
-            child: Column(
-              children: [
-                _WeekdayHeader(
-                  days: period.weeks.first.days,
-                  compact: period.isMonth,
-                ),
-                const SizedBox(height: 6),
-                Expanded(
-                  child: Column(
-                    children: [
-                      for (var index = 0; index < period.weeks.length; index++)
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              bottom: index == period.weeks.length - 1 ? 0 : 6,
-                            ),
-                            child: WeekRow(
-                              week: period.weeks[index],
-                              periodStart: period.start,
-                              postIts: postIts,
-                              today: today,
-                              selectedDate: selectedDate,
-                              compact: period.isMonth,
-                              onDaySelected: onDaySelected,
-                              onPostItTap: onPostItTap,
-                              onShowDay: onShowDay,
-                              onMovePostIt: onMovePostIt,
-                              onReorderTo: onReorderTo,
-                              onResizeEvent: onResizeEvent,
-                              onShowHiddenEvents: onShowHiddenEvents,
-                              onQuickCreateTask: onQuickCreateTask,
-                              onQuickCreateEvent: onQuickCreateEvent,
-                              focusedPostItId: focusedPostItId,
-                              onEventDragActive: onEventDragActive,
+          child: DayTapScope(
+            coordinator: _dayTapCoordinator,
+            child: DayPreviewScope(
+              registry: _previewRegistry,
+              child: Column(
+                children: [
+                  _WeekdayHeader(
+                    days: period.weeks.first.days,
+                    compact: period.isMonth,
+                  ),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < period.weeks.length;
+                          index++
+                        )
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index == period.weeks.length - 1
+                                    ? 0
+                                    : 6,
+                              ),
+                              child: WeekRow(
+                                week: period.weeks[index],
+                                periodStart: period.start,
+                                postIts: postIts,
+                                today: today,
+                                selectedDate: selectedDate,
+                                compact: period.isMonth,
+                                onDaySelected: onDaySelected,
+                                onPostItTap: onPostItTap,
+                                onShowDay: onShowDay,
+                                onMovePostIt: onMovePostIt,
+                                onReorderTo: onReorderTo,
+                                onResizeEvent: onResizeEvent,
+                                onShowHiddenEvents: onShowHiddenEvents,
+                                onQuickCreateTask: onQuickCreateTask,
+                                onQuickCreateEvent: onQuickCreateEvent,
+                                focusedPostItId: focusedPostItId,
+                                onEventDragActive: onEventDragActive,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

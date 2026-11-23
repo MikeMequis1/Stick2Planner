@@ -874,59 +874,193 @@ void main() {
     expect(find.text('Tarefa do dia'), findsWidgets);
   });
 
-  testWidgets(
-    'dois toques em dia ativo com conteúdo abrem a listagem uma vez',
-    (tester) async {
-      await pumpPlanner(
-        tester,
-        size: const Size(1280, 800),
-        postIts: [
-          buildPostIt(
-            id: 'double1',
-            title: 'Compromisso',
-            startDate: DateOnly(2026, 11, 4),
-          ),
-        ],
-      );
-      final day = find.byKey(const Key('day-2026-11-04'));
+  testWidgets('dois toques em dia ativo com conteúdo criam tarefa', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'double1',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final day = find.byKey(const Key('day-2026-11-04'));
 
-      await tester.tap(day);
-      await tester.pump(const Duration(milliseconds: 80));
-      await tester.tap(day);
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
-    },
-  );
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(find.byType(ChoiceChip), findsWidgets);
+    final taskChip = tester.widget<ChoiceChip>(
+      find.ancestor(
+        of: find.text(AppStrings.taskType),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(taskChip.selected, isTrue);
+  });
 
-  testWidgets(
-    'três toques em dia ativo com conteúdo abrem a listagem uma vez',
-    (tester) async {
-      await pumpPlanner(
-        tester,
-        size: const Size(1280, 800),
-        postIts: [
-          buildPostIt(
-            id: 'triple1',
-            title: 'Compromisso',
-            startDate: DateOnly(2026, 11, 4),
-          ),
-        ],
-      );
-      final day = find.byKey(const Key('day-2026-11-04'));
+  testWidgets('três toques em dia ativo com conteúdo criam evento', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'triple1',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final day = find.byKey(const Key('day-2026-11-04'));
 
-      await tester.tap(day);
-      await tester.pump(const Duration(milliseconds: 80));
-      await tester.tap(day);
-      await tester.pump(const Duration(milliseconds: 80));
-      await tester.tap(day);
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
-    },
-  );
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(find.byType(ChoiceChip), findsWidgets);
+    final eventChip = tester.widget<ChoiceChip>(
+      find.ancestor(
+        of: find.text(AppStrings.eventType),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(eventChip.selected, isTrue);
+  });
+
+  testWidgets('toque único em post-it abre detalhes após a janela', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tile-delay',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('post-it-tile-delay')));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('details-edit')), findsOneWidget);
+  });
+
+  testWidgets('dois toques em post-it criam tarefa no dia', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tile-double',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final tile = find.byKey(const Key('post-it-tile-double'));
+
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('details-edit')), findsNothing);
+    expect(find.byType(ChoiceChip), findsWidgets);
+    final taskChip = tester.widget<ChoiceChip>(
+      find.ancestor(
+        of: find.text(AppStrings.taskType),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(taskChip.selected, isTrue);
+  });
+
+  testWidgets('três toques em post-it criam evento no dia', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tile-triple',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final tile = find.byKey(const Key('post-it-tile-triple'));
+
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('details-edit')), findsNothing);
+    expect(find.byType(ChoiceChip), findsWidgets);
+    final eventChip = tester.widget<ChoiceChip>(
+      find.ancestor(
+        of: find.text(AppStrings.eventType),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(eventChip.selected, isTrue);
+  });
+
+  testWidgets('alternar post-it e fundo do dia mantém a contagem', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'tile-mixed',
+          title: 'Compromisso',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+      ],
+    );
+    final tile = find.byKey(const Key('post-it-tile-mixed'));
+    final day = find.byKey(const Key('day-2026-11-04'));
+
+    await tester.tap(tile);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(day);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('details-edit')), findsNothing);
+    expect(find.byType(ChoiceChip), findsWidgets);
+    final taskChip = tester.widget<ChoiceChip>(
+      find.ancestor(
+        of: find.text(AppStrings.taskType),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    expect(taskChip.selected, isTrue);
+  });
 
   testWidgets('dia vazio não abre listagem mesmo depois de selecionado', (
     tester,
@@ -947,6 +1081,102 @@ void main() {
 
     expect(find.byKey(const Key('day-details-sheet')), findsNothing);
     expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+  });
+
+  testWidgets('trocar de data cancela a sequência pendente', (tester) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'day4',
+          title: 'Dia 4',
+          startDate: DateOnly(2026, 11, 4),
+        ),
+        buildPostIt(
+          id: 'day5',
+          title: 'Dia 5',
+          startDate: DateOnly(2026, 11, 5),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('day-2026-11-04')));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tap(find.byKey(const Key('day-2026-11-05')));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
+    expect(dependencies.planner.selectedDate, DateOnly(2026, 11, 5));
+  });
+
+  testWidgets('detalhes do dia marcam evento e tarefa no mesmo horário', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'conflict-event',
+          type: PostItType.event,
+          title: 'Reunião',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+        buildPostIt(
+          id: 'conflict-task',
+          title: 'Enviar proposta',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('day-2026-11-04')));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-time-conflict-banner')), findsOneWidget);
+    expect(
+      find.byKey(const Key('time-conflict-conflict-event')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('time-conflict-conflict-task')),
+      findsOneWidget,
+    );
+    expect(find.text('09:00 — Reunião, Enviar proposta'), findsOneWidget);
+  });
+
+  testWidgets('detalhes do dia não marcam horários diferentes', (tester) async {
+    await pumpPlanner(
+      tester,
+      size: const Size(1280, 800),
+      postIts: [
+        buildPostIt(
+          id: 'no-conflict-a',
+          type: PostItType.event,
+          title: 'Reunião',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+        buildPostIt(
+          id: 'no-conflict-b',
+          title: 'Enviar proposta',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 600,
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('day-2026-11-04')));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('day-time-conflict-banner')), findsNothing);
+    expect(find.byKey(const Key('time-conflict-no-conflict-a')), findsNothing);
   });
 
   testWidgets('toque em dia ativo com conteúdo abre e reabre a lista', (

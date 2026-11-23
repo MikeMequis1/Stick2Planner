@@ -12,6 +12,7 @@ import '../../../domain/entities/tag.dart';
 import '../../shared/desktop_context_menu.dart';
 import 'adaptive_draggable.dart';
 import 'day_preview_registry.dart';
+import 'day_tap_coordinator.dart';
 import 'post_it_context_menu.dart';
 import 'post_it_drag_data.dart';
 import 'post_it_presentation.dart';
@@ -171,7 +172,10 @@ class DayCell extends StatelessWidget {
                                 compact: compact || tight,
                                 focusedPostItId: focusedPostItId,
                                 onPostItTap: onPostItTap,
+                                onSelectDay: onTap,
                                 onShowAll: onShowAll,
+                                onQuickCreateTask: onQuickCreateTask,
+                                onQuickCreateEvent: onQuickCreateEvent,
                                 onReorderTo: onReorderTo,
                               ),
                             ),
@@ -250,14 +254,10 @@ class _DayTapRegion extends StatefulWidget {
 }
 
 class _DayTapRegionState extends State<_DayTapRegion> {
-  static const _multiTapWindow = Duration(milliseconds: 300);
   static const _previewWidth = 280.0;
   static const _previewHeight = 224.0;
 
   final GlobalKey _rootKey = GlobalKey();
-  Timer? _tapTimer;
-  int _tapCount = 0;
-  bool? _sequenceWasActive;
   OverlayEntry? _previewEntry;
   DayPreviewRegistry? _registry;
   DayPreviewRegistration? _registration;
@@ -298,7 +298,6 @@ class _DayTapRegionState extends State<_DayTapRegion> {
 
   @override
   void dispose() {
-    _tapTimer?.cancel();
     _removePreview();
     _unregister();
     super.dispose();
@@ -311,57 +310,40 @@ class _DayTapRegionState extends State<_DayTapRegion> {
     _registration = null;
   }
 
-  void _resetTapCount() {
-    _tapTimer?.cancel();
-    _tapCount = 0;
-    _sequenceWasActive = null;
-  }
-
   void _handleTapUp(TapUpDetails details) {
-    _tapTimer?.cancel();
-    if (_tapCount == 0) _sequenceWasActive = widget.isActive;
-    _tapCount++;
+    final coordinator = DayTapScope.maybeOf(context);
+    final wasActive = widget.isActive;
+    final hasContent = widget.itemsFor(widget.date).isNotEmpty;
     widget.onTap();
 
-    if (widget.itemsFor(widget.date).isNotEmpty) {
-      _tapTimer = Timer(_multiTapWindow, () {
-        if (!mounted) return;
-        final count = _tapCount;
-        final startedActive = _sequenceWasActive ?? false;
-        _tapCount = 0;
-        _sequenceWasActive = null;
-        if (!widget.isActive) return;
-        // A single tap opens only when the day was already selected; a second
-        // or third tap is an explicit request to open it once.
-        if (startedActive || count >= 2) {
-          widget.onShowDay();
-        }
-      });
+    VoidCallback? singleAction;
+    if (wasActive && hasContent) {
+      singleAction = () {
+        if (mounted && widget.isActive) widget.onShowDay();
+      };
+    }
+
+    if (coordinator == null) {
+      singleAction?.call();
       return;
     }
 
-    if (_tapCount >= 3) {
-      _tapCount = 0;
-      _sequenceWasActive = null;
-      HapticFeedback.mediumImpact();
-      widget.onQuickCreateEvent(widget.date);
-      return;
-    }
-
-    _tapTimer = Timer(_multiTapWindow, () {
-      if (!mounted) return;
-      final count = _tapCount;
-      _tapCount = 0;
-      _sequenceWasActive = null;
-      if (count == 2) {
+    coordinator.registerTap(
+      date: widget.date,
+      singleAction: singleAction,
+      taskAction: () {
         HapticFeedback.lightImpact();
         widget.onQuickCreateTask(widget.date);
-      }
-    });
+      },
+      eventAction: () {
+        HapticFeedback.mediumImpact();
+        widget.onQuickCreateEvent(widget.date);
+      },
+    );
   }
 
   void _handleLongPressStart(LongPressStartDetails details) {
-    _resetTapCount();
+    DayTapScope.maybeOf(context)?.cancel();
     HapticFeedback.selectionClick();
     _showPreview(widget.date, widget.itemsFor(widget.date));
   }
@@ -641,7 +623,10 @@ class _DayContent extends StatelessWidget {
     required this.items,
     required this.compact,
     required this.onPostItTap,
+    required this.onSelectDay,
     required this.onShowAll,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
     required this.onReorderTo,
     this.focusedPostItId,
   });
@@ -652,7 +637,10 @@ class _DayContent extends StatelessWidget {
   final bool compact;
   final String? focusedPostItId;
   final ValueChanged<PostIt> onPostItTap;
+  final VoidCallback onSelectDay;
   final VoidCallback onShowAll;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
 
   @override
@@ -692,12 +680,16 @@ class _DayContent extends StatelessWidget {
                     child: SizedBox(
                       height: itemHeight,
                       child: _DraggableItem(
+                        date: date,
                         postIt: items[index],
                         index: index,
                         compact: compact,
                         isPostponed: items[index].isPostponedOn(today),
                         isFocused: focusedPostItId == items[index].id,
                         onTap: () => onPostItTap(items[index]),
+                        onSelectDay: onSelectDay,
+                        onQuickCreateTask: onQuickCreateTask,
+                        onQuickCreateEvent: onQuickCreateEvent,
                         onReorderTo: onReorderTo,
                       ),
                     ),
@@ -734,22 +726,51 @@ class _DayContent extends StatelessWidget {
 
 class _DraggableItem extends StatelessWidget {
   const _DraggableItem({
+    required this.date,
     required this.postIt,
     required this.index,
     required this.compact,
     required this.isPostponed,
     required this.isFocused,
     required this.onTap,
+    required this.onSelectDay,
+    required this.onQuickCreateTask,
+    required this.onQuickCreateEvent,
     required this.onReorderTo,
   });
 
+  final DateOnly date;
   final PostIt postIt;
   final int index;
   final bool compact;
   final bool isPostponed;
   final bool isFocused;
   final VoidCallback onTap;
+  final VoidCallback onSelectDay;
+  final ValueChanged<DateOnly> onQuickCreateTask;
+  final ValueChanged<DateOnly> onQuickCreateEvent;
   final void Function(PostIt postIt, int newIndex) onReorderTo;
+
+  void _handleTileTap(BuildContext context) {
+    onSelectDay();
+    final coordinator = DayTapScope.maybeOf(context);
+    if (coordinator == null) {
+      onTap();
+      return;
+    }
+    coordinator.registerTap(
+      date: date,
+      singleAction: onTap,
+      taskAction: () {
+        HapticFeedback.lightImpact();
+        onQuickCreateTask(date);
+      },
+      eventAction: () {
+        HapticFeedback.mediumImpact();
+        onQuickCreateEvent(date);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -767,7 +788,7 @@ class _DraggableItem extends StatelessWidget {
           compact: compact,
           isPostponed: isPostponed,
           isFocused: isFocused,
-          onTap: onTap,
+          onTap: () => _handleTileTap(context),
         );
 
         return DesktopContextMenuRegion(
@@ -778,6 +799,9 @@ class _DraggableItem extends StatelessWidget {
           ),
           child: AdaptivePostItDraggable(
             data: PostItDragData(postIt),
+            onDragStarted: () => DayTapScope.maybeOf(context)?.cancel(),
+            onDragEnd: (_) {},
+            onDraggableCanceled: () {},
             feedback: _DragFeedback(postIt: postIt, tag: tag, compact: compact),
             childWhenDragging: TweenAnimationBuilder<double>(
               tween: Tween(begin: 1, end: 0.35),

@@ -9,6 +9,7 @@ import '../../../core/date_only.dart';
 import '../../../core/platform_support.dart';
 import '../../../domain/entities/post_it.dart';
 import '../../../domain/entities/tag.dart';
+import '../../../domain/usecases/find_post_it_time_conflicts.dart';
 import '../../../domain/usecases/validate_post_it.dart';
 import '../../shared/adaptive_modal.dart';
 import '../../tags/tag_presentation.dart';
@@ -23,6 +24,7 @@ Future<void> showPostItEditorSheet(
   required DateOnly initialDate,
   PostIt? existing,
   PostItType initialType = PostItType.task,
+  TimeOfDay? initialTime,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -35,6 +37,7 @@ Future<void> showPostItEditorSheet(
       initialDate: initialDate,
       existing: existing,
       initialType: initialType,
+      initialTime: initialTime,
     ),
   );
 }
@@ -46,12 +49,14 @@ class PostItEditorSheet extends StatefulWidget {
     required this.initialDate,
     this.existing,
     this.initialType = PostItType.task,
+    this.initialTime,
   });
 
   final PlannerController controller;
   final DateOnly initialDate;
   final PostIt? existing;
   final PostItType initialType;
+  final TimeOfDay? initialTime;
 
   @override
   State<PostItEditorSheet> createState() => _PostItEditorSheetState();
@@ -97,9 +102,11 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
     _recurrenceInterval = existing?.recurrenceInterval ?? 1;
     _recurrenceEndDate = existing?.recurrenceEndDate;
     final minutes = existing?.timeMinutes;
-    _time = minutes == null
-        ? null
-        : TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+    _time = existing == null
+        ? widget.initialTime
+        : (minutes == null
+              ? null
+              : TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60));
     _reminderMinutes = existing?.reminderMinutes;
     _selectedTagIds = [...?existing?.tagIds];
   }
@@ -498,6 +505,37 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
                 ? _recurrenceEndDate
                 : null);
 
+      if (existing == null && timeMinutes != null && startDate != null) {
+        final now = DateTime.now().toUtc();
+        final draft = PostIt(
+          id: '__new__',
+          title: title,
+          type: _type,
+          status: PostItStatus.active,
+          isHighlight: _isHighlight,
+          startDate: startDate,
+          endDate: endDate,
+          recurrence: recurrence,
+          recurrenceInterval: recurrenceInterval,
+          recurrenceEndDate: recurrenceEndDate,
+          timeMinutes: timeMinutes,
+          createdAt: now,
+          updatedAt: now,
+        );
+        final conflicts = const FindPostItTimeConflicts().forNewPostIt(
+          draft,
+          widget.controller.postIts,
+        );
+        if (conflicts.isNotEmpty) {
+          final proceed = await _confirmTimeConflicts(conflicts);
+          if (proceed != true) {
+            if (mounted) setState(() => _saving = false);
+            return;
+          }
+          if (!mounted) return;
+        }
+      }
+
       if (existing == null) {
         await widget.controller.createPostIt(
           title: title,
@@ -546,6 +584,56 @@ class _PostItEditorSheetState extends State<PostItEditorSheet> {
         setState(() => _saving = false);
       }
     }
+  }
+
+  Future<bool?> _confirmTimeConflicts(List<PostItTimeConflict> conflicts) {
+    final shown = conflicts.take(6).toList(growable: false);
+    final remaining = conflicts.length - shown.length;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('time-conflict-dialog'),
+        title: Text(AppStrings.timeConflictTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppStrings.timeConflictWarning),
+              const SizedBox(height: 8),
+              for (final conflict in shown)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '${DateFormats.shortDate(conflict.date)} '
+                    '${DateFormats.clockTime(conflict.timeMinutes)} — '
+                    '${conflict.postIts.map((postIt) => postIt.title).join(', ')}',
+                  ),
+                ),
+              if (remaining > 0)
+                Text(
+                  '+$remaining',
+                  style: Theme.of(dialogContext).textTheme.labelSmall,
+                ),
+              const SizedBox(height: 12),
+              Text(AppStrings.timeConflictSaveHelp),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const Key('time-conflict-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            key: const Key('time-conflict-save'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(AppStrings.timeConflictSave),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

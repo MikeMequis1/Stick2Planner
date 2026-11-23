@@ -105,7 +105,12 @@ class _PostItTileState extends State<PostItTile> {
                       children: [
                         Text(
                           postIt.title,
-                          maxLines: compact || widget.isPostponed ? 1 : 2,
+                          maxLines:
+                              compact ||
+                                  widget.isPostponed ||
+                                  postIt.timeMinutes != null
+                              ? 1
+                              : 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: compact ? 10 : 12.5,

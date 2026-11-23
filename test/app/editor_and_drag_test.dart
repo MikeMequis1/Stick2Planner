@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:stick2planner/app/app.dart';
 import 'package:stick2planner/app/app_strings.dart';
@@ -5,6 +7,7 @@ import 'package:stick2planner/app/bootstrap.dart';
 import 'package:stick2planner/app/planner_view_mode.dart';
 import 'package:stick2planner/core/date_only.dart';
 import 'package:stick2planner/domain/entities/post_it.dart';
+import 'package:stick2planner/features/planner/widgets/post_it_editor_sheet.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -47,6 +50,93 @@ void main() {
     await tester.tap(find.byKey(Key('post-it-$id')));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('avisa conflito de horário ao criar e permite salvar', (
+    tester,
+  ) async {
+    final dependencies = await pumpPlanner(
+      tester,
+      size: const Size(800, 1200),
+      postIts: [
+        buildPostIt(
+          id: 'existing',
+          type: PostItType.event,
+          title: 'Reunião existente',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+      ],
+    );
+
+    final context = tester.element(find.byType(Scaffold).first);
+    unawaited(
+      showPostItEditorSheet(
+        context,
+        controller: dependencies.planner,
+        initialDate: DateOnly(2026, 11, 4),
+        initialType: PostItType.event,
+        initialTime: const TimeOfDay(hour: 9, minute: 0),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.enterText(
+      find.byKey(const Key('editor-title')),
+      'Nova reunião',
+    );
+    await tester.ensureVisible(find.byKey(const Key('editor-save')));
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(const Key('time-conflict-dialog')), findsOneWidget);
+    expect(find.text('Reunião existente'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('time-conflict-cancel')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('time-conflict-dialog')), findsNothing);
+    expect(find.byKey(const Key('editor-save')), findsOneWidget);
+    expect(dependencies.planner.postIts, hasLength(1));
+
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('time-conflict-save')));
+    await tester.pumpAndSettle();
+
+    expect(dependencies.planner.postIts, hasLength(2));
+  });
+
+  testWidgets('não avisa conflito ao editar registro existente', (
+    tester,
+  ) async {
+    await pumpPlanner(
+      tester,
+      postIts: [
+        buildPostIt(
+          id: 'existing-a',
+          title: 'Reunião A',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+        buildPostIt(
+          id: 'existing-b',
+          title: 'Reunião B',
+          startDate: DateOnly(2026, 11, 4),
+          timeMinutes: 540,
+        ),
+      ],
+    );
+
+    await openDetails(tester, 'existing-a');
+    await tester.tap(find.byKey(const Key('details-edit')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('editor-save')));
+    await tester.tap(find.byKey(const Key('editor-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('time-conflict-dialog')), findsNothing);
+  });
 
   testWidgets('tarefa pode repetir semanalmente', (tester) async {
     final dependencies = await pumpPlanner(tester, size: const Size(360, 780));
