@@ -874,57 +874,59 @@ void main() {
     expect(find.text('Tarefa do dia'), findsWidgets);
   });
 
-  testWidgets('dois toques em dia ativo com conteúdo não abrem a listagem', (
-    tester,
-  ) async {
-    await pumpPlanner(
-      tester,
-      size: const Size(1280, 800),
-      postIts: [
-        buildPostIt(
-          id: 'double1',
-          title: 'Compromisso',
-          startDate: DateOnly(2026, 11, 4),
-        ),
-      ],
-    );
-    final day = find.byKey(const Key('day-2026-11-04'));
+  testWidgets(
+    'dois toques em dia ativo com conteúdo abrem a listagem uma vez',
+    (tester) async {
+      await pumpPlanner(
+        tester,
+        size: const Size(1280, 800),
+        postIts: [
+          buildPostIt(
+            id: 'double1',
+            title: 'Compromisso',
+            startDate: DateOnly(2026, 11, 4),
+          ),
+        ],
+      );
+      final day = find.byKey(const Key('day-2026-11-04'));
 
-    await tester.tap(day);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tap(day);
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
+      await tester.tap(day);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tap(day);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
-  });
+      expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+    },
+  );
 
-  testWidgets('três toques em dia ativo com conteúdo não abrem a listagem', (
-    tester,
-  ) async {
-    await pumpPlanner(
-      tester,
-      size: const Size(1280, 800),
-      postIts: [
-        buildPostIt(
-          id: 'triple1',
-          title: 'Compromisso',
-          startDate: DateOnly(2026, 11, 4),
-        ),
-      ],
-    );
-    final day = find.byKey(const Key('day-2026-11-04'));
+  testWidgets(
+    'três toques em dia ativo com conteúdo abrem a listagem uma vez',
+    (tester) async {
+      await pumpPlanner(
+        tester,
+        size: const Size(1280, 800),
+        postIts: [
+          buildPostIt(
+            id: 'triple1',
+            title: 'Compromisso',
+            startDate: DateOnly(2026, 11, 4),
+          ),
+        ],
+      );
+      final day = find.byKey(const Key('day-2026-11-04'));
 
-    await tester.tap(day);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tap(day);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tap(day);
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
+      await tester.tap(day);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tap(day);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tap(day);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('day-details-sheet')), findsNothing);
-  });
+      expect(find.byKey(const Key('day-details-sheet')), findsOneWidget);
+    },
+  );
 
   testWidgets('dia vazio não abre listagem mesmo depois de selecionado', (
     tester,

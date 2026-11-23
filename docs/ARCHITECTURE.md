@@ -285,8 +285,8 @@ Other calendar interaction rules that still matter:
 - A first tap selects a day. Another tap on the selected day opens the full day
   sheet only when that day has content and only after the same short multi-tap
   window used for quick creation. Two/three taps on a day with content therefore
-  do not trigger the single-tap sheet. Empty days never open an empty sheet;
-  two/three taps still quick-create a task/event on empty days.
+  open the sheet once instead of on every tap. Empty days never open an empty
+  sheet; two/three taps still quick-create a task/event on empty days.
 - Active events with tags use the first associated tag's background and
   foreground, so agenda bars, day tiles and Inbox rows match the tag chip.
   Tasks keep their type color; resolved and Feito records keep the status/highlight

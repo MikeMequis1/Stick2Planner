@@ -257,6 +257,7 @@ class _DayTapRegionState extends State<_DayTapRegion> {
   final GlobalKey _rootKey = GlobalKey();
   Timer? _tapTimer;
   int _tapCount = 0;
+  bool? _sequenceWasActive;
   OverlayEntry? _previewEntry;
   DayPreviewRegistry? _registry;
   DayPreviewRegistration? _registration;
@@ -313,24 +314,26 @@ class _DayTapRegionState extends State<_DayTapRegion> {
   void _resetTapCount() {
     _tapTimer?.cancel();
     _tapCount = 0;
+    _sequenceWasActive = null;
   }
 
   void _handleTapUp(TapUpDetails details) {
     _tapTimer?.cancel();
-    final wasActive = widget.isActive;
+    if (_tapCount == 0) _sequenceWasActive = widget.isActive;
     _tapCount++;
     widget.onTap();
 
     if (widget.itemsFor(widget.date).isNotEmpty) {
-      if (_tapCount >= 3) {
-        _tapCount = 0;
-        return;
-      }
       _tapTimer = Timer(_multiTapWindow, () {
         if (!mounted) return;
         final count = _tapCount;
+        final startedActive = _sequenceWasActive ?? false;
         _tapCount = 0;
-        if (count == 1 && wasActive && widget.isActive) {
+        _sequenceWasActive = null;
+        if (!widget.isActive) return;
+        // A single tap opens only when the day was already selected; a second
+        // or third tap is an explicit request to open it once.
+        if (startedActive || count >= 2) {
           widget.onShowDay();
         }
       });
@@ -339,6 +342,7 @@ class _DayTapRegionState extends State<_DayTapRegion> {
 
     if (_tapCount >= 3) {
       _tapCount = 0;
+      _sequenceWasActive = null;
       HapticFeedback.mediumImpact();
       widget.onQuickCreateEvent(widget.date);
       return;
@@ -348,6 +352,7 @@ class _DayTapRegionState extends State<_DayTapRegion> {
       if (!mounted) return;
       final count = _tapCount;
       _tapCount = 0;
+      _sequenceWasActive = null;
       if (count == 2) {
         HapticFeedback.lightImpact();
         widget.onQuickCreateTask(widget.date);
