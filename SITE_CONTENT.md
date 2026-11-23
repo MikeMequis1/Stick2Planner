@@ -468,7 +468,7 @@ Estado em 23/11/2026:
 
 ```text
 flutter analyze  → sem problemas
-flutter test     → 367 testes aprovados
+flutter test     → 381 testes aprovados
 ```
 
 O número inclui as regressões do destaque do dia ativo, da janela de toques no

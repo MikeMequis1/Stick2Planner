@@ -282,11 +282,15 @@ not repeated cards. The event lane is ordered deterministically
 
 Other calendar interaction rules that still matter:
 
-- A first tap selects a day. Another tap on the selected day opens the full day
-  sheet only when that day has content and only after the same short multi-tap
-  window used for quick creation. Two/three taps on a day with content therefore
-  open the sheet once instead of on every tap. Empty days never open an empty
-  sheet; two/three taps still quick-create a task/event on empty days.
+- A first tap selects a day. A single tap on an already selected day with content
+  opens the full day sheet after the multi-tap window. Two/three taps create a
+  task/event on any day, including days with post-its; taps on an existing post-it
+  participate in the same sequence. Changing the target within the same date keeps
+  the count; changing the date resets it. Empty days never open an empty sheet.
+- Time conflicts are detected by equal `timeMinutes` on overlapping dates,
+  considering active events and tasks. Creation shows a non-blocking warning and
+  the day sheet marks every affected post-it. The model has no end time yet, so
+  partial interval overlaps are outside this check.
 - Active events with tags use the first associated tag's background and
   foreground, so agenda bars, day tiles and Inbox rows match the tag chip.
   Tasks keep their type color; resolved and Feito records keep the status/highlight

@@ -71,7 +71,7 @@ Run on 2026-11-23 in this working tree:
 
 ```text
 flutter analyze  → No issues found
-flutter test     → 367 tests passed
+flutter test     → 381 tests passed
 ```
 
 The suite includes regression coverage for the active-day highlight, the

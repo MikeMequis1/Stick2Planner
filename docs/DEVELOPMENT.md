@@ -85,7 +85,7 @@ flutter test --plain-name "dois dispositivos convergem"
 dart format lib test
 ```
 
-`flutter test` currently runs the full suite (367 tests in this working tree,
+`flutter test` currently runs the full suite (381 tests in this working tree,
 including the active-day highlight, tap-window and tag-color regressions).
 The two-device sync suite opens multiple `AppDatabase` instances in the same
 process and may print Drift's multi-instance warning. It is expected there; a
